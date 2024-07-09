@@ -45,12 +45,25 @@ def get_history(prompt_id):
     with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
         return json.loads(response.read())
 
-def get_images(ws, prompt, progress, client_id):
-    prompt_id = queue_prompt(prompt, client_id)['prompt_id']
-    print(prompt_id)
+def generate_progress_bar(value, message):
+    template = '''
+    <div class="loader-container">
+      <div class="progress-container">
+        <progress value="{value}" max="100"></progress>
+      </div>
+      <span>{message}</span>
+    </div>
+    '''
 
-    output_images = {}
+    return template.format(value=value, message=message)
+
+def comfy_request(ws, prompt, client_id):
+    prompt_id = queue_prompt(prompt, client_id)['prompt_id']
+
     current_node = ""
+    current_progress = 0
+    current_image = None
+
     while True:
         out = ws.recv()
         if isinstance(out, str):
@@ -64,25 +77,34 @@ def get_images(ws, prompt, progress, client_id):
                     else:
                         current_node = data['node']
             elif message['type'] == 'progress':
-                if message["data"]["node"] == "sampler":
-                    progress_message = "Generating"
-                elif message["data"]["node"] == "save":
-                    progress_message = "Receiving"
-                else:
-                    progress_message = None
+                # if message["data"]["node"] == "sampler":
+                #     progress_message = "Generating"
+                # elif message["data"]["node"] == "save":
+                #     progress_message = "Receiving"
+                # else:
+                #     progress_message = None
                 max = message["data"]["max"]
                 current = message["data"]["value"]
-                progress(current/max, progress_message)
+                current_progress = current/max * 100
+                yield {
+                    "image": current_image,
+                    "preview": True,
+                    "progress": current_progress
+                }
         else:
+            current_image = Image.open(io.BytesIO(out[8:]))
             if current_node == 'save':
-                images_output = output_images.get(current_node, [])
-                images_output.append(out[8:])
-                output_images[current_node] = images_output
+                yield {
+                    "image": current_image,
+                    "preview": False,
+                    "progress": 100
+                }
             else:
-                yield [Image.open(io.BytesIO(out[8:]))]
-                print("Got binary message: ", current_node)
-    print("returning full image")
-    yield [Image.open(io.BytesIO(d)) for d in output_images["save"]]
+                yield {
+                    "image": current_image,
+                    "preview": True,
+                    "progress": current_progress
+                }
 
 prompt_text = """
 {
@@ -196,16 +218,80 @@ def set_initial_state():
     seed = gr.Number(value=random.randrange(0, options["seed_max"]))
     return state, model, sampler, scheduler, seed
 
-with gr.Blocks() as server:
+css = """
+.loader-container {
+  display: flex; /* Use flex to align items horizontally */
+  align-items: center; /* Center items vertically within the container */
+  white-space: nowrap; /* Prevent line breaks within the container */
+}
+
+.progress-bar > .generating {
+  display: none !important;
+}
+
+.progress-bar{
+  height: 30px !important;
+}
+
+.progress-bar span {
+    text-align: right;
+    width: 215px;
+}
+
+/* Style the progress bar */
+progress {
+  appearance: none; /* Remove default styling */
+  height: 20px; /* Set the height of the progress bar */
+  border-radius: 5px; /* Round the corners of the progress bar */
+  background-color: #f3f3f3; /* Light grey background */
+  width: 100%;
+  vertical-align: middle !important;
+}
+
+/* Style the progress bar container */
+.progress-container {
+  margin-left: 20px;
+  margin-right: 20px;
+  flex-grow: 1; /* Allow the progress container to take up remaining space */
+}
+
+/* Set the color of the progress bar fill */
+progress::-webkit-progress-value {
+  background-color: #3498db; /* Blue color for the fill */
+}
+
+progress::-moz-progress-bar {
+  background-color: #3498db; /* Blue color for the fill in Firefox */
+}
+
+.generate-btn {
+  height: 100%;
+}
+"""
+
+with gr.Blocks(css=css) as server:
     state = gr.State({})
 
-    gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
-                         elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                         elem_id='final_gallery')
-    progress = gr.Progress()
+    with gr.Row():
+        preview_window = gr.Image(label='Preview', show_label=True, visible=False,
+                                  height=768)
+        gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+                             elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
+                             elem_id='final_gallery')
 
-    prompt = gr.Textbox(label="Prompt", lines=2, visible=True)
-    generate_btn = gr.Button("Generate")
+    progress = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
+
+    with gr.Row():
+        with gr.Column(scale=17):
+            prompt = gr.Textbox(label="Prompt", lines=2, visible=True)
+
+        with gr.Column(scale=3):
+            generate_btn = gr.Button("Generate", variant="primary", elem_id='generate-btn',
+                                     elem_classes='generate-btn', visible=True)
+            skip_btn = gr.Button("Skip", visible=False)
+            stop_btn = gr.Button("Stop", variant="stop", visible=False)
+
+
     with gr.Accordion("Advanced", open=False):
         negative_prompt = gr.Textbox(label="Negative Prompt", lines=2, visible=True)
         with gr.Row():
@@ -232,14 +318,20 @@ with gr.Blocks() as server:
 
     server.load(set_initial_state, outputs=[state, model, sampler, scheduler, seed])
 
+    @stop_btn.click()
+    def stop():
+        print("got stop")
+
     @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
-                                scheduler, negative_prompt, state, seed],
-                        outputs=gallery)
-    def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt, state, seed):
+                                scheduler, negative_prompt, state, seed, stop_btn,
+                                skip_btn, generate_btn],
+                        outputs=[gallery, progress, preview_window, seed, stop_btn,
+                                 skip_btn, generate_btn])
+    def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
+                 state, seed, stop_btn, skip_btn, generate_btn):
         client_id = state["client_id"]
         prompt = json.loads(prompt_text)
 
-        prompt["sampler"]["inputs"]["seed"] = seed
         prompt["sampler"]["inputs"]["sampler_name"] = sampler
         prompt["sampler"]["inputs"]["scheduler"] = scheduler
         prompt["sampler"]["inputs"]["steps"] = steps
@@ -247,16 +339,45 @@ with gr.Blocks() as server:
         width, height = resolution.split(" x ")
 
         prompt["loader"]["inputs"]["ckpt_name"] = model
-        prompt["latent_image"]["inputs"]["batch_size"] = count
         prompt["latent_image"]["inputs"]["width"] = width
         prompt["latent_image"]["inputs"]["height"] = height
         prompt["positive_clip"]["inputs"]["text"] = text
         prompt["negative_clip"]["inputs"]["text"] = negative_prompt
 
+        # For now, always use a batch of 1 and queue a request for
+        # each image. This way we can skip/cancel and get previews
+        prompt["latent_image"]["inputs"]["batch_size"] = 1
+
         ws = connect("ws://{}/ws?clientId={}".format(server_address, client_id), max_size=3000000)
-        images = get_images(ws, prompt, progress, client_id)
-        for img_list in images:
-            print("got a list of images: ", len(img_list))
-            yield img_list
+
+        completed_images = []
+        current_preview = None
+        for _ in range(0, count):
+            prompt["sampler"]["inputs"]["seed"] = seed
+            for resp in comfy_request(ws, prompt, client_id):
+                if resp["preview"] is True and resp["image"] is not None:
+                    current_preview = resp["image"]
+                elif resp["preview"] is False and resp["image"] is not None:
+                    completed_images.append(resp["image"])
+
+                progress = generate_progress_bar(resp["progress"], "Generating")
+                if current_preview is None or len(completed_images) == count:
+                    preview = gr.Image(visible=False)
+                    progress = gr.HTML(visible=False)
+                    stop_btn = gr.Button(visible=False)
+                    skip_btn = gr.Button(visible=False)
+                    generate_btn = gr.Button(visible=True)
+                else:
+                    preview = gr.Image(current_preview, visible=True)
+                    progress = gr.HTML(progress, visible=True)
+                    stop_btn = gr.Button(visible=True)
+                    skip_btn = gr.Button(visible=True)
+                    generate_btn = gr.Button(visible=False)
+
+                yield [completed_images, progress, preview, seed, stop_btn, skip_btn,
+                       generate_btn]
+
+            # Update the seed so we don't make the same image again
+            seed = random.randrange(0, state["options"]["seed_max"])
 
 server.launch()
