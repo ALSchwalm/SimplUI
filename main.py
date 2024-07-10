@@ -10,7 +10,7 @@ import io
 import numpy as np
 import random
 
-
+server_address = "10.10.10.65:8188"
 
 ALLOWED_RESOLUTIONS = [
     '512 x 512', '704 x 1408', '704 x 1344', '768 x 1344', '768 x 1280', '832 x 1216',
@@ -163,7 +163,7 @@ prompt_text = """
             "sampler_name": "euler",
             "scheduler": "normal",
             "seed": 0,
-            "steps": 20
+            "steps": 0
         }
     },
     "loader": {
@@ -324,6 +324,7 @@ with gr.Blocks(css=css) as server:
 
 
     with gr.Accordion("Advanced", open=False):
+        performance_rd = gr.Radio(["Quality", "Speed", "Hyper"], value="Speed", label="Performance")
         negative_prompt = gr.Textbox(label="Negative Prompt", lines=2, visible=True)
         with gr.Row():
             count = gr.Slider(1, 10, 2, step=1, label="Count")
@@ -339,7 +340,7 @@ with gr.Blocks(css=css) as server:
                                 filterable=False)
 
         with gr.Row():
-            steps = gr.Slider(1, 80, 20, step=1, label="Steps")
+            steps = gr.Slider(1, 80, 30, step=1, label="Steps")
             sampler = gr.Dropdown(label="Sampler", allow_custom_value=False,
                                   filterable=False)
             scheduler = gr.Dropdown(label="Scheduler", allow_custom_value=False,
@@ -348,6 +349,15 @@ with gr.Blocks(css=css) as server:
             seed = gr.Number(label="Seed")
 
     server.load(set_initial_state, outputs=[state, model, sampler, scheduler, seed])
+
+    @performance_rd.input(inputs=[performance_rd, state], outputs=[state, steps])
+    def performance(performance_rd, state):
+        if performance_rd == "Quality":
+            return [state, 60]
+        elif performance_rd == "Speed":
+            return [state, 30]
+        elif performance_rd == "Hyper":
+            return [state, 8]
 
     @stop_btn.click(inputs=[state])
     def stop(state):
@@ -360,17 +370,37 @@ with gr.Blocks(css=css) as server:
 
     @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
                                 scheduler, negative_prompt, state, seed, stop_btn,
-                                skip_btn, generate_btn],
+                                skip_btn, generate_btn, performance_rd],
                         outputs=[gallery, progress, preview_window, stop_btn,
                                  skip_btn, generate_btn, state])
     def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
-                 state, seed, stop_btn, skip_btn, generate_btn):
+                 state, seed, stop_btn, skip_btn, generate_btn, performance_rd):
         client_id = state["client_id"]
         prompt = json.loads(prompt_text)
 
         prompt["sampler"]["inputs"]["sampler_name"] = sampler
         prompt["sampler"]["inputs"]["scheduler"] = scheduler
         prompt["sampler"]["inputs"]["steps"] = steps
+
+        # FIXME: for now just stick hyper in here
+        if performance == "Hyper":
+            new_node = {
+                "hyper": {
+                    "class_type": "LoraLoaderModelOnly",
+                    "inputs": {
+                        "lora_model": "Hyper-SDXL-8steps-CFG-lora.safetensors",
+                        "strength_model": 1.0,
+                        "model": [
+                            "loader",
+                            0
+                        ],
+
+                    }
+                }
+            }
+            prompt.update(new_node)
+            prompt["sampler"]["inputs"]["model"][0] = "hyper"
+            prompt["sampler"]["inputs"]["cfg"] = 6.0
 
         width, height = resolution.split(" x ")
 
