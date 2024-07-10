@@ -7,6 +7,7 @@ import urllib.parse
 from websockets.sync.client import connect
 from PIL import Image
 import io
+import numpy as np
 import random
 
 
@@ -35,6 +36,18 @@ def queue_prompt(prompt, client_id):
     req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
     return json.loads(urllib.request.urlopen(req).read())
 
+def comfy_clear_queue(client_id):
+    p = {"clear": True, "client_id": client_id}
+    data = json.dumps(p).encode('utf-8')
+    req =  urllib.request.Request("http://{}/queue".format(server_address), data=data)
+    urllib.request.urlopen(req)
+
+def comfy_interrupt(client_id):
+    p = {"client_id": client_id}
+    data = json.dumps(p).encode('utf-8')
+    req =  urllib.request.Request("http://{}/interrupt".format(server_address), data=data)
+    urllib.request.urlopen(req)
+
 def get_image(filename, subfolder, folder_type):
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
@@ -57,54 +70,72 @@ def generate_progress_bar(value, message):
 
     return template.format(value=value, message=message)
 
-def comfy_request(ws, prompt, client_id):
-    prompt_id = queue_prompt(prompt, client_id)['prompt_id']
 
+def comfy_send_prompts(prompt, client_id, seed, count, state):
+    # Create an RNG with our seed so we can ensure we get consistent
+    # results across the different submissions
+    rng = np.random.RandomState(seed & (2**32-1))
+
+    ids = []
+
+    # Queue each prompt with a seed derived from the user seed
+    for _ in range(count):
+        seed = int(rng.randint(state["options"]["seed_max"], dtype="uint64"))
+        prompt["sampler"]["inputs"]["seed"] = seed
+
+        ids.append(queue_prompt(prompt, client_id)['prompt_id'])
+    return ids
+
+def comfy_stream_updates(ws, prompt_ids):
     current_node = ""
-    current_progress = 0
-    current_image = None
+    current_prompt = ""
 
     while True:
         out = ws.recv()
         if isinstance(out, str):
             message = json.loads(out)
             print(message)
+            if "data" not in message:
+                continue
+            data = message["data"]
+
+            # There is nothing left in the queue and its not the start message
+            if ("status" in data and
+                "exec_info" in data["status"] and
+                "queue_remaining" in data["status"]["exec_info"] and
+                data["status"]["exec_info"]["queue_remaining"] == 0 and
+                "sid" not in data):
+                break
+
+            if "prompt_id" not in data:
+                continue
+            if data["prompt_id"] not in prompt_ids:
+                continue
+
+            current_prompt = data["prompt_id"]
+
             if message['type'] == 'executing':
-                data = message['data']
-                if data['prompt_id'] == prompt_id:
-                    if data['node'] is None:
-                        break #Execution is done
-                    else:
-                        current_node = data['node']
-            elif message['type'] == 'progress':
-                # if message["data"]["node"] == "sampler":
-                #     progress_message = "Generating"
-                # elif message["data"]["node"] == "save":
-                #     progress_message = "Receiving"
-                # else:
-                #     progress_message = None
-                max = message["data"]["max"]
-                current = message["data"]["value"]
-                current_progress = current/max * 100
+                current_node = data['node']
                 yield {
-                    "image": current_image,
-                    "preview": True,
-                    "progress": current_progress
+                    "node": current_node,
+                    "prompt": current_prompt
+                }
+            elif message['type'] == 'progress':
+                max = data["max"]
+                current = data["value"]
+                progress = current/max * 100
+                yield {
+                    "node": current_node,
+                    "progress": progress,
+                    "prompt": current_prompt
                 }
         else:
-            current_image = Image.open(io.BytesIO(out[8:]))
-            if current_node == 'save':
-                yield {
-                    "image": current_image,
-                    "preview": False,
-                    "progress": 100
-                }
-            else:
-                yield {
-                    "image": current_image,
-                    "preview": True,
-                    "progress": current_progress
-                }
+            # A binary payload is always some kind of image
+            yield {
+                "node": current_node,
+                "image": Image.open(io.BytesIO(out[8:])),
+                "prompt": current_prompt
+            }
 
 prompt_text = """
 {
@@ -318,15 +349,20 @@ with gr.Blocks(css=css) as server:
 
     server.load(set_initial_state, outputs=[state, model, sampler, scheduler, seed])
 
-    @stop_btn.click()
-    def stop():
-        print("got stop")
+    @stop_btn.click(inputs=[state])
+    def stop(state):
+        comfy_clear_queue(state["client_id"])
+        comfy_interrupt(state["client_id"])
+
+    @skip_btn.click(inputs=[state])
+    def skip(state):
+        comfy_interrupt(state["client_id"])
 
     @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
                                 scheduler, negative_prompt, state, seed, stop_btn,
                                 skip_btn, generate_btn],
-                        outputs=[gallery, progress, preview_window, seed, stop_btn,
-                                 skip_btn, generate_btn])
+                        outputs=[gallery, progress, preview_window, stop_btn,
+                                 skip_btn, generate_btn, state])
     def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
                  state, seed, stop_btn, skip_btn, generate_btn):
         client_id = state["client_id"]
@@ -352,32 +388,43 @@ with gr.Blocks(css=css) as server:
 
         completed_images = []
         current_preview = None
-        for _ in range(0, count):
-            prompt["sampler"]["inputs"]["seed"] = seed
-            for resp in comfy_request(ws, prompt, client_id):
-                if resp["preview"] is True and resp["image"] is not None:
-                    current_preview = resp["image"]
-                elif resp["preview"] is False and resp["image"] is not None:
+        current_progress = 0
+
+        prompt_ids = comfy_send_prompts(prompt, client_id, seed, count, state)
+
+        for resp in comfy_stream_updates(ws, prompt_ids):
+            state.update({"prompt_id": resp["prompt"]})
+            if resp["node"] is None:
+                # We've finished an item
+                continue
+
+            if "image" in resp:
+                if resp["node"] == "save":
                     completed_images.append(resp["image"])
+                elif resp["node"] == "sampler":
+                    current_preview = resp["image"]
+            elif "progress" in resp:
+                current_progress = resp["progress"]
 
-                progress = generate_progress_bar(resp["progress"], "Generating")
-                if current_preview is None or len(completed_images) == count:
-                    preview = gr.Image(visible=False)
-                    progress = gr.HTML(visible=False)
-                    stop_btn = gr.Button(visible=False)
-                    skip_btn = gr.Button(visible=False)
-                    generate_btn = gr.Button(visible=True)
-                else:
-                    preview = gr.Image(current_preview, visible=True)
-                    progress = gr.HTML(progress, visible=True)
-                    stop_btn = gr.Button(visible=True)
-                    skip_btn = gr.Button(visible=True)
-                    generate_btn = gr.Button(visible=False)
+            progress = generate_progress_bar(current_progress, "Generating")
 
-                yield [completed_images, progress, preview, seed, stop_btn, skip_btn,
-                       generate_btn]
+            preview = gr.Image(current_preview, visible=True)
+            progress = gr.HTML(progress, visible=True)
+            stop_btn = gr.Button(visible=True)
+            skip_btn = gr.Button(visible=True)
+            generate_btn = gr.Button(visible=False)
 
-            # Update the seed so we don't make the same image again
-            seed = random.randrange(0, state["options"]["seed_max"])
+            yield [completed_images, progress, preview, stop_btn, skip_btn,
+                   generate_btn, state]
+
+        yield [
+            completed_images,
+            gr.HTML(visible=False),
+            gr.Image(visible=False),
+            gr.Button(visible=False),
+            gr.Button(visible=False),
+            gr.Button(visible=True),
+            state
+        ]
 
 server.launch()
