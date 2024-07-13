@@ -1,0 +1,108 @@
+/* based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/style.css */
+
+.loader-container {
+  display: flex; /* Use flex to align items horizontally */
+  align-items: center; /* Center items vertically within the container */
+  white-space: nowrap; /* Prevent line breaks within the container */
+}
+
+.progress-bar > .generating {
+  display: none !important;
+}
+
+.progress-bar{
+  height: 30px !important;
+}
+
+.progress-bar span {
+    text-align: right;
+    width: 215px;
+}
+
+/* Style the progress bar */
+progress {
+  appearance: none; /* Remove default styling */
+  height: 20px; /* Set the height of the progress bar */
+  border-radius: 5px; /* Round the corners of the progress bar */
+  background-color: #f3f3f3; /* Light grey background */
+  width: 100%;
+  vertical-align: middle !important;
+}
+
+/* Style the progress bar container */
+.progress-container {
+  margin-left: 20px;
+  margin-right: 20px;
+  flex-grow: 1; /* Allow the progress container to take up remaining space */
+}
+
+/* Set the color of the progress bar fill */
+progress::-webkit-progress-value {
+  background-color: #3498db; /* Blue color for the fill */
+}
+
+progress::-moz-progress-bar {
+  background-color: #3498db; /* Blue color for the fill in Firefox */
+}
+
+.generate-btn {
+  height: 100%;
+}
+
+/* scrollable box for style selections */
+.contain .tabs {
+  height: 100%;
+}
+
+.contain .tabs .tabitem.style_selections_tab {
+  height: 100%;
+}
+
+.contain .tabs .tabitem.style_selections_tab > div:first-child {
+  height: 100%;
+}
+
+.contain .tabs .tabitem.style_selections_tab .style_selections {
+  min-height: 200px;
+  height: 100%;
+}
+
+.contain .tabs .tabitem.style_selections_tab .style_selections .wrap[data-testid="checkbox-group"] {
+  position: absolute; /* remove this to disable scrolling within the checkbox-group */
+  overflow: auto;
+  padding-right: 2px;
+  max-height: 100%;
+}
+
+.contain .tabs .tabitem.style_selections_tab .style_selections .wrap[data-testid="checkbox-group"] label {
+  /* max-width: calc(35% - 15px) !important; */ /* add this to enable 3 columns layout */
+  flex: calc(50% - 5px) !important;
+}
+
+.contain .tabs .tabitem.style_selections_tab .style_selections .wrap[data-testid="checkbox-group"] label span {
+  /* white-space:nowrap; */ /* add this to disable text wrapping (better choice for 3 columns layout) */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#stylePreviewOverlay {
+    opacity: 0;
+    pointer-events: none;
+    width: 128px;
+    height: 128px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    border: solid 1px lightgrey;
+    transform: translate(-140px, 20px);
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    z-index: 100;
+    transition: transform 0.1s ease, opacity 0.3s ease;
+}
+
+#stylePreviewOverlay.lower-half {
+    transform: translate(-140px, -140px);
+}

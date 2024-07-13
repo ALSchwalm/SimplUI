@@ -1,16 +1,13 @@
+import argparse
 import gradio as gr
-import websocket
 import uuid
 import json
-import urllib.request
-import urllib.parse
 from websockets.sync.client import connect
-from PIL import Image
-import io
-import numpy as np
 import random
-
-server_address = "10.10.10.65:8188"
+import modules.styles
+import modules.utils
+import modules.html
+import modules.comfy
 
 ALLOWED_RESOLUTIONS = [
     '512 x 512', '704 x 1408', '704 x 1344', '768 x 1344', '768 x 1280', '832 x 1216',
@@ -19,44 +16,6 @@ ALLOWED_RESOLUTIONS = [
     '1280 x 768', '1344 x 768', '1344 x 704', '1408 x 704', '1472 x 704', '1536 x 640',
     '1600 x 640', '1664 x 576', '1728 x 576']
 DEFAULT_RESOLUTION="1024 x 1024"
-
-def get_available_options():
-    opts = {}
-    with urllib.request.urlopen("http://{}/object_info".format(server_address)) as response:
-        nodes = json.loads(response.read())
-        opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
-        opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
-        opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
-        opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
-    return opts
-
-def queue_prompt(prompt, client_id):
-    p = {"prompt": prompt, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
-    return json.loads(urllib.request.urlopen(req).read())
-
-def comfy_clear_queue(client_id):
-    p = {"clear": True, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/queue".format(server_address), data=data)
-    urllib.request.urlopen(req)
-
-def comfy_interrupt(client_id):
-    p = {"client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/interrupt".format(server_address), data=data)
-    urllib.request.urlopen(req)
-
-def get_image(filename, subfolder, folder_type):
-    data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
-    url_values = urllib.parse.urlencode(data)
-    with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
-        return response.read()
-
-def get_history(prompt_id):
-    with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
-        return json.loads(response.read())
 
 def generate_progress_bar(value, message):
     template = '''
@@ -69,73 +28,6 @@ def generate_progress_bar(value, message):
     '''
 
     return template.format(value=value, message=message)
-
-
-def comfy_send_prompts(prompt, client_id, seed, count, state):
-    # Create an RNG with our seed so we can ensure we get consistent
-    # results across the different submissions
-    rng = np.random.RandomState(seed & (2**32-1))
-
-    ids = []
-
-    # Queue each prompt with a seed derived from the user seed
-    for _ in range(count):
-        seed = int(rng.randint(state["options"]["seed_max"], dtype="uint64"))
-        prompt["sampler"]["inputs"]["seed"] = seed
-
-        ids.append(queue_prompt(prompt, client_id)['prompt_id'])
-    return ids
-
-def comfy_stream_updates(ws, prompt_ids):
-    current_node = ""
-    current_prompt = ""
-
-    while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            print(message)
-            if "data" not in message:
-                continue
-            data = message["data"]
-
-            # There is nothing left in the queue and its not the start message
-            if ("status" in data and
-                "exec_info" in data["status"] and
-                "queue_remaining" in data["status"]["exec_info"] and
-                data["status"]["exec_info"]["queue_remaining"] == 0 and
-                "sid" not in data):
-                break
-
-            if "prompt_id" not in data:
-                continue
-            if data["prompt_id"] not in prompt_ids:
-                continue
-
-            current_prompt = data["prompt_id"]
-
-            if message['type'] == 'executing':
-                current_node = data['node']
-                yield {
-                    "node": current_node,
-                    "prompt": current_prompt
-                }
-            elif message['type'] == 'progress':
-                max = data["max"]
-                current = data["value"]
-                progress = current/max * 100
-                yield {
-                    "node": current_node,
-                    "progress": progress,
-                    "prompt": current_prompt
-                }
-        else:
-            # A binary payload is always some kind of image
-            yield {
-                "node": current_node,
-                "image": Image.open(io.BytesIO(out[8:])),
-                "prompt": current_prompt
-            }
 
 prompt_text = """
 {
@@ -197,7 +89,7 @@ prompt_text = """
                 "loader",
                 1
             ],
-            "text": "bad hands"
+            "text": ""
         }
     },
     "vae": {
@@ -225,13 +117,15 @@ prompt_text = """
 }
 """
 
-def set_initial_state():
+def set_initial_state(comfy_address):
     state = {}
     state["client_id"] = str(uuid.uuid4())
     state["seed"] = str()
 
-    options = get_available_options()
+    options = modules.comfy.get_available_options(comfy_address)
     state["options"] = options
+    state["positive_styles"] = []
+    state["negative_styles"] = []
 
     model = gr.Dropdown(choices=options["models"],
                         value=options["models"][0],
@@ -249,212 +143,211 @@ def set_initial_state():
     seed = gr.Number(value=random.randrange(0, options["seed_max"]))
     return state, model, sampler, scheduler, seed
 
-css = """
-.loader-container {
-  display: flex; /* Use flex to align items horizontally */
-  align-items: center; /* Center items vertically within the container */
-  white-space: nowrap; /* Prevent line breaks within the container */
-}
 
-.progress-bar > .generating {
-  display: none !important;
-}
+CSS_PATH = modules.utils.absolute_from_root_relative("./assets/style.css")
+JS_PATH = modules.utils.absolute_from_root_relative("./assets/script.js")
 
-.progress-bar{
-  height: 30px !important;
-}
-
-.progress-bar span {
-    text-align: right;
-    width: 215px;
-}
-
-/* Style the progress bar */
-progress {
-  appearance: none; /* Remove default styling */
-  height: 20px; /* Set the height of the progress bar */
-  border-radius: 5px; /* Round the corners of the progress bar */
-  background-color: #f3f3f3; /* Light grey background */
-  width: 100%;
-  vertical-align: middle !important;
-}
-
-/* Style the progress bar container */
-.progress-container {
-  margin-left: 20px;
-  margin-right: 20px;
-  flex-grow: 1; /* Allow the progress container to take up remaining space */
-}
-
-/* Set the color of the progress bar fill */
-progress::-webkit-progress-value {
-  background-color: #3498db; /* Blue color for the fill */
-}
-
-progress::-moz-progress-bar {
-  background-color: #3498db; /* Blue color for the fill in Firefox */
-}
-
-.generate-btn {
-  height: 100%;
-}
-"""
-
-with gr.Blocks(css=css) as server:
-    state = gr.State({})
-
-    with gr.Row():
-        preview_window = gr.Image(label='Preview', show_label=True, visible=False,
-                                  height=768)
-        gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
-                             elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                             elem_id='final_gallery')
-
-    progress = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
-
-    with gr.Row():
-        with gr.Column(scale=17):
-            prompt = gr.Textbox(label="Prompt", lines=2, visible=True)
-
-        with gr.Column(scale=3):
-            generate_btn = gr.Button("Generate", variant="primary", elem_id='generate-btn',
-                                     elem_classes='generate-btn', visible=True)
-            skip_btn = gr.Button("Skip", visible=False)
-            stop_btn = gr.Button("Stop", variant="stop", visible=False)
-
-
-    with gr.Accordion("Advanced", open=False):
-        performance_rd = gr.Radio(["Quality", "Speed", "Hyper"], value="Speed", label="Performance")
-        negative_prompt = gr.Textbox(label="Negative Prompt", lines=2, visible=True)
-        with gr.Row():
-            count = gr.Slider(1, 10, 2, step=1, label="Count")
-            resolution = gr.Dropdown(choices=ALLOWED_RESOLUTIONS,
-                                     value=DEFAULT_RESOLUTION,
-                                     label="Resolution",
-                                     interactive=True,
-                                     allow_custom_value=False,
-                                     filterable=False)
-
-            model = gr.Dropdown(label="Model",
-                                allow_custom_value=False,
-                                filterable=False)
+def run(comfy_address):
+    with gr.Blocks(head=modules.html.HEAD, css=CSS_PATH, js=JS_PATH) as server:
+        state = gr.State({})
 
         with gr.Row():
-            steps = gr.Slider(1, 80, 30, step=1, label="Steps")
-            sampler = gr.Dropdown(label="Sampler", allow_custom_value=False,
-                                  filterable=False)
-            scheduler = gr.Dropdown(label="Scheduler", allow_custom_value=False,
-                                    filterable=False)
-        with gr.Row():
-            seed = gr.Number(label="Seed")
+            with gr.Column(scale=2):
+                with gr.Row():
+                    preview_window = gr.Image(label='Preview', show_label=True, visible=False,
+                                              height=768)
+                    gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+                                         elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
+                                         elem_id='final_gallery')
 
-    server.load(set_initial_state, outputs=[state, model, sampler, scheduler, seed])
+                progress = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
 
-    @performance_rd.input(inputs=[performance_rd, state], outputs=[state, steps])
-    def performance(performance_rd, state):
-        if performance_rd == "Quality":
-            return [state, 60]
-        elif performance_rd == "Speed":
-            return [state, 30]
-        elif performance_rd == "Hyper":
-            return [state, 8]
+                with gr.Row():
+                    with gr.Column(scale=17):
+                        prompt = gr.Textbox(label="Prompt", lines=2, visible=True)
 
-    @stop_btn.click(inputs=[state])
-    def stop(state):
-        comfy_clear_queue(state["client_id"])
-        comfy_interrupt(state["client_id"])
+                    with gr.Column(scale=3):
+                        generate_btn = gr.Button("Generate", variant="primary", elem_id='generate-btn',
+                                                 elem_classes='generate-btn', visible=True)
+                        skip_btn = gr.Button("Skip", visible=False)
+                        stop_btn = gr.Button("Stop", variant="stop", visible=False)
 
-    @skip_btn.click(inputs=[state])
-    def skip(state):
-        comfy_interrupt(state["client_id"])
+                with gr.Row():
+                    advanced_checkbox = gr.Checkbox(label="Advanced", container=False)
 
-    @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
-                                scheduler, negative_prompt, state, seed, stop_btn,
-                                skip_btn, generate_btn, performance_rd],
-                        outputs=[gallery, progress, preview_window, stop_btn,
-                                 skip_btn, generate_btn, state])
-    def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
-                 state, seed, stop_btn, skip_btn, generate_btn, performance_rd):
-        client_id = state["client_id"]
-        prompt = json.loads(prompt_text)
+            with gr.Column(scale=1, visible=False) as advanced_column:
+                with gr.Tab(label='Setting'):
+                    performance_rd = gr.Radio(["Quality", "Speed", "Hyper"], value="Speed", label="Performance")
+                    negative_prompt = gr.Textbox(label="Negative Prompt", lines=2, visible=True)
+                    with gr.Row():
+                        count = gr.Slider(1, 10, 2, step=1, label="Count")
+                        resolution = gr.Dropdown(choices=ALLOWED_RESOLUTIONS,
+                                                 value=DEFAULT_RESOLUTION,
+                                                 label="Resolution",
+                                                 interactive=True,
+                                                 allow_custom_value=False,
+                                                 filterable=False)
 
-        prompt["sampler"]["inputs"]["sampler_name"] = sampler
-        prompt["sampler"]["inputs"]["scheduler"] = scheduler
-        prompt["sampler"]["inputs"]["steps"] = steps
+                        model = gr.Dropdown(label="Model",
+                                            allow_custom_value=False,
+                                            filterable=False)
 
-        # FIXME: for now just stick hyper in here
-        if performance == "Hyper":
-            new_node = {
-                "hyper": {
-                    "class_type": "LoraLoaderModelOnly",
-                    "inputs": {
-                        "lora_model": "Hyper-SDXL-8steps-CFG-lora.safetensors",
-                        "strength_model": 1.0,
-                        "model": [
-                            "loader",
-                            0
-                        ],
+                    with gr.Row():
+                        steps = gr.Slider(1, 80, 30, step=1, label="Steps")
+                        sampler = gr.Dropdown(label="Sampler", allow_custom_value=False,
+                                              filterable=False)
+                        scheduler = gr.Dropdown(label="Scheduler", allow_custom_value=False,
+                                                filterable=False)
+                    with gr.Row():
+                        seed = gr.Number(label="Seed")
+                with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
+                    style_search_bar = gr.Textbox(show_label=False, container=False,
+                                                  placeholder="\U0001F50E Type here to search styles ...",
+                                                  value="",
+                                                  label='Search Styles')
+                    styles_list, _ = modules.styles.generate_styles_list([], "", {})
 
+        server.load(lambda: set_initial_state(comfy_address),
+                    outputs=[state, model, sampler, scheduler, seed])
+
+        style_search_bar.change(modules.styles.generate_styles_list,
+                                inputs=[styles_list, style_search_bar, state],
+                                outputs=[styles_list, state],
+                                queue=False,
+                                show_progress="hidden")
+        styles_list.change(modules.styles.update_styles_state,
+                           inputs=[styles_list, state],
+                           outputs=[state])
+
+        advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
+                                 queue=False, show_progress=False)
+
+        @performance_rd.input(inputs=[performance_rd, state], outputs=[state, steps])
+        def performance(performance_rd, state):
+            if performance_rd == "Quality":
+                return [state, 60]
+            elif performance_rd == "Speed":
+                return [state, 30]
+            elif performance_rd == "Hyper":
+                return [state, 4]
+
+        @stop_btn.click(inputs=[state])
+        def stop(state):
+            modules.comfy.clear_queue(comfy_address, state["client_id"])
+            modules.comfy.interrupt(comfy_address, state["client_id"])
+
+        @skip_btn.click(inputs=[state])
+        def skip(state):
+            modules.comfy.interrupt(comfy_address, state["client_id"])
+
+        @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
+                                    scheduler, negative_prompt, state, seed, stop_btn,
+                                    skip_btn, generate_btn, performance_rd],
+                            outputs=[gallery, progress, preview_window, stop_btn,
+                                     skip_btn, generate_btn, state])
+        def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
+                     state, seed, stop_btn, skip_btn, generate_btn, performance_rd):
+            client_id = state["client_id"]
+            prompt = json.loads(prompt_text)
+
+            prompt["sampler"]["inputs"]["sampler_name"] = sampler
+            prompt["sampler"]["inputs"]["scheduler"] = scheduler
+            prompt["sampler"]["inputs"]["steps"] = steps
+
+            # FIXME: for now just stick hyper in here
+            if performance_rd == "Hyper":
+                new_node = {
+                    "hyper": {
+                        "class_type": "LoraLoaderModelOnly",
+                        "inputs": {
+                            "lora_name": "sdxl_lightning_4step_lora.safetensors",
+                            "strength_model": 1.0,
+                            "model": [
+                                "loader",
+                                0
+                            ],
+
+                        }
                     }
                 }
-            }
-            prompt.update(new_node)
-            prompt["sampler"]["inputs"]["model"][0] = "hyper"
-            prompt["sampler"]["inputs"]["cfg"] = 6.0
+                prompt.update(new_node)
+                prompt["sampler"]["inputs"]["model"][0] = "hyper"
+                prompt["sampler"]["inputs"]["cfg"] = 1.0
+                prompt["sampler"]["inputs"]["sampler_name"] = "dpmpp_2m_sde"
+                prompt["sampler"]["inputs"]["scheduler"] = "sgm_uniform"
 
-        width, height = resolution.split(" x ")
+            width, height = resolution.split(" x ")
 
-        prompt["loader"]["inputs"]["ckpt_name"] = model
-        prompt["latent_image"]["inputs"]["width"] = width
-        prompt["latent_image"]["inputs"]["height"] = height
-        prompt["positive_clip"]["inputs"]["text"] = text
-        prompt["negative_clip"]["inputs"]["text"] = negative_prompt
+            prompt["loader"]["inputs"]["ckpt_name"] = model
+            prompt["latent_image"]["inputs"]["width"] = width
+            prompt["latent_image"]["inputs"]["height"] = height
 
-        # For now, always use a batch of 1 and queue a request for
-        # each image. This way we can skip/cancel and get previews
-        prompt["latent_image"]["inputs"]["batch_size"] = 1
+            prompt["positive_clip"]["inputs"]["text"] = modules.styles.render_styles_prompt(
+                text, state["positive_styles"])
+            prompt["negative_clip"]["inputs"]["text"] = modules.styles.render_styles_prompt(
+                negative_prompt, state["negative_styles"])
 
-        ws = connect("ws://{}/ws?clientId={}".format(server_address, client_id), max_size=3000000)
+            # For now, always use a batch of 1 and queue a request for
+            # each image. This way we can skip/cancel and get previews
+            prompt["latent_image"]["inputs"]["batch_size"] = 1
 
-        completed_images = []
-        current_preview = None
-        current_progress = 0
+            ws = connect("ws://{}/ws?clientId={}".format(comfy_address, client_id), max_size=3000000)
 
-        prompt_ids = comfy_send_prompts(prompt, client_id, seed, count, state)
+            from pprint import pprint
+            pprint(prompt)
 
-        for resp in comfy_stream_updates(ws, prompt_ids):
-            state.update({"prompt_id": resp["prompt"]})
-            if resp["node"] is None:
-                # We've finished an item
-                continue
+            completed_images = []
+            current_preview = None
+            current_progress = 0
 
-            if "image" in resp:
-                if resp["node"] == "save":
-                    completed_images.append(resp["image"])
-                elif resp["node"] == "sampler":
-                    current_preview = resp["image"]
-            elif "progress" in resp:
-                current_progress = resp["progress"]
+            prompt_ids = modules.comfy.send_prompts(comfy_address, prompt, client_id,
+                                                    seed, count, state)
 
-            progress = generate_progress_bar(current_progress, "Generating")
+            for resp in modules.comfy.stream_updates(ws, prompt_ids):
+                state.update({"prompt_id": resp["prompt"]})
+                if resp["node"] is None:
+                    # We've finished an item
+                    continue
 
-            preview = gr.Image(current_preview, visible=True)
-            progress = gr.HTML(progress, visible=True)
-            stop_btn = gr.Button(visible=True)
-            skip_btn = gr.Button(visible=True)
-            generate_btn = gr.Button(visible=False)
+                if "image" in resp:
+                    if resp["node"] == "save":
+                        completed_images.append(resp["image"])
+                        current_progress = 0
+                    elif resp["node"] == "sampler":
+                        current_preview = resp["image"]
+                elif "progress" in resp:
+                    current_progress = resp["progress"]
 
-            yield [completed_images, progress, preview, stop_btn, skip_btn,
-                   generate_btn, state]
+                total_progress = len(completed_images) * 100 / count + current_progress / count
+                progress = generate_progress_bar(total_progress, resp["text"])
 
-        yield [
-            completed_images,
-            gr.HTML(visible=False),
-            gr.Image(visible=False),
-            gr.Button(visible=False),
-            gr.Button(visible=False),
-            gr.Button(visible=True),
-            state
-        ]
+                preview = gr.Image(current_preview, visible=current_preview is not None)
+                progress = gr.HTML(progress, visible=True)
+                stop_btn = gr.Button(visible=True)
+                skip_btn = gr.Button(visible=True)
+                generate_btn = gr.Button(visible=False)
 
-server.launch()
+                yield [completed_images, progress, preview, stop_btn, skip_btn,
+                       generate_btn, state]
+
+            yield [
+                completed_images,
+                gr.HTML(visible=False),
+                gr.Image(visible=False),
+                gr.Button(visible=False),
+                gr.Button(visible=False),
+                gr.Button(visible=True),
+                state
+            ]
+    server.launch(allowed_paths=[
+        modules.utils.absolute_from_root_relative("./styles/samples")
+    ])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Run comfy-minimal')
+    parser.add_argument('--listen', default="127.0.0.1",
+                        help='set the address to listen on')
+    parser.add_argument('--comfy-addr', default="127.0.0.1:8188",
+                        help='The address of the comfy instance')
+    args = parser.parse_args()
+    run(args.comfy_addr)
