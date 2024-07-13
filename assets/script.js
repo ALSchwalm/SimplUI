@@ -34,3 +34,5 @@ function initStylePreviewOverlay() {
         overlay.className = e.clientY > window.innerHeight / 2 ? "lower-half" : "upper-half";
     });
 }
+
+initStylePreviewOverlay();
