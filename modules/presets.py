@@ -21,7 +21,7 @@ def generate_preset_dropdown():
     return gr.Dropdown(label="Preset", value="default", choices=list(PRESETS.keys()))
 
 def update_preset_state(preset, model, sampler, scheduler, cfg, prompt,
-                        negative_prompt, styles):
+                        negative_prompt, styles, performance, *loras):
     preset = PRESETS[preset]
 
     if "model" in preset:
@@ -45,4 +45,25 @@ def update_preset_state(preset, model, sampler, scheduler, cfg, prompt,
     if "styles" in preset:
         styles = preset["styles"]
 
-    return model, sampler, scheduler, cfg, prompt, negative_prompt, styles
+    loras = list(loras)
+    if "loras" in preset:
+        for i in range(0, len(loras), 3):
+            lora_idx = i//3
+            if lora_idx >= len(preset["loras"]):
+                enabled = False
+                lora_name = "None"
+                weight = 1.0
+            else:
+                preset_lora = preset["loras"][lora_idx]
+                enabled = True
+                lora_name = preset_lora["lora_name"]
+                weight = preset_lora["weight"]
+            loras[i] = enabled
+            loras[i+1] = lora_name
+            loras[i+2] = weight
+
+    if "performance" in preset:
+        performance = preset["performance"]
+
+    return (model, sampler, scheduler, cfg, prompt, negative_prompt,
+            styles, performance, *loras)

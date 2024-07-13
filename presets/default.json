@@ -1,6 +1,10 @@
 {
     "model": "juggernautXL_v8Rundiffusion.safetensors",
+    "performance": "Speed",
     "styles": [
 	"Fooocus Enhance"
-    ]
+    ],
+    "prompt": "",
+    "negative_prompt": "",
+    "loras": []
 }

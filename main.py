@@ -35,11 +35,14 @@ def set_initial_state(comfy_address):
     fallback_prompt = ""
     fallback_negative_prompt = ""
     fallback_styles = []
+    fallback_loras = [False, "None", 1.0] * 6
+    fallback_performance = "Speed"
 
-    model, sampler, scheduler, cfg, prompt, negative_prompt, styles = \
+    model, sampler, scheduler, cfg, prompt, negative_prompt, styles, performance, *loras = \
         modules.presets.update_preset_state(
             "default", fallback_model, fallback_sampler, fallback_scheduler,
-            fallback_cfg, fallback_prompt, fallback_negative_prompt, fallback_styles)
+            fallback_cfg, fallback_prompt, fallback_negative_prompt, fallback_styles,
+            fallback_performance, *fallback_loras)
 
     model = gr.Dropdown(choices=options["models"],
                         value=model)
@@ -54,16 +57,14 @@ def set_initial_state(comfy_address):
 
     styles = gr.CheckboxGroup(value=styles)
 
-    loras = []
-    for _ in range(6):
-        loras.append(False)
-        loras.append(gr.Dropdown(choices=state["options"]["loras"] + ["None"],
-                                 value="None"))
-        loras.append(1.0)
+    for i in range(0, len(loras), 3):
+        _, value, _ = loras[i:i+3]
+        loras[i+1] = gr.Dropdown(choices=state["options"]["loras"] + ["None"],
+                                 value=value)
 
     seed = gr.Number(value=random.randrange(0, options["seed_max"]))
     return (state, model, sampler, scheduler, seed, cfg, prompt,
-            negative_prompt, styles, *loras)
+            negative_prompt, styles, performance, *loras)
 
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
@@ -145,7 +146,7 @@ def run(comfy_address):
 
         server.load(lambda: set_initial_state(comfy_address),
                     outputs=[state, model, sampler, scheduler, seed, cfg, prompt,
-                             negative_prompt, styles_list] + lora_ctrls)
+                             negative_prompt, styles_list, performance_rd] + lora_ctrls)
 
         style_search_bar.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list, style_search_bar, state],
@@ -157,21 +158,23 @@ def run(comfy_address):
                            outputs=[state])
 
         presets.change(modules.presets.update_preset_state,
-                       inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt, styles_list],
-                       outputs=[model, sampler, scheduler, cfg, prompt, negative_prompt, styles_list])
+                       inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt,
+                               styles_list, performance_rd, *lora_ctrls],
+                       outputs=[model, sampler, scheduler, cfg, prompt, negative_prompt, styles_list,
+                                performance_rd, *lora_ctrls])
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
                                  queue=False, show_progress=False)
 
-        @performance_rd.input(inputs=[performance_rd, state, *lora_ctrls[-3:]],
+        @performance_rd.input(inputs=[performance_rd, state],
                               outputs=[state, steps, cfg, scheduler, sampler, *lora_ctrls[-3:]])
-        def performance(performance_rd, state, lora_enabled, lora_model, lora_weight):
+        def performance(performance_rd, state):
             if performance_rd == "Quality":
                 return [state, 60, 8.0, "normal", "euler_ancestral",
-                        lora_enabled, lora_model, lora_weight]
+                        False, "None", 1.0]
             elif performance_rd == "Speed":
                 return [state, 30, 8.0, "normal", "euler_ancestral",
-                        lora_enabled, lora_model, lora_weight]
+                        False, "None", 1.0]
             elif performance_rd == "Lightning":
                 return [state, 4, 1.0, "sgm_uniform", "dpmpp_2m_sde",
                         True, "sdxl_lightning_4step_lora.safetensors", 1.0]

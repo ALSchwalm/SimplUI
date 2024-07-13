@@ -1,0 +1,16 @@
+{
+    "model": "realisticStockPhoto_v20.safetensors",
+    "performance": "Speed",
+    "prompt": "",
+    "negative_prompt": "",
+    "styles": [
+	"Fooocus Enhance",
+	"Fooocus Photograph"
+    ],
+    "loras": [
+	{
+	    "lora_name": "SDXL_FILM_PHOTOGRAPHY_STYLE_BetaV0.4.safetensors",
+	    "weight": 1.0
+	}
+    ]
+}

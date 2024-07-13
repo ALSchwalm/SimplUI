@@ -1,5 +1,11 @@
 {
     "model": "animaPencilXL_v310.safetensors",
+    "performance": "Speed",
     "cfg": 5.0,
-    "negative_prompt": "realistic"
+    "prompt": "",
+    "negative_prompt": "realistic",
+    "styles": [
+	"SAI Anime"
+    ],
+    "loras": []
 }
