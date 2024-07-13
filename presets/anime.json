@@ -1,0 +1,5 @@
+{
+    "model": "animaPencilXL_v310.safetensors",
+    "cfg": 5.0,
+    "negative_prompt": "realistic"
+}

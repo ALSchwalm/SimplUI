@@ -2,8 +2,9 @@ import os
 import glob
 import json
 import gradio as gr
+import modules.utils
 
-styles_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../styles/'))
+STYLES_PATH = modules.utils.absolute_from_root_relative("./styles")
 
 def render_name(style_name):
     style_name = [p.title() for p in style_name.replace(" ", "-").split("-")]
@@ -12,22 +13,22 @@ def render_name(style_name):
     return " ".join(style_name)
 
 def read_styles():
-    files = glob.glob("*.json", root_dir=styles_path)
+    files = glob.glob("*.json", root_dir=STYLES_PATH)
     styles = []
     for file in files:
-        with open(os.path.join(styles_path, file)) as f:
+        with open(os.path.join(STYLES_PATH, file)) as f:
             file_styles = json.loads(f.read())
             for style in file_styles:
                 style["name"] = render_name(style["name"])
                 styles.append(style)
     return sorted(styles, key=lambda style: style["name"])
 
-styles = read_styles()
+STYLES = read_styles()
 
 def update_styles_state(selected, state):
     state["positive_styles"] = []
     state["negative_styles"] = []
-    for style in styles:
+    for style in STYLES:
         name = style["name"]
         if name not in selected:
             continue
@@ -46,7 +47,7 @@ def generate_styles_list(selected, searched, state):
     output = []
     state["positive_styles"] = []
     state["negative_styles"] = []
-    for style in styles:
+    for style in STYLES:
         name = style["name"]
         if not searched or name in selected or searched.lower() in name.lower():
             output.append(name)

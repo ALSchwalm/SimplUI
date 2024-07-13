@@ -8,7 +8,7 @@ import numpy as np
 
 def get_available_options(comfy_address):
     opts = {}
-    with urllib.request.urlopen("http://{}/object_info".format(comfy_address)) as response:
+    with urllib.request.urlopen(f"http://{comfy_address}/object_info") as response:
         nodes = json.loads(response.read())
         opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
         opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
@@ -20,7 +20,7 @@ def get_available_options(comfy_address):
 def queue_prompt(comfy_address, prompt, client_id):
     p = {"prompt": prompt, "client_id": client_id}
     data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/prompt".format(comfy_address), data=data)
+    req =  urllib.request.Request(f"http://{comfy_address}/prompt", data=data)
     try:
         return json.loads(urllib.request.urlopen(req).read())
     except urllib.error.HTTPError as e:
@@ -30,13 +30,13 @@ def queue_prompt(comfy_address, prompt, client_id):
 def clear_queue(comfy_address, client_id):
     p = {"clear": True, "client_id": client_id}
     data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/queue".format(comfy_address), data=data)
+    req =  urllib.request.Request(f"http://{comfy_address}/queue", data=data)
     urllib.request.urlopen(req)
 
 def interrupt(comfy_address, client_id):
     p = {"client_id": client_id}
     data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/interrupt".format(comfy_address), data=data)
+    req =  urllib.request.Request(f"http://{comfy_address}/interrupt", data=data)
     urllib.request.urlopen(req)
 
 
