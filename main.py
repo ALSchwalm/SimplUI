@@ -89,7 +89,7 @@ def run(comfy_address):
             with gr.Column(scale=2):
                 with gr.Row():
                     preview_window = gr.Image(label='Preview', show_label=True, visible=False,
-                                              height=768)
+                                              height=768, elem_id="preview-image")
                     gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', height=768,
                                          elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
                                          elem_id='final_gallery')
