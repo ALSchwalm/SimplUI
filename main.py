@@ -81,7 +81,6 @@ def run(comfy_address):
         return (state, model, sampler, scheduler, cfg, prompt,
                 negative_prompt, styles, performance, vae, skip_clip, *loras)
 
-
     with gr.Blocks(head=HEAD) as server:
         state = gr.State({})
 
@@ -256,49 +255,55 @@ def run(comfy_address):
             prompt_ids = modules.comfy.send_prompts(comfy_address, workflow, client_id,
                                                     int(seed), count, state)
 
-            for resp in modules.comfy.stream_updates(ws, prompt_ids):
-                state.update({"prompt_id": resp["prompt"]})
-                if resp["node"] is None:
-                    # We've finished an item
-                    continue
+            try:
+                for resp in modules.comfy.stream_updates(ws, prompt_ids):
+                    state.update({"prompt_id": resp["prompt"]})
+                    if resp["node"] is None:
+                        # We've finished an item
+                        continue
 
-                if "image" in resp:
-                    if resp["node"] == "save":
-                        completed_images.append(resp["image"])
-                        current_progress = 0
-                    elif resp["node"] == "sampler":
-                        current_preview = resp["image"]
-                elif "progress" in resp:
-                    current_progress = resp["progress"]
+                    if "image" in resp:
+                        if resp["node"] == "save":
+                            completed_images.append(resp["image"])
+                            current_progress = 0
+                        elif resp["node"] == "sampler":
+                            current_preview = resp["image"]
+                    elif "progress" in resp:
+                        current_progress = resp["progress"]
 
-                total_progress = len(completed_images) * 100 / count + current_progress / count
-                progress = modules.html.generate_progress_bar(total_progress, resp["text"])
+                    total_progress = len(completed_images) * 100 / count + current_progress / count
+                    progress = modules.html.generate_progress_bar(total_progress, resp["text"])
 
-                preview = gr.Image(current_preview, visible=current_preview is not None)
-                progress = gr.HTML(progress, visible=True)
-                stop_btn = gr.Button(visible=True)
-                skip_btn = gr.Button(visible=True)
-                generate_btn = gr.Button(visible=False)
+                    preview = gr.Image(current_preview, visible=current_preview is not None)
+                    progress = gr.HTML(progress, visible=True)
+                    stop_btn = gr.Button(visible=True)
+                    skip_btn = gr.Button(visible=True)
+                    generate_btn = gr.Button(visible=False)
 
-                # Hide the gallery if we don't have a completed image yet
-                if len(completed_images) == 0 and current_preview is not None:
-                    output_images = gr.Gallery(visible=False)
-                else:
-                    output_images = gr.Gallery(completed_images, visible=True)
+                    # Hide the gallery if we don't have a completed image yet
+                    if len(completed_images) == 0 and current_preview is not None:
+                        output_images = gr.Gallery(visible=False)
+                    else:
+                        output_images = gr.Gallery(completed_images, visible=True)
 
-                yield [output_images, progress, preview, stop_btn, skip_btn,
-                       generate_btn, state, seed]
+                    yield [output_images, progress, preview, stop_btn, skip_btn,
+                           generate_btn, state, seed]
 
-            yield [
-                completed_images,
-                gr.HTML(visible=False),
-                gr.Image(visible=False),
-                gr.Button(visible=False),
-                gr.Button(visible=False),
-                gr.Button(visible=True),
-                state,
-                seed
-            ]
+                yield [
+                    completed_images,
+                    gr.HTML(visible=False),
+                    gr.Image(visible=False),
+                    gr.Button(visible=False),
+                    gr.Button(visible=False),
+                    gr.Button(visible=True),
+                    state,
+                    seed
+                ]
+            except GeneratorExit:
+                modules.comfy.clear_queue(comfy_address, state["client_id"])
+                modules.comfy.interrupt(comfy_address, state["client_id"])
+                ws.close()
+                raise
     server.launch(allowed_paths=ALLOWED_PATHS)
 
 if __name__ == "__main__":
