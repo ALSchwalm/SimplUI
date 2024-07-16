@@ -111,22 +111,52 @@ def run(comfy_address):
 
             with gr.Column(scale=1, visible=False) as advanced_column:
                 with gr.Tab(label='Setting'):
-                    presets = modules.presets.generate_preset_dropdown()
-                    performance_rd = gr.Radio(["Quality", "Speed", "Hyper"],
-                                              value="Speed", label="Performance")
-                    negative_prompt = gr.Textbox(label="Negative Prompt", lines=2)
-                    with gr.Row():
-                        count = gr.Slider(1, 10, 2, step=1, label="Count")
-                        resolution = gr.Dropdown(choices=ALLOWED_RESOLUTIONS,
-                                                 value=DEFAULT_RESOLUTION,
-                                                 label="Resolution",
-                                                 allow_custom_value=False,
-                                                 filterable=False)
+                    with gr.Group():
+                        presets = modules.presets.generate_preset_dropdown()
+                        performance_rd = gr.Radio(["Quality", "Speed", "Hyper"],
+                                                  value="Speed", label="Performance")
 
+                    resolution = gr.Dropdown(choices=ALLOWED_RESOLUTIONS,
+                                             value=DEFAULT_RESOLUTION,
+                                             label="Resolution",
+                                             allow_custom_value=False,
+                                             filterable=False)
+
+                    with gr.Group():
+                        count = gr.Slider(1, 10, 2, step=1, label="Count")
+                        negative_prompt = gr.Textbox(label="Negative Prompt", lines=2)
+                        with gr.Row():
+                            seed_random = gr.Checkbox(label='Random Seed', value=True, scale=1)
+
+                            # Work around https://github.com/gradio-app/gradio/issues/5354
+                            seed = gr.Text(label="Seed", max_lines=1, value="0", visible=False, scale=2)
+
+                with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
+                    style_search_bar = gr.Textbox(show_label=False, container=False,
+                                                  placeholder="\U0001F50E Type here to search styles ...",
+                                                  value="",
+                                                  label='Search Styles')
+                    styles_list, _ = modules.styles.generate_styles_list([], "", {})
+
+                with gr.Tab(label='Models'):
+                    with gr.Group():
                         model = gr.Dropdown(label="Model",
                                             allow_custom_value=False,
                                             filterable=False)
 
+                        lora_ctrls = []
+
+                        for i in range(6):
+                            with gr.Row():
+                                lora_enabled = gr.Checkbox(label='Enable', value=False, scale=1,
+                                                           elem_classes=['lora_enable', 'min_check'])
+                                lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
+                                                         scale=5, elem_classes='lora_model')
+                                lora_weight = gr.Slider(label='Weight', minimum=0, maximum=2.0, step=0.01,
+                                                        value=1.0, scale=5, elem_classes='lora_weight', interactive=True)
+                                lora_ctrls += [lora_enabled, lora_model, lora_weight]
+
+                with gr.Tab(label='Advanced'):
                     with gr.Row():
                         steps = gr.Slider(1, 80, 30, step=1, label="Steps")
                         sampler = gr.Dropdown(label="Sampler", allow_custom_value=False,
@@ -139,32 +169,6 @@ def run(comfy_address):
                     with gr.Row():
                         vae = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
                         skip_clip = gr.Slider(minimum=0, step=1, label="Skip CLIP")
-
-                    with gr.Row():
-                        seed_random = gr.Checkbox(label='Random Seed', value=True, scale=1)
-
-                        # Work around https://github.com/gradio-app/gradio/issues/5354
-                        seed = gr.Text(label="Seed", max_lines=1, value="0", visible=False, scale=2)
-                with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
-                    style_search_bar = gr.Textbox(show_label=False, container=False,
-                                                  placeholder="\U0001F50E Type here to search styles ...",
-                                                  value="",
-                                                  label='Search Styles')
-                    styles_list, _ = modules.styles.generate_styles_list([], "", {})
-
-                with gr.Tab(label='Loras'):
-                    with gr.Group():
-                        lora_ctrls = []
-
-                        for i in range(6):
-                            with gr.Row():
-                                lora_enabled = gr.Checkbox(label='Enable', value=False, scale=1,
-                                                           elem_classes=['lora_enable', 'min_check'])
-                                lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
-                                                         scale=5, elem_classes='lora_model')
-                                lora_weight = gr.Slider(label='Weight', minimum=0, maximum=2.0, step=0.01,
-                                                        value=1.0, scale=5, elem_classes='lora_weight', interactive=True)
-                                lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
         server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
                                                 prompt, negative_prompt, styles_list,
@@ -277,9 +281,10 @@ def run(comfy_address):
                 generate_btn = gr.Button(visible=False)
 
                 # Hide the gallery if we don't have a completed image yet
-                output_images = completed_images
                 if len(completed_images) == 0 and current_preview is not None:
                     output_images = gr.Gallery(visible=False)
+                else:
+                    output_images = gr.Gallery(completed_images, visible=True)
 
                 yield [output_images, progress, preview, stop_btn, skip_btn,
                        generate_btn, state, seed]
