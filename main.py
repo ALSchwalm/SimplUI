@@ -18,57 +18,70 @@ ALLOWED_RESOLUTIONS = [
     '1600 x 640', '1664 x 576', '1728 x 576']
 DEFAULT_RESOLUTION="1024 x 1024"
 
-def set_initial_state(comfy_address):
-    state = {}
-    state["client_id"] = str(uuid.uuid4())
-    state["seed"] = str()
-
-    options = modules.comfy.get_available_options(comfy_address)
-    state["options"] = options
-    state["positive_styles"] = []
-    state["negative_styles"] = []
-
-    fallback_model = options["models"][0]
-    fallback_sampler = "euler_ancestral"
-    fallback_scheduler = "normal"
-    fallback_cfg = 8.0
-    fallback_prompt = ""
-    fallback_negative_prompt = ""
-    fallback_styles = []
-    fallback_loras = [False, "None", 1.0] * 6
-    fallback_performance = "Speed"
-
-    model, sampler, scheduler, cfg, prompt, negative_prompt, styles, performance, *loras = \
-        modules.presets.update_preset_state(
-            "default", fallback_model, fallback_sampler, fallback_scheduler,
-            fallback_cfg, fallback_prompt, fallback_negative_prompt, fallback_styles,
-            fallback_performance, *fallback_loras)
-
-    model = gr.Dropdown(choices=options["models"],
-                        value=model)
-
-    sampler = gr.Dropdown(value=fallback_sampler,
-                          choices=options["sampler"])
-
-    scheduler = gr.Dropdown(value=fallback_scheduler,
-                            choices=options["scheduler"])
-
-    cfg = gr.Slider(value=cfg)
-
-    styles = gr.CheckboxGroup(value=styles)
-
-    for i in range(0, len(loras), 3):
-        _, value, _ = loras[i:i+3]
-        loras[i+1] = gr.Dropdown(choices=state["options"]["loras"] + ["None"],
-                                 value=value)
-
-    seed = gr.Number(value=random.randrange(0, options["seed_max"]))
-    return (state, model, sampler, scheduler, seed, cfg, prompt,
-            negative_prompt, styles, performance, *loras)
-
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
 def run(comfy_address):
+    async def set_initial_state():
+        state = {}
+        state["client_id"] = str(uuid.uuid4())
+        state["seed"] = str()
+
+        options = modules.comfy.get_available_options(comfy_address)
+        state["options"] = options
+        state["positive_styles"] = []
+        state["negative_styles"] = []
+        state["perf_lora"] = None
+
+        # Getting this info can take a while, so store a task
+        # that we'll await when we actually need the info
+        state["model_details"] = await modules.comfy.get_model_details(comfy_address)
+
+        fallback_model = options["models"][0]
+        fallback_sampler = "euler_ancestral"
+        fallback_scheduler = "normal"
+        fallback_cfg = 8.0
+        fallback_prompt = ""
+        fallback_negative_prompt = ""
+        fallback_styles = []
+        fallback_loras = [False, "None", 1.0] * 6
+        fallback_performance = "Speed"
+        fallback_vae = "Builtin"
+        fallback_skip_clip = 2
+
+        model, sampler, scheduler, cfg, prompt, negative_prompt, styles, performance, *loras = \
+            modules.presets.update_preset_state(
+                "default", fallback_model, fallback_sampler, fallback_scheduler,
+                fallback_cfg, fallback_prompt, fallback_negative_prompt, fallback_styles,
+                fallback_performance, *fallback_loras)
+
+        model = gr.Dropdown(choices=options["models"],
+                            value=model)
+
+        sampler = gr.Dropdown(value=fallback_sampler,
+                              choices=options["sampler"])
+
+        scheduler = gr.Dropdown(value=fallback_scheduler,
+                                choices=options["scheduler"])
+
+        vae = gr.Dropdown(value=fallback_vae,
+                                choices=options["vaes"] + ["Builtin"])
+
+        cfg = gr.Slider(value=cfg)
+        skip_clip = gr.Slider(value=fallback_skip_clip, maximum=options["skip_max"])
+
+        pprint(options)
+
+        styles = gr.CheckboxGroup(value=styles)
+
+        for i in range(0, len(loras), 3):
+            _, value, _ = loras[i:i+3]
+            loras[i+1] = gr.Dropdown(choices=options["loras"] + ["None"],
+                                     value=value)
+
+        return (state, model, sampler, scheduler, cfg, prompt,
+                negative_prompt, styles, performance, vae, skip_clip, *loras)
+
+
     with gr.Blocks(head=HEAD) as server:
         state = gr.State({})
 
@@ -91,7 +104,7 @@ def run(comfy_address):
                         generate_btn = gr.Button("Generate", variant="primary", elem_id='generate-btn',
                                                  elem_classes='generate-btn')
                         skip_btn = gr.Button("Skip", visible=False)
-                        stop_btn = gr.Button("Stop", variant="stop", visible=False)
+                        stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id='stop-btn')
 
                 with gr.Row():
                     advanced_checkbox = gr.Checkbox(label="Advanced", container=False)
@@ -99,7 +112,8 @@ def run(comfy_address):
             with gr.Column(scale=1, visible=False) as advanced_column:
                 with gr.Tab(label='Setting'):
                     presets = modules.presets.generate_preset_dropdown()
-                    performance_rd = gr.Radio(["Quality", "Speed", "Lightning"], value="Speed", label="Performance")
+                    performance_rd = gr.Radio(["Quality", "Speed", "Hyper"],
+                                              value="Speed", label="Performance")
                     negative_prompt = gr.Textbox(label="Negative Prompt", lines=2)
                     with gr.Row():
                         count = gr.Slider(1, 10, 2, step=1, label="Count")
@@ -121,8 +135,16 @@ def run(comfy_address):
                         cfg = gr.Slider(minimum=1.0, maximum=10, step=0.1, label="Cfg")
                         scheduler = gr.Dropdown(label="Scheduler", allow_custom_value=False,
                                                 filterable=False)
+
                     with gr.Row():
-                        seed = gr.Number(label="Seed")
+                        vae = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
+                        skip_clip = gr.Slider(minimum=0, step=1, label="Skip CLIP")
+
+                    with gr.Row():
+                        seed_random = gr.Checkbox(label='Random Seed', value=True, scale=1)
+
+                        # Work around https://github.com/gradio-app/gradio/issues/5354
+                        seed = gr.Text(label="Seed", max_lines=1, value="0", visible=False, scale=2)
                 with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
                     style_search_bar = gr.Textbox(show_label=False, container=False,
                                                   placeholder="\U0001F50E Type here to search styles ...",
@@ -144,9 +166,9 @@ def run(comfy_address):
                                                         value=1.0, scale=5, elem_classes='lora_weight', interactive=True)
                                 lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
-        server.load(lambda: set_initial_state(comfy_address),
-                    outputs=[state, model, sampler, scheduler, seed, cfg, prompt,
-                             negative_prompt, styles_list, performance_rd] + lora_ctrls)
+        server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
+                                                prompt, negative_prompt, styles_list,
+                                                performance_rd, vae, skip_clip] + lora_ctrls)
 
         style_search_bar.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list, style_search_bar, state],
@@ -156,6 +178,13 @@ def run(comfy_address):
         styles_list.change(modules.styles.update_styles_state,
                            inputs=[styles_list, state],
                            outputs=[state])
+
+        seed_random.change(lambda rand: gr.Text(visible=rand is False),
+                           inputs=[seed_random],
+                           outputs=[seed],
+                           queue=False,
+                           show_progress="hidden")
+
 
         presets.change(modules.presets.update_preset_state,
                        inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt,
@@ -167,17 +196,18 @@ def run(comfy_address):
                                  queue=False, show_progress=False)
 
         @performance_rd.input(inputs=[performance_rd, state],
-                              outputs=[state, steps, cfg, scheduler, sampler, *lora_ctrls[-3:]])
-        def performance(performance_rd, state):
-            if performance_rd == "Quality":
-                return [state, 60, 8.0, "normal", "euler_ancestral",
-                        False, "None", 1.0]
-            elif performance_rd == "Speed":
-                return [state, 30, 8.0, "normal", "euler_ancestral",
-                        False, "None", 1.0]
-            elif performance_rd == "Lightning":
-                return [state, 4, 1.0, "sgm_uniform", "dpmpp_2m_sde",
-                        True, "sdxl_lightning_4step_lora.safetensors", 1.0]
+                              outputs=[state, steps, cfg, scheduler, sampler])
+        async def performance(performance_rd, state):
+            match performance_rd:
+                case "Quality":
+                    state["perf_lora"] = None
+                    return [state, 60, 8.0, "normal", "euler_ancestral"]
+                case "Speed":
+                    state["perf_lora"] = None
+                    return [state, 30, 8.0, "normal", "euler_ancestral"]
+                case "Hyper":
+                    state["perf_lora"] = "Hyper"
+                    return [state, 4, 1.0, "sgm_uniform", "dpmpp_2m_sde"]
 
         @stop_btn.click(inputs=[state])
         def stop(state):
@@ -189,12 +219,14 @@ def run(comfy_address):
             modules.comfy.interrupt(comfy_address, state["client_id"])
 
         @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
-                                    scheduler, negative_prompt, state, seed, stop_btn,
-                                    skip_btn, generate_btn, cfg, *lora_ctrls],
+                                    scheduler, negative_prompt, state, seed, seed_random,
+                                    stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
                             outputs=[gallery, progress, preview_window, stop_btn,
-                                     skip_btn, generate_btn, state])
+                                     skip_btn, generate_btn, state, seed],
+                            show_progress=False)
         def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
-                     state, seed, stop_btn, skip_btn, generate_btn, cfg, *lora_ctrls):
+                     state, seed, seed_random, stop_btn, skip_btn, generate_btn, cfg, vae,
+                     skip_clip, *lora_ctrls):
             client_id = state["client_id"]
 
             width, height = resolution.split(" x ")
@@ -203,7 +235,7 @@ def run(comfy_address):
             negative = modules.styles.render_styles_prompt(negative_prompt, state["negative_styles"])
 
             workflow = modules.workflow.render(model, sampler, scheduler, steps, width, height,
-                                               positive, negative, cfg, lora_ctrls)
+                                               positive, negative, cfg, vae, skip_clip, state["perf_lora"], lora_ctrls)
             pprint(workflow)
 
             # Make max size large enough for the images
@@ -213,8 +245,12 @@ def run(comfy_address):
             current_preview = None
             current_progress = 0
 
+            if seed_random:
+                # generate a new one and return it
+                seed = random.randrange(0, state["options"]["seed_max"])
+
             prompt_ids = modules.comfy.send_prompts(comfy_address, workflow, client_id,
-                                                    seed, count, state)
+                                                    int(seed), count, state)
 
             for resp in modules.comfy.stream_updates(ws, prompt_ids):
                 state.update({"prompt_id": resp["prompt"]})
@@ -240,8 +276,13 @@ def run(comfy_address):
                 skip_btn = gr.Button(visible=True)
                 generate_btn = gr.Button(visible=False)
 
-                yield [completed_images, progress, preview, stop_btn, skip_btn,
-                       generate_btn, state]
+                # Hide the gallery if we don't have a completed image yet
+                output_images = completed_images
+                if len(completed_images) == 0 and current_preview is not None:
+                    output_images = gr.Gallery(visible=False)
+
+                yield [output_images, progress, preview, stop_btn, skip_btn,
+                       generate_btn, state, seed]
 
             yield [
                 completed_images,
@@ -250,7 +291,8 @@ def run(comfy_address):
                 gr.Button(visible=False),
                 gr.Button(visible=False),
                 gr.Button(visible=True),
-                state
+                state,
+                seed
             ]
     server.launch(allowed_paths=ALLOWED_PATHS)
 

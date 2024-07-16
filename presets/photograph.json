@@ -1,7 +1,6 @@
 {
     "model": "realisticStockPhoto_v20.safetensors",
     "performance": "Speed",
-    "prompt": "",
     "negative_prompt": "",
     "styles": [
 	"Fooocus Enhance",

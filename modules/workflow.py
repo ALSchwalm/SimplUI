@@ -1,5 +1,9 @@
 import json
 
+SDXL_HYPER_LORA = "sdxl_hyper_sd_4step_lora.safetensors"
+# SDXL_HYPER_LORA = "Hyper-SDXL-8steps-CFG-lora.safetensors"
+SD15_HYPER_LORA = "Hyper-SD15-8steps-CFG-lora.safetensors"
+
 BASIC_WORKFLOW = """
 {
     "sampler": {
@@ -63,7 +67,7 @@ BASIC_WORKFLOW = """
             "text": ""
         }
     },
-    "vae": {
+    "vae_decode": {
         "class_type": "VAEDecode",
         "inputs": {
             "samples": [
@@ -80,7 +84,7 @@ BASIC_WORKFLOW = """
         "class_type": "SaveImageWebsocket",
         "inputs": {
             "images": [
-                "vae",
+                "vae_decode",
                 0
             ]
         }
@@ -88,8 +92,27 @@ BASIC_WORKFLOW = """
 }
 """
 
+def link_lora_to_workflow(node_name, workflow, lora_name, weight):
+    prior_node_name = workflow["sampler"]["inputs"]["model"][0]
+    new_node = {
+        node_name: {
+            "class_type": "LoraLoaderModelOnly",
+            "inputs": {
+                "lora_name": lora_name,
+                "strength_model": weight,
+                "model": [
+                    prior_node_name,
+                    0
+                ],
+            }
+        }
+    }
+    workflow.update(new_node)
+    workflow["sampler"]["inputs"]["model"][0] = node_name
+
 def render(model, sampler, scheduler, steps, width,
-           height, positive, negative, cfg, loras):
+           height, positive, negative, cfg, vae, skip_clip,
+           perf_lora, loras):
     workflow = json.loads(BASIC_WORKFLOW)
     workflow["sampler"]["inputs"]["sampler_name"] = sampler
     workflow["sampler"]["inputs"]["scheduler"] = scheduler
@@ -107,28 +130,47 @@ def render(model, sampler, scheduler, steps, width,
     # each image. This way we can skip/cancel and get previews
     workflow["latent_image"]["inputs"]["batch_size"] = 1
 
-    prior_node_name = "loader"
     for i in range(0, len(loras), 3):
         enabled, value, weight = loras[i:i+3]
         if not enabled:
             continue
         lora_node_name = f"lora_{i}"
+        link_lora_to_workflow(lora_node_name, workflow, value, weight)
 
-        new_node = {
-            lora_node_name: {
-                "class_type": "LoraLoaderModelOnly",
+    if perf_lora is not None:
+        match perf_lora:
+            case "Hyper":
+                link_lora_to_workflow(perf_lora, workflow,
+                                      SDXL_HYPER_LORA, 0.8)
+
+    if vae != "Builtin":
+        vae_node = {
+            "vae_load": {
+                "class_type": "VAELoader",
                 "inputs": {
-                    "lora_name": value,
-                    "strength_model": weight,
-                    "model": [
-                        prior_node_name,
-                        0
-                    ],
+                    "vae_name": vae,
                 }
             }
         }
-        prior_node_name = lora_node_name
-        workflow.update(new_node)
-        workflow["sampler"]["inputs"]["model"][0] = lora_node_name
+        workflow.update(vae_node)
+        workflow["vae_decode"]["inputs"]["vae"][0] = "vae_load"
+        workflow["vae_decode"]["inputs"]["vae"][1] = 0
+
+    if skip_clip != 0:
+        skip_clip_node = {
+            "skip_clip": {
+                "class_type": "CLIPSetLastLayer",
+                "inputs": {
+                    "clip": [
+                        "loader",
+                        1
+                    ],
+                    "stop_at_clip_layer": skip_clip * -1
+                }
+            }
+        }
+        workflow.update(skip_clip_node)
+        workflow["positive_clip"]["inputs"]["clip"][0] = "skip_clip"
+        workflow["positive_clip"]["inputs"]["clip"][1] = 0
 
     return workflow

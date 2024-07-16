@@ -1,3 +1,4 @@
+import asyncio
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -15,7 +16,18 @@ def get_available_options(comfy_address):
         opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
         opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
         opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
+        opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
+        opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
     return opts
+
+async def get_model_details(comfy_address):
+    # This takes a while, so make this async and only await it when
+    # we actually need the answer
+    def _get_model_details():
+        req = urllib.request.Request(f"http://{comfy_address}/etn/model_info")
+        return json.loads(urllib.request.urlopen(req).read())
+    return asyncio.create_task(asyncio.to_thread(_get_model_details))
+
 
 def queue_prompt(comfy_address, prompt, client_id):
     p = {"prompt": prompt, "client_id": client_id}
