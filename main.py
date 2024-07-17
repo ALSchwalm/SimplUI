@@ -4,19 +4,43 @@ import uuid
 from websockets.sync.client import connect
 from pprint import pprint
 import random
+import math
 import modules.styles
 import modules.html
 import modules.comfy
 import modules.workflow
 import modules.presets
 
-ALLOWED_RESOLUTIONS = [
-    '512 x 512', '704 x 1408', '704 x 1344', '768 x 1344', '768 x 1280', '832 x 1216',
-    '832 x 1152', '896 x 1152', '896 x 1088', '960 x 1088', '960 x 1024', '1024 x 1024',
-    '1024 x 960', '1088 x 960', '1088 x 896', '1152 x 896', '1152 x 832', '1216 x 832',
-    '1280 x 768', '1344 x 768', '1344 x 704', '1408 x 704', '1472 x 704', '1536 x 640',
-    '1600 x 640', '1664 x 576', '1728 x 576']
-DEFAULT_RESOLUTION="1024 x 1024"
+BASE_RESOLUTIONS = [
+    '704×1408', '704×1344', '768×1344', '768×1280', '832×1216',
+    '832×1152', '896×1152', '896×1088', '960×1088', '960×1024', '1024×1024',
+    '1024×960', '1088×960', '1088×896', '1152×896', '1152×832', '1216×832',
+    '1280×768', '1344×768', '1344×704', '1408×704', '1472×704', '1536×640',
+    '1600×640', '1664×576', '1728×576']
+
+SCALES = ["0.5 (SD1.5)", "0.75", "1.0 (SDXL)", "1.25", "1.5"]
+DEFAULT_SCALE = "1.0 (SDXL)"
+DEFAULT_RATIO = "7:9"
+
+def as_ratio(resolution, scale):
+    a, b = resolution.split("×")
+    a = int(a)
+    b = int(b)
+    g = math.gcd(a, b)
+    ratio = f"{a // g}:{b // g}"
+    return f"{ratio} \U00002223 {int(a * scale)}×{int(b * scale)}"
+
+def get_ratios_for_scale(scale):
+    scale = float(scale.split(" ")[0])
+    return [
+        as_ratio(r, scale) for r in BASE_RESOLUTIONS
+    ]
+
+def resolution_from_ratio(ratio):
+    return ratio.split(" ")[-1]
+
+def get_matching_ratio(ratio, ratio_list):
+    return next(r for r in ratio_list if r.split(" ")[0] == ratio)
 
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
@@ -66,6 +90,12 @@ def run(comfy_address):
         vae = gr.Dropdown(value=fallback_vae,
                                 choices=options["vaes"] + ["Builtin"])
 
+        scale = gr.Dropdown(choices=SCALES, value=DEFAULT_SCALE)
+
+        ratio_list = get_ratios_for_scale(DEFAULT_SCALE)
+        default_ratio = get_matching_ratio(DEFAULT_RATIO, ratio_list)
+        ratio = gr.Dropdown(choices=ratio_list, value=default_ratio)
+
         cfg = gr.Slider(value=cfg)
         skip_clip = gr.Slider(value=fallback_skip_clip, maximum=options["skip_max"])
 
@@ -79,7 +109,8 @@ def run(comfy_address):
                                      value=value)
 
         return (state, model, sampler, scheduler, cfg, prompt,
-                negative_prompt, styles, performance, vae, skip_clip, *loras)
+                negative_prompt, styles, performance, vae, skip_clip,
+                ratio, scale, *loras)
 
     with gr.Blocks(head=HEAD) as server:
         state = gr.State({})
@@ -115,11 +146,14 @@ def run(comfy_address):
                         performance_rd = gr.Radio(["Quality", "Speed", "Hyper"],
                                                   value="Speed", label="Performance")
 
-                    resolution = gr.Dropdown(choices=ALLOWED_RESOLUTIONS,
-                                             value=DEFAULT_RESOLUTION,
-                                             label="Resolution",
-                                             allow_custom_value=False,
-                                             filterable=False)
+                    with gr.Row():
+                        ratio = gr.Dropdown(label="Aspect Ratio",
+                                            allow_custom_value=False,
+                                            filterable=False)
+
+                        scale = gr.Dropdown(label="Scale",
+                                            allow_custom_value=False,
+                                            filterable=False)
 
                     with gr.Group():
                         count = gr.Slider(1, 10, 2, step=1, label="Count")
@@ -171,7 +205,8 @@ def run(comfy_address):
 
         server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
                                                 prompt, negative_prompt, styles_list,
-                                                performance_rd, vae, skip_clip] + lora_ctrls)
+                                                performance_rd, vae, skip_clip,
+                                                ratio, scale] + lora_ctrls)
 
         style_search_bar.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list, style_search_bar, state],
@@ -188,7 +223,6 @@ def run(comfy_address):
                            queue=False,
                            show_progress="hidden")
 
-
         presets.change(modules.presets.update_preset_state,
                        inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt,
                                styles_list, performance_rd, *lora_ctrls],
@@ -197,6 +231,13 @@ def run(comfy_address):
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
                                  queue=False, show_progress=False)
+
+        @scale.change(inputs=[scale, ratio], outputs=[ratio])
+        def ratio_change(scale, ratio):
+            ratio_list = get_ratios_for_scale(scale)
+            ratio = ratio.split(" ")[0]
+            new_ratio = get_matching_ratio(ratio, ratio_list)
+            return gr.Dropdown(choices=ratio_list, value=new_ratio)
 
         @performance_rd.input(inputs=[performance_rd, state],
                               outputs=[state, steps, cfg, scheduler, sampler])
@@ -221,18 +262,18 @@ def run(comfy_address):
         def skip(state):
             modules.comfy.interrupt(comfy_address, state["client_id"])
 
-        @generate_btn.click(inputs=[prompt, count, resolution, model, steps, sampler,
+        @generate_btn.click(inputs=[prompt, count, ratio, model, steps, sampler,
                                     scheduler, negative_prompt, state, seed, seed_random,
                                     stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
                             outputs=[gallery, progress, preview_window, stop_btn,
                                      skip_btn, generate_btn, state, seed],
                             show_progress=False)
-        def generate(text, count, resolution, model, steps, sampler, scheduler, negative_prompt,
+        def generate(text, count, ratio, model, steps, sampler, scheduler, negative_prompt,
                      state, seed, seed_random, stop_btn, skip_btn, generate_btn, cfg, vae,
                      skip_clip, *lora_ctrls):
             client_id = state["client_id"]
 
-            width, height = resolution.split(" x ")
+            width, height = resolution_from_ratio(ratio).split("×")
 
             positive = modules.styles.render_styles_prompt(text, state["positive_styles"])
             negative = modules.styles.render_styles_prompt(negative_prompt, state["negative_styles"])
@@ -269,6 +310,7 @@ def run(comfy_address):
                         elif resp["node"] == "sampler":
                             current_preview = resp["image"]
                     elif "progress" in resp:
+
                         current_progress = resp["progress"]
 
                     total_progress = len(completed_images) * 100 / count + current_progress / count
