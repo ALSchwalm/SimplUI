@@ -11,6 +11,9 @@ import modules.comfy
 import modules.workflow
 import modules.presets
 
+# Show the bar 10% full after starting
+STATIC_PROGRESS = 10
+
 BASE_RESOLUTIONS = [
     '704×1408', '704×1344', '768×1344', '768×1280', '832×1216',
     '832×1152', '896×1152', '896×1088', '960×1088', '960×1024', '1024×1024',
@@ -124,7 +127,7 @@ def run(comfy_address):
                                          elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
                                          elem_id='final_gallery')
 
-                progress = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
+                progress_bar = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
 
                 with gr.Row():
                     with gr.Column(scale=17):
@@ -268,7 +271,7 @@ def run(comfy_address):
         @generate_btn.click(inputs=[prompt, count, ratio, model, steps, sampler,
                                     scheduler, negative_prompt, state, seed, seed_random,
                                     stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
-                            outputs=[gallery, progress, preview_window, stop_btn,
+                            outputs=[gallery, progress_bar, preview_window, stop_btn,
                                      skip_btn, generate_btn, state, seed],
                             show_progress=False)
         def generate(text, count, ratio, model, steps, sampler, scheduler, negative_prompt,
@@ -284,6 +287,13 @@ def run(comfy_address):
             workflow = modules.workflow.render(model, sampler, scheduler, steps, width, height,
                                                positive, negative, cfg, vae, skip_clip, state["perf_lora"], lora_ctrls)
             pprint(workflow)
+
+            # Just show something so we quickly get the progress bar up
+            progress = modules.html.generate_progress_bar(0, "Starting...")
+            progress = gr.HTML(progress, visible=True)
+            yield {
+                progress_bar: progress
+            }
 
             # Make max size large enough for the images
             ws = connect(f"ws://{comfy_address}/ws?clientId={client_id}", max_size=3000000)
@@ -315,7 +325,8 @@ def run(comfy_address):
                     elif "progress" in resp:
                         current_progress = resp["progress"]
 
-                    total_progress = len(completed_images) * 100 / count + current_progress / count
+                    total_progress = STATIC_PROGRESS + (1-STATIC_PROGRESS/100) * \
+                        (len(completed_images) * 100 / count + current_progress / count)
                     progress = modules.html.generate_progress_bar(total_progress, resp["text"])
 
                     preview = gr.Image(current_preview, visible=current_preview is not None)
@@ -334,7 +345,7 @@ def run(comfy_address):
                            generate_btn, state, seed]
 
                 yield [
-                    completed_images,
+                    gr.Gallery(completed_images, visible=True),
                     gr.HTML(visible=False),
                     gr.Image(visible=False),
                     gr.Button(visible=False),
