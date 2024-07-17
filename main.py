@@ -206,7 +206,8 @@ def run(comfy_address):
         server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
                                                 prompt, negative_prompt, styles_list,
                                                 performance_rd, vae, skip_clip,
-                                                ratio, scale] + lora_ctrls)
+                                                ratio, scale] + lora_ctrls,
+                    show_progress=False)
 
         style_search_bar.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list, style_search_bar, state],
@@ -227,12 +228,13 @@ def run(comfy_address):
                        inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt,
                                styles_list, performance_rd, *lora_ctrls],
                        outputs=[model, sampler, scheduler, cfg, prompt, negative_prompt, styles_list,
-                                performance_rd, *lora_ctrls])
+                                performance_rd, *lora_ctrls],
+                       show_progress=False)
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
                                  queue=False, show_progress=False)
 
-        @scale.change(inputs=[scale, ratio], outputs=[ratio])
+        @scale.change(inputs=[scale, ratio], outputs=[ratio], show_progress=False)
         def ratio_change(scale, ratio):
             ratio_list = get_ratios_for_scale(scale)
             ratio = ratio.split(" ")[0]
@@ -240,7 +242,8 @@ def run(comfy_address):
             return gr.Dropdown(choices=ratio_list, value=new_ratio)
 
         @performance_rd.input(inputs=[performance_rd, state],
-                              outputs=[state, steps, cfg, scheduler, sampler])
+                              outputs=[state, steps, cfg, scheduler, sampler],
+                              show_progress=False)
         async def performance(performance_rd, state):
             match performance_rd:
                 case "Quality":
@@ -310,7 +313,6 @@ def run(comfy_address):
                         elif resp["node"] == "sampler":
                             current_preview = resp["image"]
                     elif "progress" in resp:
-
                         current_progress = resp["progress"]
 
                     total_progress = len(completed_images) * 100 / count + current_progress / count
