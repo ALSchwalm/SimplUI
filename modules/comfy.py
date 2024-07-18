@@ -1,60 +1,57 @@
-import threading
-import urllib.request
-import urllib.parse
-import urllib.error
+import asyncio
+import aiohttp
 from PIL import Image
 import json
 import io
 import numpy as np
 
-def get_available_options(comfy_address):
+async def get_available_options(comfy_address):
     opts = {}
-    with urllib.request.urlopen(f"http://{comfy_address}/object_info") as response:
-        nodes = json.loads(response.read())
-        opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
-        opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
-        opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
-        opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
-        opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
-        opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
-        opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
-    return opts
+    async with aiohttp.ClientSession(raise_for_status=True) as session:
+        async with session.get(f"http://{comfy_address}/object_info") as resp:
+            if not resp.ok:
+                print(await resp.text())
+                resp.raise_for_status()
+            nodes = await resp.json()
+            opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
+            opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
+            opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
+            opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
+            opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
+            opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
+            opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
+        return opts
 
-def get_model_details(comfy_address):
-    def _get_model_details():
-        req = urllib.request.Request(f"http://{comfy_address}/etn/model_info")
-        value = json.loads(urllib.request.urlopen(req).read())
-        # Well, it's python so we might as well mutate types
-        threading.current_thread().result = value
-    t = threading.Thread(target=_get_model_details)
-    t.start()
-    return t
-
-
-def queue_prompt(comfy_address, prompt, client_id):
-    p = {"prompt": prompt, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request(f"http://{comfy_address}/prompt", data=data)
-    try:
-        return json.loads(urllib.request.urlopen(req).read())
-    except urllib.error.HTTPError as e:
-        print(e.fp.read())
-        raise
-
-def clear_queue(comfy_address, client_id):
-    p = {"clear": True, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request(f"http://{comfy_address}/queue", data=data)
-    urllib.request.urlopen(req)
-
-def interrupt(comfy_address, client_id):
-    p = {"client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request(f"http://{comfy_address}/interrupt", data=data)
-    urllib.request.urlopen(req)
+async def get_model_details(comfy_address):
+    async def _get_model_details():
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            async with session.get(f"http://{comfy_address}/etn/model_info") as resp:
+                return await resp.json()
+    return asyncio.create_task(_get_model_details())
 
 
-def send_prompts(comfy_address, prompt, client_id, seed, count, state):
+async def queue_prompt(comfy_address, prompt, client_id):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(f"http://{comfy_address}/prompt", json={
+                "prompt": prompt, "client_id": client_id}) as resp:
+            if not resp.ok:
+                print(await resp.text())
+                resp.raise_for_status()
+            return await resp.json()
+
+async def clear_queue(comfy_address, client_id):
+    async with aiohttp.ClientSession() as session:
+        await session.post(f"http://{comfy_address}/queue",
+                           json={"clear": True, "client_id": client_id},
+                           raise_for_status=True)
+
+async def interrupt(comfy_address, client_id):
+    async with aiohttp.ClientSession() as session:
+        await session.post(f"http://{comfy_address}/interrupt",
+                           json={"client_id": client_id},
+                           raise_for_status=True)
+
+async def send_prompts(comfy_address, prompt, client_id, seed, count, state):
     # Create an RNG with our seed so we can ensure we get consistent
     # results across the different submissions
     rng = np.random.RandomState(seed & (2**32-1))
@@ -64,7 +61,7 @@ def send_prompts(comfy_address, prompt, client_id, seed, count, state):
     # Queue each prompt with a seed derived from the user seed
     for _ in range(count):
         prompt["sampler"]["inputs"]["seed"] = seed
-        ids.append(queue_prompt(comfy_address, prompt, client_id)['prompt_id'])
+        ids.append((await queue_prompt(comfy_address, prompt, client_id))['prompt_id'])
         seed = int(rng.randint(state["options"]["seed_max"], dtype="uint64"))
     return ids
 
@@ -88,12 +85,12 @@ def render_node_text(node_data):
         case _:
             return ""
 
-def stream_updates(ws, prompt_ids):
+async def stream_updates(ws, prompt_ids):
     current_node = ""
     current_prompt = ""
 
     while True:
-        out = ws.recv()
+        out = await ws.recv()
         if isinstance(out, str):
             message = json.loads(out)
             print(message)

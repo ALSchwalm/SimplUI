@@ -1,7 +1,7 @@
 import argparse
 import gradio as gr
 import uuid
-from websockets.sync.client import connect
+from websockets.client import connect
 from pprint import pprint
 import random
 import math
@@ -48,12 +48,12 @@ def get_matching_ratio(ratio, ratio_list):
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
 def run(comfy_address):
-    def set_initial_state():
+    async def set_initial_state():
         state = {}
         state["client_id"] = str(uuid.uuid4())
         state["seed"] = str()
 
-        options = modules.comfy.get_available_options(comfy_address)
+        options = await modules.comfy.get_available_options(comfy_address)
         state["options"] = options
         state["positive_styles"] = []
         state["negative_styles"] = []
@@ -61,7 +61,7 @@ def run(comfy_address):
 
         # Getting this info can take a while, so store a task
         # that we'll await when we actually need the info
-        state["model_details"] = modules.comfy.get_model_details(comfy_address)
+        state["model_details"] = await modules.comfy.get_model_details(comfy_address)
 
         fallback_model = options["models"][0]
         fallback_sampler = "euler_ancestral"
@@ -270,21 +270,15 @@ def run(comfy_address):
                     return [state, 4, 1.0, "sgm_uniform", "dpmpp_2m_sde"]
 
         @stop_btn.click(inputs=[state])
-        def stop(state):
-            modules.comfy.clear_queue(comfy_address, state["client_id"])
-            modules.comfy.interrupt(comfy_address, state["client_id"])
+        async def stop(state):
+            await modules.comfy.clear_queue(comfy_address, state["client_id"])
+            await modules.comfy.interrupt(comfy_address, state["client_id"])
 
         @skip_btn.click(inputs=[state])
-        def skip(state):
-            modules.comfy.interrupt(comfy_address, state["client_id"])
+        async def skip(state):
+            await modules.comfy.interrupt(comfy_address, state["client_id"])
 
-        @generate_btn.click(inputs=[prompt, count, ratio, model, steps, sampler,
-                                    scheduler, negative_prompt, state, seed, seed_random,
-                                    stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
-                            outputs=[gallery, progress_bar, preview_window, stop_btn,
-                                     skip_btn, generate_btn, state, seed],
-                            show_progress=False)
-        def generate(text, count, ratio, model, steps, sampler, scheduler, negative_prompt,
+        async def generate_fn(text, count, ratio, model, steps, sampler, scheduler, negative_prompt,
                      state, seed, seed_random, stop_btn, skip_btn, generate_btn, cfg, vae,
                      skip_clip, *lora_ctrls):
             client_id = state["client_id"]
@@ -294,9 +288,9 @@ def run(comfy_address):
             positive = modules.styles.render_styles_prompt(text, state["positive_styles"])
             negative = modules.styles.render_styles_prompt(negative_prompt, state["negative_styles"])
 
-            workflow = modules.workflow.render(model, sampler, scheduler, steps, width, height,
-                                               positive, negative, cfg, vae, skip_clip, state["perf_lora"],
-                                               state["model_details"], lora_ctrls)
+            workflow = await modules.workflow.render(model, sampler, scheduler, steps, width, height,
+                                                     positive, negative, cfg, vae, skip_clip, state["perf_lora"],
+                                                     state["model_details"], lora_ctrls)
             pprint(workflow)
 
             # Just show something so we quickly get the progress bar up
@@ -307,7 +301,7 @@ def run(comfy_address):
             }
 
             # Make max size large enough for the images
-            ws = connect(f"ws://{comfy_address}/ws?clientId={client_id}", max_size=3000000)
+            ws = await connect(f"ws://{comfy_address}/ws?clientId={client_id}", max_size=3000000)
 
             completed_images = []
             current_preview = None
@@ -317,11 +311,11 @@ def run(comfy_address):
                 # generate a new one and return it
                 seed = random.randrange(0, state["options"]["seed_max"])
 
-            prompt_ids = modules.comfy.send_prompts(comfy_address, workflow, client_id,
-                                                    int(seed), count, state)
+            prompt_ids = await modules.comfy.send_prompts(comfy_address, workflow, client_id,
+                                                          int(seed), count, state)
 
             try:
-                for resp in modules.comfy.stream_updates(ws, prompt_ids):
+                async for resp in modules.comfy.stream_updates(ws, prompt_ids):
                     state.update({"prompt_id": resp["prompt"]})
                     if resp["node"] is None:
                         # We've finished an item
@@ -370,6 +364,14 @@ def run(comfy_address):
                 modules.comfy.interrupt(comfy_address, state["client_id"])
                 ws.close()
                 raise
+
+        generate_btn.click(generate_fn,
+                       inputs=[prompt, count, ratio, model, steps, sampler,
+                               scheduler, negative_prompt, state, seed, seed_random,
+                               stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
+                       outputs=[gallery, progress_bar, preview_window, stop_btn,
+                                skip_btn, generate_btn, state, seed],
+                       show_progress="hidden")
     server.launch(allowed_paths=ALLOWED_PATHS)
 
 if __name__ == "__main__":

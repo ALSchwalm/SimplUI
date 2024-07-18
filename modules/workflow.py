@@ -109,7 +109,7 @@ def link_lora_to_workflow(node_name, workflow, lora_name, weight):
     workflow.update(new_node)
     workflow["sampler"]["inputs"]["model"][0] = node_name
 
-def render(model, sampler, scheduler, steps, width,
+async def render(model, sampler, scheduler, steps, width,
            height, positive, negative, cfg, vae, skip_clip,
            perf_lora, model_details, loras):
     workflow = json.loads(BASIC_WORKFLOW)
@@ -139,8 +139,7 @@ def render(model, sampler, scheduler, steps, width,
     if perf_lora is not None:
         match perf_lora:
             case "Hyper":
-                model_details.join()
-                details = model_details.result
+                details = await model_details
                 base_model = details[model]["base_model"]
                 if base_model == "sdxl":
                     link_lora_to_workflow(perf_lora, workflow,
