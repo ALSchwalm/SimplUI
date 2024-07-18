@@ -90,7 +90,7 @@ def render_node_text(node_data):
             return "Encoding positive"
         case "loader":
             return "Loading model"
-        case "vae":
+        case "vae_decode":
             return "Rendering"
         case "save":
             return "Downloading image"
