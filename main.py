@@ -48,7 +48,7 @@ def get_matching_ratio(ratio, ratio_list):
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
 def run(comfy_address):
-    async def set_initial_state():
+    def set_initial_state():
         state = {}
         state["client_id"] = str(uuid.uuid4())
         state["seed"] = str()
@@ -61,7 +61,7 @@ def run(comfy_address):
 
         # Getting this info can take a while, so store a task
         # that we'll await when we actually need the info
-        state["model_details"] = await modules.comfy.get_model_details(comfy_address)
+        state["model_details"] = modules.comfy.get_model_details(comfy_address)
 
         fallback_model = options["models"][0]
         fallback_sampler = "euler_ancestral"
@@ -285,7 +285,8 @@ def run(comfy_address):
             negative = modules.styles.render_styles_prompt(negative_prompt, state["negative_styles"])
 
             workflow = modules.workflow.render(model, sampler, scheduler, steps, width, height,
-                                               positive, negative, cfg, vae, skip_clip, state["perf_lora"], lora_ctrls)
+                                               positive, negative, cfg, vae, skip_clip, state["perf_lora"],
+                                               state["model_details"], lora_ctrls)
             pprint(workflow)
 
             # Just show something so we quickly get the progress bar up

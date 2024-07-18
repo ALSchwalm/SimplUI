@@ -1,8 +1,7 @@
 import json
 
-SDXL_HYPER_LORA = "sdxl_hyper_sd_4step_lora.safetensors"
-# SDXL_HYPER_LORA = "Hyper-SDXL-8steps-CFG-lora.safetensors"
-SD15_HYPER_LORA = "Hyper-SD15-8steps-CFG-lora.safetensors"
+SDXL_HYPER_LORA = "Hyper-SDXL-4steps-lora.safetensors"
+SD15_HYPER_LORA = "Hyper-SD15-4steps-lora.safetensors"
 
 BASIC_WORKFLOW = """
 {
@@ -112,7 +111,7 @@ def link_lora_to_workflow(node_name, workflow, lora_name, weight):
 
 def render(model, sampler, scheduler, steps, width,
            height, positive, negative, cfg, vae, skip_clip,
-           perf_lora, loras):
+           perf_lora, model_details, loras):
     workflow = json.loads(BASIC_WORKFLOW)
     workflow["sampler"]["inputs"]["sampler_name"] = sampler
     workflow["sampler"]["inputs"]["scheduler"] = scheduler
@@ -140,8 +139,19 @@ def render(model, sampler, scheduler, steps, width,
     if perf_lora is not None:
         match perf_lora:
             case "Hyper":
-                link_lora_to_workflow(perf_lora, workflow,
-                                      SDXL_HYPER_LORA, 0.8)
+                model_details.join()
+                details = model_details.result
+                base_model = details[model]["base_model"]
+                if base_model == "sdxl":
+                    link_lora_to_workflow(perf_lora, workflow,
+                                          SDXL_HYPER_LORA, 1.0)
+                elif base_model == "sd15":
+                    link_lora_to_workflow(perf_lora, workflow,
+                                          SD15_HYPER_LORA, 1.0)
+                else:
+                    #TODO: show an error here
+                    pass
+
 
     if vae != "Builtin":
         vae_node = {

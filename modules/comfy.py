@@ -1,4 +1,4 @@
-import asyncio
+import threading
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -20,13 +20,15 @@ def get_available_options(comfy_address):
         opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
     return opts
 
-async def get_model_details(comfy_address):
-    # This takes a while, so make this async and only await it when
-    # we actually need the answer
+def get_model_details(comfy_address):
     def _get_model_details():
         req = urllib.request.Request(f"http://{comfy_address}/etn/model_info")
-        return json.loads(urllib.request.urlopen(req).read())
-    return asyncio.create_task(asyncio.to_thread(_get_model_details))
+        value = json.loads(urllib.request.urlopen(req).read())
+        # Well, it's python so we might as well mutate types
+        threading.current_thread().result = value
+    t = threading.Thread(target=_get_model_details)
+    t.start()
+    return t
 
 
 def queue_prompt(comfy_address, prompt, client_id):
