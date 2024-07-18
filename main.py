@@ -104,7 +104,8 @@ def run(comfy_address):
 
         pprint(options)
 
-        styles, _ = modules.styles.generate_styles_list(styles, "", {})
+        if (isinstance(styles, list)):
+            styles, _ = modules.styles.generate_styles_list(styles, "", {})
 
         for i in range(0, len(loras), 3):
             _, value, _ = loras[i:i+3]

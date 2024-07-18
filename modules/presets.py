@@ -3,6 +3,7 @@ import os
 import json
 import gradio as gr
 import modules.utils
+import modules.styles
 
 PRESET_PATH = modules.utils.absolute_from_root_relative("./presets")
 
@@ -43,7 +44,7 @@ def update_preset_state(preset, model, sampler, scheduler, cfg, prompt,
         negative_prompt = preset["negative_prompt"]
 
     if "styles" in preset:
-        styles = preset["styles"]
+        styles, _ = modules.styles.generate_styles_list(preset["styles"], "", {})
 
     loras = list(loras)
     if "loras" in preset:
