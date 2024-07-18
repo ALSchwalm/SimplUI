@@ -6,20 +6,32 @@ import io
 import numpy as np
 
 async def get_available_options(comfy_address):
+    async def fetch(session, component):
+        async with session.get(f"http://{comfy_address}/object_info/{component}") as response:
+            return await response.json()
+
+    desired_node_types = [
+        "CheckpointLoaderSimple",
+        "KSampler",
+        "LoraLoaderModelOnly",
+        "VAELoader",
+        "CLIPSetLastLayer"
+    ]
     opts = {}
     async with aiohttp.ClientSession(raise_for_status=True) as session:
-        async with session.get(f"http://{comfy_address}/object_info") as resp:
-            if not resp.ok:
-                print(await resp.text())
-                resp.raise_for_status()
-            nodes = await resp.json()
-            opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
-            opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
-            opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
-            opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
-            opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
-            opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
-            opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
+        nodes = {}
+        for res in await asyncio.gather(*[
+            fetch(session, url) for url in desired_node_types
+        ], return_exceptions=True):
+            nodes.update(res)
+
+        opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
+        opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
+        opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
+        opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
+        opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
+        opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
+        opts["skip_max"] = -1 * nodes["CLIPSetLastLayer"]["input"]["required"]["stop_at_clip_layer"][1]["min"]
         return opts
 
 async def get_model_details(comfy_address):

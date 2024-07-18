@@ -212,8 +212,7 @@ def run(comfy_address):
         server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
                                                 prompt, negative_prompt, styles_list,
                                                 performance_rd, vae, skip_clip,
-                                                ratio, scale] + lora_ctrls,
-                    show_progress=False)
+                                                ratio, scale] + lora_ctrls)
 
         style_search_bar.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list, style_search_bar, state],
