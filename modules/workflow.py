@@ -50,8 +50,8 @@ BASIC_WORKFLOW = """
         "class_type": "CLIPTextEncode",
         "inputs": {
             "clip": [
-                "loader",
-                1
+                "skip_clip",
+                0
             ],
             "text": ""
         }
@@ -60,8 +60,8 @@ BASIC_WORKFLOW = """
         "class_type": "CLIPTextEncode",
         "inputs": {
             "clip": [
-                "loader",
-                1
+                "skip_clip",
+                0
             ],
             "text": ""
         }
@@ -77,6 +77,16 @@ BASIC_WORKFLOW = """
                 "loader",
                 2
             ]
+        }
+    },
+    "skip_clip": {
+        "class_type": "CLIPSetLastLayer",
+        "inputs": {
+            "clip": [
+                "loader",
+                 1
+            ],
+            "stop_at_clip_layer": -2
         }
     },
     "save": {
@@ -125,6 +135,8 @@ async def render(model, sampler, scheduler, steps, width,
     workflow["positive_clip"]["inputs"]["text"] = positive
     workflow["negative_clip"]["inputs"]["text"] = negative
 
+    workflow["skip_clip"]["inputs"]["stop_at_clip_layer"] = skip_clip * -1
+
     # For now, always use a batch of 1 and queue a request for
     # each image. This way we can skip/cancel and get previews
     workflow["latent_image"]["inputs"]["batch_size"] = 1
@@ -164,22 +176,5 @@ async def render(model, sampler, scheduler, steps, width,
         workflow.update(vae_node)
         workflow["vae_decode"]["inputs"]["vae"][0] = "vae_load"
         workflow["vae_decode"]["inputs"]["vae"][1] = 0
-
-    if skip_clip != 0:
-        skip_clip_node = {
-            "skip_clip": {
-                "class_type": "CLIPSetLastLayer",
-                "inputs": {
-                    "clip": [
-                        "loader",
-                        1
-                    ],
-                    "stop_at_clip_layer": skip_clip * -1
-                }
-            }
-        }
-        workflow.update(skip_clip_node)
-        workflow["positive_clip"]["inputs"]["clip"][0] = "skip_clip"
-        workflow["positive_clip"]["inputs"]["clip"][1] = 0
 
     return workflow

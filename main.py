@@ -207,7 +207,7 @@ def run(comfy_address):
 
                     with gr.Row():
                         vae = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
-                        skip_clip = gr.Slider(minimum=0, step=1, label="Skip CLIP")
+                        skip_clip = gr.Slider(minimum=1, step=1, label="Skip CLIP")
 
         server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
                                                 prompt, negative_prompt, styles_list,
