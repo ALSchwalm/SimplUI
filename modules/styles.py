@@ -53,9 +53,10 @@ def generate_styles_list(selected, searched, state):
             output.append(name)
 
     state = update_styles_state(selected, state)
+    output.sort(key=lambda choice: choice in selected, reverse=True)
 
     return gr.CheckboxGroup(label="Styles", choices=output,
-                            elem_classes=['style_selections'],
+                            value=selected, elem_classes=['style_selections'],
                             show_label=False, container=False), state
 
 def render_styles_prompt(prompt, styles):

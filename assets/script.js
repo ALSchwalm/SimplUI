@@ -71,6 +71,14 @@ function onUiUpdate(callback) {
 }
 
 /**
+ * Register callback to be called when the UI is loaded.
+ * The callback receives no arguments.
+ */
+function onUiLoaded(callback) {
+    uiLoadedCallbacks.push(callback);
+}
+
+/**
  * Register callback to be called soon after UI updates.
  * The callback receives no arguments.
  *
@@ -348,6 +356,16 @@ function modalTileImageToggle(event) {
     event.stopPropagation();
 }
 
+function on_style_selection_blur() {
+    let target = document.querySelector("#gradio_receiver_style_selections textarea");
+    target.value = "on_style_selection_blur " + Math.random();
+    let e = new Event("input", {bubbles: true})
+    Object.defineProperty(e, "target", {value: target})
+    target.dispatchEvent(e);
+}
+
+
+
 onAfterUiUpdate(function() {
     var fullImg_preview = gradioApp().querySelectorAll('.image_gallery > button > button > img');
     if (fullImg_preview != null) {
@@ -414,7 +432,7 @@ function onLoad() {
     document.body.appendChild(modal);
 
     var mutationObserver = new MutationObserver(function(m) {
-        if (!executedOnLoaded && gradioApp().querySelector('#generate-button')) {
+        if (!executedOnLoaded && gradioApp().querySelector('#generate-btn')) {
             executedOnLoaded = true;
             executeCallbacks(uiLoadedCallbacks);
         }
@@ -430,6 +448,16 @@ function onLoad() {
     mutationObserver.observe(gradioApp(), {childList: true, subtree: true});
     initStylePreviewOverlay();
 }
+
+onUiLoaded(async () => {
+    document.querySelector('.style_selections').addEventListener('focusout', function (event) {
+        setTimeout(() => {
+            if (!this.contains(document.activeElement)) {
+                on_style_selection_blur();
+            }
+        }, 200);
+    });
+})
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", onLoad);

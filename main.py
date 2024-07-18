@@ -104,7 +104,7 @@ def run(comfy_address):
 
         pprint(options)
 
-        styles = gr.CheckboxGroup(value=styles)
+        styles, _ = modules.styles.generate_styles_list(styles, "", {})
 
         for i in range(0, len(loras), 3):
             _, value, _ = loras[i:i+3]
@@ -174,6 +174,9 @@ def run(comfy_address):
                                                   label='Search Styles')
                     styles_list, _ = modules.styles.generate_styles_list([], "", {})
 
+                    # "fake" element used to trigger re-sorting of the styles on blur
+                    gradio_receiver_style_selections = gr.Textbox(elem_id='gradio_receiver_style_selections', visible=False)
+
                 with gr.Tab(label='Models'):
                     with gr.Group():
                         model = gr.Dropdown(label="Model",
@@ -236,6 +239,13 @@ def run(comfy_address):
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
                                  queue=False, show_progress=False)
+
+        @gradio_receiver_style_selections.change(inputs=[styles_list, style_search_bar],
+                                                 outputs=[styles_list])
+        def style_blur(selected_styles, searched_styles):
+            styles_list, _ = modules.styles.generate_styles_list(selected_styles,
+                                                                 searched_styles, {})
+            return styles_list
 
         @scale.change(inputs=[scale, ratio], outputs=[ratio], show_progress=False)
         def ratio_change(scale, ratio):
