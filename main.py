@@ -139,7 +139,7 @@ def run(comfy_address, host, port):
                                                    height=768, elem_id="preview-image")
                     gallery_comp = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', height=768,
                                               elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                              elem_id='final_gallery')
+                                              elem_id='final-gallery')
 
                 progress_bar_comp = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
 

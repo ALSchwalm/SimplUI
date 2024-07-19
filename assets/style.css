@@ -1,5 +1,12 @@
 /* based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/style.css */
 
+/* Make things fit a little better on small screens */
+@media (max-width: 800px) {
+  #final-gallery, #preview-image {
+      height: 540px !important;
+  }
+}
+
 .loader-container {
   display: flex; /* Use flex to align items horizontally */
   align-items: center; /* Center items vertically within the container */
