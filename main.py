@@ -47,7 +47,7 @@ def get_matching_ratio(ratio, ratio_list):
 
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
-def run(comfy_address):
+def run(comfy_address, host, port):
     async def set_initial_state(state_comp, model_comp, sampler_comp, scheduler_comp,
                                 cfg_comp, prompt_comp, negative_prompt_comp,
                                 styles_list_comp, performance_rd_comp, ratio_comp,
@@ -398,13 +398,16 @@ def run(comfy_address):
                                 stop_btn_comp, skip_btn_comp, generate_btn_comp,
                                 state_comp, seed_comp],
                        show_progress="hidden")
-    server.launch(allowed_paths=ALLOWED_PATHS)
+    server.launch(allowed_paths=ALLOWED_PATHS,
+                  server_name=host, server_port=port)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run comfy-minimal')
     parser.add_argument('--listen', default="127.0.0.1",
                         help='set the address to listen on')
+    parser.add_argument('--port', type=int, default=7860,
+                        help='set the port to listen on')
     parser.add_argument('--comfy-addr', default="127.0.0.1:8188",
                         help='The address of the comfy instance')
     args = parser.parse_args()
-    run(args.comfy_addr)
+    run(args.comfy_addr, args.listen, args.port)
