@@ -129,7 +129,7 @@ def run(comfy_address, host, port):
         output[state_comp] = state
         return output
 
-    with gr.Blocks(head=HEAD) as server:
+    with gr.Blocks(head=HEAD, title="SimplUI") as server:
         state_comp = gr.State({})
 
         with gr.Row():
@@ -402,7 +402,7 @@ def run(comfy_address, host, port):
                   server_name=host, server_port=port)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run comfy-minimal')
+    parser = argparse.ArgumentParser(description='Run SimplUI')
     parser.add_argument('--listen', default="127.0.0.1",
                         help='set the address to listen on')
     parser.add_argument('--port', type=int, default=7860,
