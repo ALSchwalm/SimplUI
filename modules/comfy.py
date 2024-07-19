@@ -4,6 +4,7 @@ from PIL import Image
 import json
 import io
 import numpy as np
+import gradio as gr
 
 async def get_available_options(comfy_address):
     async def fetch(session, component):
@@ -20,10 +21,14 @@ async def get_available_options(comfy_address):
     opts = {}
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         nodes = {}
-        for res in await asyncio.gather(*[
-            fetch(session, url) for url in desired_node_types
-        ], return_exceptions=True):
-            nodes.update(res)
+
+        try:
+            for res in await asyncio.gather(*[
+                    fetch(session, url) for url in desired_node_types
+            ]):
+                nodes.update(res)
+        except Exception as e:
+            raise gr.Error(str(e))
 
         opts["models"] = nodes["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
         opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
@@ -47,8 +52,8 @@ async def queue_prompt(comfy_address, prompt, client_id):
         async with session.post(f"http://{comfy_address}/prompt", json={
                 "prompt": prompt, "client_id": client_id}) as resp:
             if not resp.ok:
-                print(await resp.text())
-                resp.raise_for_status()
+                msg = await resp.text()
+                raise gr.Error(f"Failed to send workflow: {msg}")
             return await resp.json()
 
 async def clear_queue(comfy_address, client_id):
