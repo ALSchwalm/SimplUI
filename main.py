@@ -48,12 +48,18 @@ def get_matching_ratio(ratio, ratio_list):
 HEAD, ALLOWED_PATHS = modules.html.render_head()
 
 def run(comfy_address):
-    async def set_initial_state():
+    async def set_initial_state(state_comp, model_comp, sampler_comp, scheduler_comp,
+                                cfg_comp, prompt_comp, negative_prompt_comp,
+                                styles_list_comp, performance_rd_comp, ratio_comp,
+                                scale_comp, vae_comp, skip_clip_comp, steps_comp,
+                                *lora_comps):
         state = {}
         state["client_id"] = str(uuid.uuid4())
         state["seed"] = str()
 
         options = await modules.comfy.get_available_options(comfy_address)
+        pprint(options)
+
         state["options"] = options
         state["positive_styles"] = []
         state["negative_styles"] = []
@@ -63,58 +69,65 @@ def run(comfy_address):
         # that we'll await when we actually need the info
         state["model_details"] = await modules.comfy.get_model_details(comfy_address)
 
-        fallback_model = options["models"][0]
-        fallback_sampler = "euler_ancestral"
-        fallback_scheduler = "normal"
-        fallback_cfg = 8.0
-        fallback_prompt = ""
-        fallback_negative_prompt = ""
-        fallback_styles = []
-        fallback_loras = [False, "None", 1.0] * 6
-        fallback_performance = "Speed"
-        fallback_vae = "Builtin"
-        fallback_skip_clip = 2
-
-        model, sampler, scheduler, cfg, prompt, negative_prompt, styles, performance, *loras = \
-            modules.presets.update_preset_state(
-                "default", fallback_model, fallback_sampler, fallback_scheduler,
-                fallback_cfg, fallback_prompt, fallback_negative_prompt, fallback_styles,
-                fallback_performance, *fallback_loras)
-
-        model = gr.Dropdown(choices=options["models"],
-                            value=model)
-
-        sampler = gr.Dropdown(value=fallback_sampler,
-                              choices=options["sampler"])
-
-        scheduler = gr.Dropdown(value=fallback_scheduler,
-                                choices=options["scheduler"])
-
-        vae = gr.Dropdown(value=fallback_vae,
-                                choices=options["vaes"] + ["Builtin"])
-
-        scale = gr.Dropdown(choices=SCALES, value=DEFAULT_SCALE)
-
         ratio_list = get_ratios_for_scale(DEFAULT_SCALE)
         default_ratio = get_matching_ratio(DEFAULT_RATIO, ratio_list)
-        ratio = gr.Dropdown(choices=ratio_list, value=default_ratio)
 
-        cfg = gr.Slider(value=cfg)
-        skip_clip = gr.Slider(value=fallback_skip_clip, maximum=options["skip_max"])
+        output = {
+            model_comp: options["models"][0],
+            sampler_comp: "euler_ancestral",
+            scheduler_comp: "normal",
+            cfg_comp: 8.0,
+            prompt_comp: "",
+            negative_prompt_comp: "",
+            styles_list_comp: [],
+            performance_rd_comp: "Speed",
+            scale_comp: DEFAULT_SCALE,
+            ratio_comp: default_ratio,
+            vae_comp: "Builtin",
+            skip_clip_comp: 2,
+            steps_comp: 30
+        }
 
-        pprint(options)
+        preset = \
+            modules.presets.update_preset_state(
+                "default", model_comp, sampler_comp, scheduler_comp,
+                cfg_comp, prompt_comp, negative_prompt_comp,
+                styles_list_comp, performance_rd_comp, ratio_comp,
+                scale_comp, vae_comp, skip_clip_comp, steps_comp,
+                *lora_comps)
+        output.update(preset)
 
-        if (isinstance(styles, list)):
-            styles, _ = modules.styles.generate_styles_list(styles, "", {})
+        output[model_comp] = gr.Dropdown(choices=options["models"],
+                                         value=output[model_comp])
 
-        for i in range(0, len(loras), 3):
-            _, value, _ = loras[i:i+3]
-            loras[i+1] = gr.Dropdown(choices=options["loras"] + ["None"],
-                                     value=value)
+        output[sampler_comp] = gr.Dropdown(choices=options["sampler"],
+                                           value=output[sampler_comp])
 
-        return (state, model, sampler, scheduler, cfg, prompt,
-                negative_prompt, styles, performance, vae, skip_clip,
-                ratio, scale, *loras)
+        output[scheduler_comp] = gr.Dropdown(choices=options["scheduler"],
+                                             value=output[scheduler_comp])
+
+        output[cfg_comp] = gr.Slider(value=output[cfg_comp])
+
+        output[vae_comp] = gr.Dropdown(value=output[vae_comp],
+                                       choices=options["vaes"] + ["Builtin"])
+
+        output[scale_comp] = gr.Dropdown(choices=SCALES, value=output[scale_comp])
+
+        output[ratio_comp] = gr.Dropdown(choices=ratio_list, value=output[ratio_comp])
+        output[skip_clip_comp] = gr.Slider(value=output[skip_clip_comp],
+                                           maximum=options["skip_max"])
+
+        for i in range(0, len(lora_comps), 3):
+            _, value_comp, _ = lora_comps[i:i+3]
+            if value_comp in output:
+                lora_value = output[value_comp]
+            else:
+                lora_value = "None"
+            output[lora_comps[i+1]] = gr.Dropdown(choices=options["loras"] + ["None"],
+                                                  value=lora_value)
+
+        output[state_comp] = state
+        return output
 
     with gr.Blocks(head=HEAD) as server:
         state_comp = gr.State({})
@@ -210,11 +223,17 @@ def run(comfy_address):
                         vae_comp = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
                         skip_clip_comp = gr.Slider(minimum=1, step=1, label="Skip CLIP")
 
-        server.load(set_initial_state, outputs=[state_comp, model_comp, sampler_comp,
-                                                scheduler_comp, cfg_comp,
-                                                prompt_comp, negative_prompt_comp, styles_list_comp,
-                                                performance_rd_comp, vae_comp, skip_clip_comp,
-                                                ratio_comp, scale_comp] + lora_comps)
+
+        presetable_comps = [model_comp, sampler_comp, scheduler_comp,
+                            cfg_comp, prompt_comp, negative_prompt_comp,
+                            styles_list_comp, performance_rd_comp, ratio_comp,
+                            scale_comp, vae_comp, skip_clip_comp, steps_comp,
+                            *lora_comps]
+
+        async def set_initial_state_apply():
+            return await set_initial_state(state_comp, *presetable_comps)
+        server.load(set_initial_state_apply,
+                    outputs=[state_comp] + presetable_comps)
 
         style_search_bar_comp.change(modules.styles.generate_styles_list,
                                 inputs=[styles_list_comp, style_search_bar_comp, state_comp],
@@ -231,13 +250,9 @@ def run(comfy_address):
                            queue=False,
                            show_progress="hidden")
 
-        presets_comp.change(modules.presets.update_preset_state,
-                       inputs=[presets_comp, model_comp, sampler_comp, scheduler_comp,
-                               cfg_comp, prompt_comp, negative_prompt_comp,
-                               styles_list_comp, performance_rd_comp, *lora_comps],
-                       outputs=[model_comp, sampler_comp, scheduler_comp, cfg_comp,
-                                prompt_comp, negative_prompt_comp, styles_list_comp,
-                                performance_rd_comp, *lora_comps],
+        presets_comp.change(lambda preset: modules.presets.update_preset_state(preset, *presetable_comps),
+                            inputs=[presets_comp],
+                       outputs=presetable_comps,
                        show_progress=False)
 
         advanced_checkbox_comp.change(lambda x: gr.update(visible=x), advanced_checkbox_comp,

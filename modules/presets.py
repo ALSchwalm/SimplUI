@@ -21,34 +21,56 @@ PRESETS = read_presets()
 def generate_preset_dropdown():
     return gr.Dropdown(label="Preset", value="default", choices=list(PRESETS.keys()))
 
-def update_preset_state(preset, model, sampler, scheduler, cfg, prompt,
-                        negative_prompt, styles, performance, *loras):
+def update_preset_state(preset, model_comp, sampler_comp, scheduler_comp,
+                        cfg_comp, prompt_comp, negative_prompt_comp, styles_comp,
+                        performance_comp, ratio_comp, scale_comp, vae_comp,
+                        skip_clip_comp, steps_comp, *lora_comps):
     preset = PRESETS[preset]
 
+    output = {}
+
     if "model" in preset:
-        model = preset["model"]
+        output[model_comp] = preset["model"]
 
     if "sampler" in preset:
-        sampler = preset["sampler"]
+        output[sampler_comp] = preset["sampler"]
 
     if "scheduler" in preset:
-        scheduler = preset["scheduler"]
+        output[scheduler_comp] = preset["scheduler"]
 
     if "cfg" in preset:
-        cfg = preset["cfg"]
+        output[cfg_comp] = preset["cfg"]
 
     if "prompt"in preset:
-        prompt = preset["prompt"]
+        output[prompt_comp] = preset["prompt"]
 
     if "negative_prompt" in preset:
-        negative_prompt = preset["negative_prompt"]
+        output[negative_prompt_comp] = preset["negative_prompt"]
 
     if "styles" in preset:
         styles, _ = modules.styles.generate_styles_list(preset["styles"], "", {})
+        output[styles_comp] = styles
 
-    loras = list(loras)
+    if "performance" in preset:
+        output[performance_comp] = preset["performance"]
+
+    if "ratio" in preset:
+        output[ratio_comp] = preset["ratio"]
+
+    if "scale" in preset:
+        output[scale_comp] = preset["scale"]
+
+    if "vae" in preset:
+        output[vae_comp] = preset["vae"]
+
+    if "skip_clip" in preset:
+        output[skip_clip_comp] = preset["skip_clip"]
+
+    if "steps" in preset:
+        output[steps_comp] = preset["steps"]
+
     if "loras" in preset:
-        for i in range(0, len(loras), 3):
+        for i in range(0, len(lora_comps), 3):
             lora_idx = i//3
             if lora_idx >= len(preset["loras"]):
                 enabled = False
@@ -59,12 +81,8 @@ def update_preset_state(preset, model, sampler, scheduler, cfg, prompt,
                 enabled = True
                 lora_name = preset_lora["lora_name"]
                 weight = preset_lora["weight"]
-            loras[i] = enabled
-            loras[i+1] = lora_name
-            loras[i+2] = weight
+            output[lora_comps[i]] = enabled
+            output[lora_comps[i+1]] = lora_name
+            output[lora_comps[i+2]] = weight
 
-    if "performance" in preset:
-        performance = preset["performance"]
-
-    return (model, sampler, scheduler, cfg, prompt, negative_prompt,
-            styles, performance, *loras)
+    return output
