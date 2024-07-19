@@ -117,145 +117,152 @@ def run(comfy_address):
                 ratio, scale, *loras)
 
     with gr.Blocks(head=HEAD) as server:
-        state = gr.State({})
+        state_comp = gr.State({})
 
         with gr.Row():
             with gr.Column(scale=2):
                 with gr.Row():
-                    preview_window = gr.Image(label='Preview', show_label=True, visible=False,
-                                              height=768, elem_id="preview-image")
-                    gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', height=768,
-                                         elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                         elem_id='final_gallery')
+                    preview_window_comp = gr.Image(label='Preview', show_label=True, visible=False,
+                                                   height=768, elem_id="preview-image")
+                    gallery_comp = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', height=768,
+                                              elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
+                                              elem_id='final_gallery')
 
-                progress_bar = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
+                progress_bar_comp = gr.HTML(visible=False, elem_id='progress-bar', elem_classes='progress-bar')
 
                 with gr.Row():
                     with gr.Column(scale=17):
-                        prompt = gr.Textbox(label="Prompt", lines=2)
+                        prompt_comp = gr.Textbox(label="Prompt", lines=2)
 
                     with gr.Column(scale=3):
-                        generate_btn = gr.Button("Generate", variant="primary", elem_id='generate-btn',
-                                                 elem_classes='generate-btn')
-                        skip_btn = gr.Button("Skip", visible=False)
-                        stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id='stop-btn')
+                        generate_btn_comp = gr.Button("Generate", variant="primary", elem_id='generate-btn',
+                                                      elem_classes='generate-btn')
+                        skip_btn_comp = gr.Button("Skip", visible=False)
+                        stop_btn_comp = gr.Button("Stop", variant="stop", visible=False, elem_id='stop-btn')
 
                 with gr.Row():
-                    advanced_checkbox = gr.Checkbox(label="Advanced", container=False)
+                    advanced_checkbox_comp = gr.Checkbox(label="Advanced", container=False)
 
-            with gr.Column(scale=1, visible=False) as advanced_column:
+            with gr.Column(scale=1, visible=False) as advanced_column_comp:
                 with gr.Tab(label='Setting'):
                     with gr.Group():
-                        presets = modules.presets.generate_preset_dropdown()
-                        performance_rd = gr.Radio(["Quality", "Speed", "Hyper"],
-                                                  value="Speed", label="Performance")
+                        presets_comp = modules.presets.generate_preset_dropdown()
+                        performance_rd_comp = gr.Radio(["Quality", "Speed", "Hyper"],
+                                                       value="Speed", label="Performance")
 
                     with gr.Row():
-                        ratio = gr.Dropdown(label="Aspect Ratio",
-                                            allow_custom_value=False,
-                                            filterable=False)
+                        ratio_comp = gr.Dropdown(label="Aspect Ratio",
+                                                 allow_custom_value=False,
+                                                 filterable=False)
 
-                        scale = gr.Dropdown(label="Scale",
-                                            allow_custom_value=False,
-                                            filterable=False)
+                        scale_comp = gr.Dropdown(label="Scale",
+                                                 allow_custom_value=False,
+                                                 filterable=False)
 
                     with gr.Group():
-                        count = gr.Slider(1, 10, 2, step=1, label="Count")
-                        negative_prompt = gr.Textbox(label="Negative Prompt", lines=2)
+                        count_comp = gr.Slider(1, 10, 2, step=1, label="Count")
+                        negative_prompt_comp = gr.Textbox(label="Negative Prompt", lines=2)
                         with gr.Row():
-                            seed_random = gr.Checkbox(label='Random Seed', value=True, scale=1)
+                            seed_random_comp = gr.Checkbox(label='Random Seed', value=True, scale=1)
 
                             # Work around https://github.com/gradio-app/gradio/issues/5354
-                            seed = gr.Text(label="Seed", max_lines=1, value="0", visible=False, scale=2)
+                            seed_comp = gr.Text(label="Seed", max_lines=1, value="0", visible=False, scale=2)
 
                 with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
-                    style_search_bar = gr.Textbox(show_label=False, container=False,
-                                                  placeholder="\U0001F50E Type here to search styles ...",
-                                                  value="",
-                                                  label='Search Styles')
-                    styles_list, _ = modules.styles.generate_styles_list([], "", {})
+                    style_search_bar_comp = gr.Textbox(show_label=False, container=False,
+                                                       placeholder="\U0001F50E Type here to search styles ...",
+                                                       value="",
+                                                       label='Search Styles')
+                    styles_list_comp, _ = modules.styles.generate_styles_list([], "", {})
 
                     # "fake" element used to trigger re-sorting of the styles on blur
-                    gradio_receiver_style_selections = gr.Textbox(elem_id='gradio_receiver_style_selections', visible=False)
+                    gradio_receiver_style_selections_comp = gr.Textbox(elem_id='gradio_receiver_style_selections', visible=False)
 
                 with gr.Tab(label='Models'):
                     with gr.Group():
-                        model = gr.Dropdown(label="Model",
+                        model_comp = gr.Dropdown(label="Model",
                                             allow_custom_value=False,
                                             filterable=False)
 
-                        lora_ctrls = []
+                        lora_comps = []
 
                         for i in range(6):
                             with gr.Row():
-                                lora_enabled = gr.Checkbox(label='Enable', value=False, scale=1,
-                                                           elem_classes=['lora_enable', 'min_check'])
-                                lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
-                                                         scale=5, elem_classes='lora_model')
-                                lora_weight = gr.Slider(label='Weight', minimum=0, maximum=2.0, step=0.01,
-                                                        value=1.0, scale=5, elem_classes='lora_weight', interactive=True)
-                                lora_ctrls += [lora_enabled, lora_model, lora_weight]
+                                lora_enabled_comp = gr.Checkbox(label='Enable', value=False, scale=1,
+                                                                elem_classes=['lora_enable', 'min_check'])
+                                lora_model_comp = gr.Dropdown(label=f'LoRA {i + 1}',
+                                                              scale=5, elem_classes='lora_model')
+                                lora_weight_comp = gr.Slider(label='Weight', minimum=0, maximum=2.0, step=0.01,
+                                                             value=1.0, scale=5, elem_classes='lora_weight', interactive=True)
+                                lora_comps += [lora_enabled_comp, lora_model_comp, lora_weight_comp]
 
                 with gr.Tab(label='Advanced'):
                     with gr.Row():
-                        steps = gr.Slider(1, 80, 30, step=1, label="Steps")
-                        sampler = gr.Dropdown(label="Sampler", allow_custom_value=False,
-                                              filterable=False)
+                        steps_comp = gr.Slider(1, 80, 30, step=1, label="Steps")
+                        sampler_comp = gr.Dropdown(label="Sampler", allow_custom_value=False,
+                                                   filterable=False)
                     with gr.Row():
-                        cfg = gr.Slider(minimum=1.0, maximum=10, step=0.1, label="Cfg")
-                        scheduler = gr.Dropdown(label="Scheduler", allow_custom_value=False,
-                                                filterable=False)
+                        cfg_comp = gr.Slider(minimum=1.0, maximum=10, step=0.1, label="Cfg")
+                        scheduler_comp = gr.Dropdown(label="Scheduler", allow_custom_value=False,
+                                                     filterable=False)
 
                     with gr.Row():
-                        vae = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
-                        skip_clip = gr.Slider(minimum=1, step=1, label="Skip CLIP")
+                        vae_comp = gr.Dropdown(label="VAE", allow_custom_value=False, filterable=False)
+                        skip_clip_comp = gr.Slider(minimum=1, step=1, label="Skip CLIP")
 
-        server.load(set_initial_state, outputs=[state, model, sampler, scheduler, cfg,
-                                                prompt, negative_prompt, styles_list,
-                                                performance_rd, vae, skip_clip,
-                                                ratio, scale] + lora_ctrls)
+        server.load(set_initial_state, outputs=[state_comp, model_comp, sampler_comp,
+                                                scheduler_comp, cfg_comp,
+                                                prompt_comp, negative_prompt_comp, styles_list_comp,
+                                                performance_rd_comp, vae_comp, skip_clip_comp,
+                                                ratio_comp, scale_comp] + lora_comps)
 
-        style_search_bar.change(modules.styles.generate_styles_list,
-                                inputs=[styles_list, style_search_bar, state],
-                                outputs=[styles_list, state],
+        style_search_bar_comp.change(modules.styles.generate_styles_list,
+                                inputs=[styles_list_comp, style_search_bar_comp, state_comp],
+                                outputs=[styles_list_comp, state_comp],
                                 queue=False,
                                 show_progress="hidden")
-        styles_list.change(modules.styles.update_styles_state,
-                           inputs=[styles_list, state],
-                           outputs=[state])
+        styles_list_comp.change(modules.styles.update_styles_state,
+                           inputs=[styles_list_comp, state_comp],
+                           outputs=[state_comp])
 
-        seed_random.change(lambda rand: gr.Text(visible=rand is False),
-                           inputs=[seed_random],
-                           outputs=[seed],
+        seed_random_comp.change(lambda rand: gr.Text(visible=rand is False),
+                           inputs=[seed_random_comp],
+                           outputs=[seed_comp],
                            queue=False,
                            show_progress="hidden")
 
-        presets.change(modules.presets.update_preset_state,
-                       inputs=[presets, model, sampler, scheduler, cfg, prompt, negative_prompt,
-                               styles_list, performance_rd, *lora_ctrls],
-                       outputs=[model, sampler, scheduler, cfg, prompt, negative_prompt, styles_list,
-                                performance_rd, *lora_ctrls],
+        presets_comp.change(modules.presets.update_preset_state,
+                       inputs=[presets_comp, model_comp, sampler_comp, scheduler_comp,
+                               cfg_comp, prompt_comp, negative_prompt_comp,
+                               styles_list_comp, performance_rd_comp, *lora_comps],
+                       outputs=[model_comp, sampler_comp, scheduler_comp, cfg_comp,
+                                prompt_comp, negative_prompt_comp, styles_list_comp,
+                                performance_rd_comp, *lora_comps],
                        show_progress=False)
 
-        advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
+        advanced_checkbox_comp.change(lambda x: gr.update(visible=x), advanced_checkbox_comp,
+                                 advanced_column_comp,
                                  queue=False, show_progress=False)
 
-        @gradio_receiver_style_selections.change(inputs=[styles_list, style_search_bar],
-                                                 outputs=[styles_list])
+        @gradio_receiver_style_selections_comp.change(inputs=[styles_list_comp,
+                                                              style_search_bar_comp],
+                                                 outputs=[styles_list_comp])
         def style_blur(selected_styles, searched_styles):
             styles_list, _ = modules.styles.generate_styles_list(selected_styles,
                                                                  searched_styles, {})
             return styles_list
 
-        @scale.change(inputs=[scale, ratio], outputs=[ratio], show_progress=False)
+        @scale_comp.change(inputs=[scale_comp, ratio_comp], outputs=[ratio_comp],
+                           show_progress=False)
         def ratio_change(scale, ratio):
             ratio_list = get_ratios_for_scale(scale)
             ratio = ratio.split(" ")[0]
             new_ratio = get_matching_ratio(ratio, ratio_list)
             return gr.Dropdown(choices=ratio_list, value=new_ratio)
 
-        @performance_rd.input(inputs=[performance_rd, state],
-                              outputs=[state, steps, cfg, scheduler, sampler],
+        @performance_rd_comp.input(inputs=[performance_rd_comp, state_comp],
+                              outputs=[state_comp, steps_comp, cfg_comp, scheduler_comp,
+                                       sampler_comp],
                               show_progress=False)
         async def performance(performance_rd, state):
             match performance_rd:
@@ -269,12 +276,12 @@ def run(comfy_address):
                     state["perf_lora"] = "Hyper"
                     return [state, 4, 1.0, "sgm_uniform", "dpmpp_2m_sde"]
 
-        @stop_btn.click(inputs=[state])
+        @stop_btn_comp.click(inputs=[state_comp])
         async def stop(state):
             await modules.comfy.clear_queue(comfy_address, state["client_id"])
             await modules.comfy.interrupt(comfy_address, state["client_id"])
 
-        @skip_btn.click(inputs=[state])
+        @skip_btn_comp.click(inputs=[state_comp])
         async def skip(state):
             await modules.comfy.interrupt(comfy_address, state["client_id"])
 
@@ -297,7 +304,7 @@ def run(comfy_address):
             progress = modules.html.generate_progress_bar(0, "Starting...")
             progress = gr.HTML(progress, visible=True)
             yield {
-                progress_bar: progress
+                progress_bar_comp: progress
             }
 
             # Make max size large enough for the images
@@ -365,12 +372,16 @@ def run(comfy_address):
                 ws.close()
                 raise
 
-        generate_btn.click(generate_fn,
-                       inputs=[prompt, count, ratio, model, steps, sampler,
-                               scheduler, negative_prompt, state, seed, seed_random,
-                               stop_btn, skip_btn, generate_btn, cfg, vae, skip_clip, *lora_ctrls],
-                       outputs=[gallery, progress_bar, preview_window, stop_btn,
-                                skip_btn, generate_btn, state, seed],
+        generate_btn_comp.click(generate_fn,
+                       inputs=[prompt_comp, count_comp, ratio_comp, model_comp,
+                               steps_comp, sampler_comp, scheduler_comp,
+                               negative_prompt_comp, state_comp, seed_comp,
+                               seed_random_comp, stop_btn_comp, skip_btn_comp,
+                               generate_btn_comp, cfg_comp, vae_comp, skip_clip_comp,
+                               *lora_comps],
+                       outputs=[gallery_comp, progress_bar_comp, preview_window_comp,
+                                stop_btn_comp, skip_btn_comp, generate_btn_comp,
+                                state_comp, seed_comp],
                        show_progress="hidden")
     server.launch(allowed_paths=ALLOWED_PATHS)
 
