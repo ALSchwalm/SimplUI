@@ -101,6 +101,7 @@ BASIC_WORKFLOW = """
 }
 """
 
+
 def link_lora_to_workflow(node_name, workflow, lora_name, weight):
     prior_node_name = workflow["sampler"]["inputs"]["model"][0]
     new_node = {
@@ -109,19 +110,30 @@ def link_lora_to_workflow(node_name, workflow, lora_name, weight):
             "inputs": {
                 "lora_name": lora_name,
                 "strength_model": weight,
-                "model": [
-                    prior_node_name,
-                    0
-                ],
-            }
+                "model": [prior_node_name, 0],
+            },
         }
     }
     workflow.update(new_node)
     workflow["sampler"]["inputs"]["model"][0] = node_name
 
-async def render(model, sampler, scheduler, steps, width,
-           height, positive, negative, cfg, vae, skip_clip,
-           perf_lora, model_details, loras):
+
+async def render(
+    model,
+    sampler,
+    scheduler,
+    steps,
+    width,
+    height,
+    positive,
+    negative,
+    cfg,
+    vae,
+    skip_clip,
+    perf_lora,
+    model_details,
+    loras,
+):
     workflow = json.loads(BASIC_WORKFLOW)
     workflow["sampler"]["inputs"]["sampler_name"] = sampler
     workflow["sampler"]["inputs"]["scheduler"] = scheduler
@@ -142,7 +154,7 @@ async def render(model, sampler, scheduler, steps, width,
     workflow["latent_image"]["inputs"]["batch_size"] = 1
 
     for i in range(0, len(loras), 3):
-        enabled, value, weight = loras[i:i+3]
+        enabled, value, weight = loras[i : i + 3]
         if not enabled:
             continue
         lora_node_name = f"lora_{i}"
@@ -154,15 +166,12 @@ async def render(model, sampler, scheduler, steps, width,
                 details = await model_details
                 base_model = details[model]["base_model"]
                 if base_model == "sdxl":
-                    link_lora_to_workflow(perf_lora, workflow,
-                                          SDXL_HYPER_LORA, 1.0)
+                    link_lora_to_workflow(perf_lora, workflow, SDXL_HYPER_LORA, 1.0)
                 elif base_model == "sd15":
-                    link_lora_to_workflow(perf_lora, workflow,
-                                          SD15_HYPER_LORA, 1.0)
+                    link_lora_to_workflow(perf_lora, workflow, SD15_HYPER_LORA, 1.0)
                 else:
-                    #TODO: show an error here
+                    # TODO: show an error here
                     pass
-
 
     if vae != "Builtin":
         vae_node = {
@@ -170,7 +179,7 @@ async def render(model, sampler, scheduler, steps, width,
                 "class_type": "VAELoader",
                 "inputs": {
                     "vae_name": vae,
-                }
+                },
             }
         }
         workflow.update(vae_node)
