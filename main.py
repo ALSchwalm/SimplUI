@@ -76,6 +76,7 @@ HEAD, ALLOWED_PATHS = modules.html.render_head()
 def run(comfy_address, host, port):
     async def set_initial_state(
         state_comp,
+        server_state_comp,
         model_comp,
         sampler_comp,
         scheduler_comp,
@@ -104,8 +105,11 @@ def run(comfy_address, host, port):
         state["perf_lora"] = None
 
         # Getting this info can take a while, so store a task
-        # that we'll await when we actually need the info
-        state["model_details"] = await modules.comfy.get_model_details(comfy_address)
+        # that we'll await when we actually need the info. This
+        # is not plain data, so it must be stored server side.
+        server_state = {
+            "model_details": await modules.comfy.get_model_details(comfy_address)
+        }
 
         ratio_list = get_ratios_for_scale(DEFAULT_SCALE)
         default_ratio = get_matching_ratio(DEFAULT_RATIO, ratio_list)
@@ -181,10 +185,22 @@ def run(comfy_address, host, port):
             )
 
         output[state_comp] = state
+        output[server_state_comp] = server_state
         return output
 
     with gr.Blocks(head=HEAD, title="SimplUI") as server:
-        state_comp = gr.State({})
+        # Avoid using gr.State here, because that is lost if the server
+        # restarts or after the timeout. But we know the client state is
+        # actually all just available, we don't really keep anything. So
+        # just let the client feed it back to us through this invisible
+        # json component. Only downside here is that all "state" has to
+        # be plain data.
+        state_comp = gr.JSON({}, visible=False)
+
+        # For things that are not plain data, we store them in this, but
+        # keep in mind it will be lost if the client doesn't send anything
+        # for a while. Ensure that isn't an error
+        server_state_comp = gr.State()
 
         with gr.Row():
             with gr.Column(scale=2):
@@ -365,9 +381,14 @@ def run(comfy_address, host, port):
         ]
 
         async def set_initial_state_apply():
-            return await set_initial_state(state_comp, *presetable_comps)
+            return await set_initial_state(
+                state_comp, server_state_comp, *presetable_comps
+            )
 
-        server.load(set_initial_state_apply, outputs=[state_comp] + presetable_comps)
+        server.load(
+            set_initial_state_apply,
+            outputs=[state_comp, server_state_comp] + presetable_comps,
+        )
 
         style_search_bar_comp.change(
             modules.styles.generate_styles_list,
@@ -459,6 +480,7 @@ def run(comfy_address, host, port):
             scheduler,
             negative_prompt,
             state,
+            server_state,
             seed,
             seed_random,
             stop_btn,
@@ -469,6 +491,8 @@ def run(comfy_address, host, port):
             skip_clip,
             *lora_ctrls,
         ):
+            # TODO: this is reflected from the client so we probably shouldn't
+            # trust it.
             client_id = state["client_id"]
 
             width, height = resolution_from_ratio(ratio).split("×")
@@ -477,6 +501,17 @@ def run(comfy_address, host, port):
             negative = modules.styles.render_styles_prompt(
                 negative_prompt, state["negative_styles"]
             )
+
+            # If the server has restarted or the client has timed out, there won't be
+            # any server state object, so start the details gather task in case we need
+            # it in the renderer
+            if server_state is None or "model_details" not in server_state:
+                model_details = await modules.comfy.get_model_details(comfy_address)
+                # And go ahead and yield here to update the component so we don't
+                # need to do this again
+                yield {server_state_comp: {"model_details": model_details}}
+            else:
+                model_details = server_state["model_details"]
 
             workflow = await modules.workflow.render(
                 model,
@@ -491,7 +526,7 @@ def run(comfy_address, host, port):
                 vae,
                 skip_clip,
                 state["perf_lora"],
-                state["model_details"],
+                model_details,
                 lora_ctrls,
             )
             pprint(workflow)
@@ -512,7 +547,7 @@ def run(comfy_address, host, port):
 
             if seed_random:
                 # generate a new one and return it
-                seed = random.randrange(0, state["options"]["seed_max"])
+                seed = random.randrange(0, int(state["options"]["seed_max"]))
 
             prompt_ids = await modules.comfy.send_prompts(
                 comfy_address, workflow, client_id, int(seed), count, state
@@ -555,27 +590,27 @@ def run(comfy_address, host, port):
                     else:
                         output_images = gr.Gallery(completed_images, visible=True)
 
-                    yield [
-                        output_images,
-                        progress,
-                        preview,
-                        stop_btn,
-                        skip_btn,
-                        generate_btn,
-                        state,
-                        seed,
-                    ]
+                    yield {
+                        gallery_comp: output_images,
+                        progress_bar_comp: progress,
+                        preview_window_comp: preview,
+                        stop_btn_comp: stop_btn,
+                        skip_btn_comp: skip_btn,
+                        generate_btn_comp: generate_btn,
+                        state_comp: state,
+                        seed_comp: seed,
+                    }
 
-                yield [
-                    gr.Gallery(completed_images, visible=True),
-                    gr.HTML(visible=False),
-                    gr.Image(visible=False),
-                    gr.Button(visible=False),
-                    gr.Button(visible=False),
-                    gr.Button(visible=True),
-                    state,
-                    seed,
-                ]
+                yield {
+                    gallery_comp: gr.Gallery(completed_images, visible=True),
+                    progress_bar_comp: gr.HTML(visible=False),
+                    preview_window_comp: gr.Image(visible=False),
+                    stop_btn_comp: gr.Button(visible=False),
+                    skip_btn_comp: gr.Button(visible=False),
+                    generate_btn_comp: gr.Button(visible=True),
+                    state_comp: state,
+                    seed_comp: seed,
+                }
             except GeneratorExit:
                 modules.comfy.clear_queue(comfy_address, state["client_id"])
                 modules.comfy.interrupt(comfy_address, state["client_id"])
@@ -594,6 +629,7 @@ def run(comfy_address, host, port):
                 scheduler_comp,
                 negative_prompt_comp,
                 state_comp,
+                server_state_comp,
                 seed_comp,
                 seed_random_comp,
                 stop_btn_comp,
@@ -612,6 +648,7 @@ def run(comfy_address, host, port):
                 skip_btn_comp,
                 generate_btn_comp,
                 state_comp,
+                server_state_comp,
                 seed_comp,
             ],
             show_progress="hidden",

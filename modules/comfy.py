@@ -38,7 +38,7 @@ async def get_available_options(comfy_address):
         ][0]
         opts["sampler"] = nodes["KSampler"]["input"]["required"]["sampler_name"][0]
         opts["scheduler"] = nodes["KSampler"]["input"]["required"]["scheduler"][0]
-        opts["seed_max"] = nodes["KSampler"]["input"]["required"]["seed"][1]["max"]
+        opts["seed_max"] = str(nodes["KSampler"]["input"]["required"]["seed"][1]["max"])
         opts["loras"] = nodes["LoraLoaderModelOnly"]["input"]["required"]["lora_name"][0]
         opts["vaes"] = nodes["VAELoader"]["input"]["required"]["vae_name"][0]
         opts["skip_max"] = (
