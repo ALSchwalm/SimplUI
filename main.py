@@ -470,6 +470,13 @@ def run(comfy_address, host, port):
         async def skip(state):
             await modules.comfy.interrupt(comfy_address, state["client_id"])
 
+        async def generate_fn_wrapper(*args):
+            try:
+                async for res in generate_fn(*args):
+                    yield res
+            except Exception as e:
+                raise gr.Error(str(e))
+
         async def generate_fn(
             text,
             count,
@@ -618,7 +625,7 @@ def run(comfy_address, host, port):
                 raise
 
         generate_btn_comp.click(
-            generate_fn,
+            generate_fn_wrapper,
             inputs=[
                 prompt_comp,
                 count_comp,
