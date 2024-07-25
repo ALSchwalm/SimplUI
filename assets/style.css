@@ -1,5 +1,11 @@
 /* based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/style.css */
 
+/* Make sure the tabs in the dropdown are not collapsed */
+#ratio-drop li {
+    white-space: pre;
+    tab-size: 4;
+}
+
 /* Make things fit a little better on small screens */
 @media (max-width: 800px) {
   #final-gallery, #preview-image {

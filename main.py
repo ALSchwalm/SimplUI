@@ -54,7 +54,13 @@ def as_ratio(resolution, scale):
     b = int(b)
     g = math.gcd(a, b)
     ratio = f"{a // g}:{b // g}"
-    return f"{ratio} \U00002223 {int(a * scale)}×{int(b * scale)}"
+
+    # Hack to get these aligned without a bunch of javascript/css
+    tabs = "\t\t"
+    if len(ratio) > 4:
+        tabs = "\t"
+
+    return f"{ratio} {tabs}\U00002223 {int(a * scale)}×{int(b * scale)}"
 
 
 def get_ratios_for_scale(scale):
@@ -266,6 +272,7 @@ def run(comfy_address, host, port):
                             label="Aspect Ratio",
                             allow_custom_value=False,
                             filterable=False,
+                            elem_id='ratio-drop'
                         )
 
                         scale_comp = gr.Dropdown(
