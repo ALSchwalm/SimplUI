@@ -32,6 +32,44 @@ BASIC_WORKFLOW = """
             "steps": 0
         }
     },
+    "upscale_sampler": {
+        "class_type": "KSampler",
+        "inputs": {
+            "cfg": 8,
+            "denoise": 0.7,
+            "latent_image": [
+                "upscaler",
+                0
+            ],
+            "model": [
+                "loader",
+                0
+            ],
+            "negative": [
+                "negative_clip",
+                0
+            ],
+            "positive": [
+                "positive_clip",
+                0
+            ],
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "simple",
+            "seed": 0,
+            "steps": 1
+        }
+    },
+    "upscaler" : {
+        "class_type": "LatentUpscaleBy",
+        "inputs": {
+            "samples": [
+                "sampler",
+                0
+            ],
+            "upscale_method": "nearest-exact",
+            "scale_by": 0.0
+        }
+    },
     "loader": {
         "class_type": "CheckpointLoaderSimple",
         "inputs": {
@@ -123,8 +161,10 @@ async def render(
     sampler,
     scheduler,
     steps,
+    upscale_steps,
     width,
     height,
+    scale,
     positive,
     negative,
     cfg,
@@ -185,5 +225,10 @@ async def render(
         workflow.update(vae_node)
         workflow["vae_decode"]["inputs"]["vae"][0] = "vae_load"
         workflow["vae_decode"]["inputs"]["vae"][1] = 0
+
+    if scale > 1.0:
+        workflow["vae_decode"]["inputs"]["samples"][0] = "upscale_sampler"
+        workflow["upscaler"]["inputs"]["scale_by"] = scale
+        workflow["upscale_sampler"]["inputs"]["steps"] = upscale_steps
 
     return workflow

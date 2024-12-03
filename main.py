@@ -43,10 +43,11 @@ BASE_RESOLUTIONS = [
     "1728×576",
 ]
 
-SCALES = ["0.5 (SD1.5)", "0.75", "1.0 (SDXL)", "1.25", "1.5"]
+SCALES = ["0.5 (SD1.5)", "0.75", "1.0 (SDXL)", "1.25", "1.5", "2.0"]
 DEFAULT_SCALE = "1.0 (SDXL)"
 DEFAULT_RATIO = "7:9"
 
+DEFAULT_UPSCALE_STEPS = 12
 
 def as_ratio(resolution, scale):
     a, b = resolution.split("×")
@@ -488,6 +489,7 @@ def run(comfy_address, host, port):
             text,
             count,
             ratio,
+            scale,
             model,
             steps,
             sampler,
@@ -511,6 +513,17 @@ def run(comfy_address, host, port):
 
             width, height = resolution_from_ratio(ratio).split("×")
 
+            needs_upscale = True if float(scale.split(" ")[0]) > 1.0 else False
+
+            #TODO: this is a hack
+            if needs_upscale:
+                ratio_list = get_ratios_for_scale(scale)
+                idx = ratio_list.index(ratio)
+                base_list = get_ratios_for_scale(DEFAULT_SCALE)
+                width, height = resolution_from_ratio(base_list[idx]).split("×")
+
+            scale = float(scale.split(" ")[0])
+
             positive = modules.styles.render_styles_prompt(text, state["positive_styles"])
             negative = modules.styles.render_styles_prompt(
                 negative_prompt, state["negative_styles"]
@@ -532,8 +545,10 @@ def run(comfy_address, host, port):
                 sampler,
                 scheduler,
                 steps,
+                DEFAULT_UPSCALE_STEPS,
                 width,
                 height,
+                scale,
                 positive,
                 negative,
                 cfg,
@@ -552,7 +567,7 @@ def run(comfy_address, host, port):
 
             # Make max size large enough for the images
             ws = await connect(
-                f"ws://{comfy_address}/ws?clientId={client_id}", max_size=3000000
+                f"ws://{comfy_address}/ws?clientId={client_id}", max_size=None
             )
 
             completed_images = []
@@ -578,10 +593,15 @@ def run(comfy_address, host, port):
                         if resp["node"] == "save":
                             completed_images.append(resp["image"])
                             current_progress = 0
-                        elif resp["node"] == "sampler":
+                        elif resp["node"] in ("sampler", "upscale_sampler"):
                             current_preview = resp["image"]
                     elif "progress" in resp:
-                        current_progress = resp["progress"]
+                        if not needs_upscale:
+                            current_progress = resp["progress"]
+                        elif resp["node"] == "sampler":
+                            current_progress = resp["progress"]/2
+                        else:
+                            current_progress = 50 + resp["progress"]/2
 
                     total_progress = STATIC_PROGRESS + (1 - STATIC_PROGRESS / 100) * (
                         len(completed_images) * 100 / count + current_progress / count
@@ -626,9 +646,9 @@ def run(comfy_address, host, port):
                     seed_comp: seed,
                 }
             except GeneratorExit:
-                modules.comfy.clear_queue(comfy_address, state["client_id"])
-                modules.comfy.interrupt(comfy_address, state["client_id"])
-                ws.close()
+                await modules.comfy.clear_queue(comfy_address, state["client_id"])
+                await modules.comfy.interrupt(comfy_address, state["client_id"])
+                await ws.close()
                 raise
 
         generate_btn_comp.click(
@@ -637,6 +657,7 @@ def run(comfy_address, host, port):
                 prompt_comp,
                 count_comp,
                 ratio_comp,
+                scale_comp,
                 model_comp,
                 steps_comp,
                 sampler_comp,

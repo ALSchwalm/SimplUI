@@ -99,6 +99,7 @@ async def send_prompts(comfy_address, prompt, client_id, seed, count, state):
     # Queue each prompt with a seed derived from the user seed
     for _ in range(count):
         prompt["sampler"]["inputs"]["seed"] = seed
+        prompt["upscale_sampler"]["inputs"]["seed"] = seed
         ids.append((await queue_prompt(comfy_address, prompt, client_id))["prompt_id"])
         seed = int(rng.randint(state["options"]["seed_max"], dtype="uint64"))
     return ids
@@ -111,6 +112,11 @@ def render_node_text(node_data):
                 return "Sampling Step {}/{}".format(node_data["value"], node_data["max"])
             else:
                 return "Preparing sampling"
+        case "upscale_sampler":
+            if "value" in node_data and "max" in node_data:
+                return "Upscaling Step {}/{}".format(node_data["value"], node_data["max"])
+            else:
+                return "Preparing upscaling"
         case "negative_clip":
             return "Encoding negative"
         case "positive_clip":
@@ -162,7 +168,7 @@ async def stream_updates(ws, prompt_ids):
                     "prompt": current_prompt,
                     "text": render_node_text(data),
                 }
-            elif message["type"] == "progress" and data["node"] == "sampler":
+            elif message["type"] == "progress" and data["node"] in ("sampler", "upscale_sampler"):
                 max = data["max"]
                 current = data["value"]
                 progress = current / max * 100
