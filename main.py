@@ -218,6 +218,7 @@ def run(comfy_address, host, port):
                         visible=False,
                         height=768,
                         elem_id="preview-image",
+                        format="jpeg"
                     )
                     gallery_comp = gr.Gallery(
                         label="Gallery",
@@ -231,6 +232,7 @@ def run(comfy_address, host, port):
                             "image_gallery",
                         ],
                         elem_id="final-gallery",
+                        format="jpeg"
                     )
 
                 progress_bar_comp = gr.HTML(
