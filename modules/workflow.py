@@ -36,9 +36,9 @@ BASIC_WORKFLOW = """
         "class_type": "KSampler",
         "inputs": {
             "cfg": 8,
-            "denoise": 0.7,
+            "denoise": 0.3,
             "latent_image": [
-                "upscaler",
+                "upscale_vae_encode",
                 0
             ],
             "model": [
@@ -59,11 +59,37 @@ BASIC_WORKFLOW = """
             "steps": 1
         }
     },
-    "upscaler" : {
-        "class_type": "LatentUpscaleBy",
+    "upscale_vae_decode": {
+        "class_type": "VAEDecode",
         "inputs": {
             "samples": [
                 "sampler",
+                0
+            ],
+            "vae": [
+                "loader",
+                2
+            ]
+        }
+    },
+    "upscale_vae_encode": {
+        "class_type": "VAEEncode",
+        "inputs": {
+            "pixels": [
+                "upscaler",
+                0
+            ],
+            "vae": [
+                "loader",
+                2
+            ]
+        }
+    },
+    "upscaler" : {
+        "class_type": "ImageScaleBy",
+        "inputs": {
+            "image": [
+                "upscale_vae_decode",
                 0
             ],
             "upscale_method": "nearest-exact",

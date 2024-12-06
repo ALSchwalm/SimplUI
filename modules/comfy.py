@@ -114,15 +114,21 @@ def render_node_text(node_data):
                 return "Preparing sampling"
         case "upscale_sampler":
             if "value" in node_data and "max" in node_data:
-                return "Upscaling Step {}/{}".format(node_data["value"], node_data["max"])
+                return "Upscale Detail Step {}/{}".format(node_data["value"], node_data["max"])
             else:
-                return "Preparing upscaling"
+                return "Preparing Upscale Detail"
         case "negative_clip":
             return "Encoding negative"
         case "positive_clip":
             return "Encoding positive"
         case "loader":
             return "Loading model"
+        case "upscaler":
+            return "Upscaling"
+        case "upscale_vae_encode":
+            return "Upscaling"
+        case "upscale_vae_decode":
+            return "Upscaling"
         case "vae_decode":
             return "Rendering"
         case "save":
