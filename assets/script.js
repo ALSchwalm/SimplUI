@@ -1,3 +1,6 @@
+// Avoid accidental 'back'
+window.onbeforeunload = function() { return true; }
+
 function initStylePreviewOverlay() {
     let overlayVisible = false;
     const samplesPath = document.querySelector("meta[name='samples-path']").getAttribute("content")
