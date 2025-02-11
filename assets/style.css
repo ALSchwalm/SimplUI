@@ -29,6 +29,7 @@
 
 .progress-bar{
   height: 30px !important;
+  overflow: visible !important;
 }
 
 .progress-bar span {
