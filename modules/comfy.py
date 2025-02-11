@@ -53,7 +53,7 @@ async def get_available_options(comfy_address):
 async def get_model_details(comfy_address):
     async def _get_model_details():
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            async with session.get(f"http://{comfy_address}/etn/model_info") as resp:
+            async with session.get(f"http://{comfy_address}/api/etn/model_info") as resp:
                 return await resp.json()
 
     return asyncio.create_task(_get_model_details())

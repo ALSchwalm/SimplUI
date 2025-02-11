@@ -1,6 +1,7 @@
 import argparse
 import gradio as gr
 import uuid
+import pathlib
 from websockets.client import connect
 from pprint import pprint
 import random
@@ -10,6 +11,15 @@ import modules.html
 import modules.comfy
 import modules.workflow
 import modules.presets
+import modules.utils
+
+# This is a terrible hack. When the client sends after a server
+# disconnect, there will be no server side state. That's fine because
+# we keep and reflect everything back, but some dropdowns have choices
+# that are populated on the server during page load. This means the
+# choices list is empty when the client sends, causing preprocessing
+# to fail. Monkey patch to disable preprocessing for this field.
+gr.Dropdown.preprocess = lambda self, payload: payload
 
 # Show the bar 10% full after starting
 STATIC_PROGRESS = 10
@@ -115,7 +125,8 @@ def run(comfy_address, host, port):
         # that we'll await when we actually need the info. This
         # is not plain data, so it must be stored server side.
         server_state = {
-            "model_details": await modules.comfy.get_model_details(comfy_address)
+            "model_details": await modules.comfy.get_model_details(comfy_address),
+            "history": []
         }
 
         ratio_list = get_ratios_for_scale(DEFAULT_SCALE)
@@ -195,7 +206,8 @@ def run(comfy_address, host, port):
         output[server_state_comp] = server_state
         return output
 
-    with gr.Blocks(head=HEAD, title="SimplUI") as server:
+    css = pathlib.Path(modules.utils.absolute_from_root_relative("./assets/style.css")).read_text()
+    with gr.Blocks(head=HEAD, title="SimplUI", css=css) as server:
         # Avoid using gr.State here, because that is lost if the server
         # restarts or after the timeout. But we know the client state is
         # actually all just available, we don't really keep anything. So
@@ -209,7 +221,7 @@ def run(comfy_address, host, port):
         # for a while. Ensure that isn't an error
         server_state_comp = gr.State()
 
-        with gr.Row():
+        with gr.Row(equal_height=True):
             with gr.Column(scale=2):
                 with gr.Row():
                     preview_window_comp = gr.Image(
@@ -239,7 +251,7 @@ def run(comfy_address, host, port):
                     visible=False, elem_id="progress-bar", elem_classes="progress-bar"
                 )
 
-                with gr.Row():
+                with gr.Row(equal_height=True):
                     with gr.Column(scale=17):
                         prompt_comp = gr.Textbox(label="Prompt", lines=2)
 
@@ -271,15 +283,20 @@ def run(comfy_address, host, port):
                         )
 
                     with gr.Row():
+                        ratio_list = get_ratios_for_scale(DEFAULT_SCALE)
+                        default_ratio = get_matching_ratio(DEFAULT_RATIO, ratio_list)
                         ratio_comp = gr.Dropdown(
                             label="Aspect Ratio",
                             allow_custom_value=False,
                             filterable=False,
-                            elem_id='ratio-drop'
+                            elem_id='ratio-drop',
+                            choices=ratio_list,
+                            value=default_ratio
                         )
 
                         scale_comp = gr.Dropdown(
-                            label="Scale", allow_custom_value=False, filterable=False
+                            label="Scale", allow_custom_value=False, filterable=False,
+                            choices=SCALES, value=DEFAULT_SCALE
                         )
 
                     with gr.Group():
@@ -372,6 +389,22 @@ def run(comfy_address, host, port):
                             label="VAE", allow_custom_value=False, filterable=False
                         )
                         skip_clip_comp = gr.Slider(minimum=1, step=1, label="Skip CLIP")
+
+                with gr.Tab(label="History"):
+                    history_comp = gr.Gallery(
+                        label="History",
+                        show_label=False,
+                        object_fit="contain",
+                        height=768,
+                        elem_classes=[
+                            "resizable_area",
+                            "main_view",
+                            "history_gallery",
+                            "image_gallery",
+                        ],
+                        elem_id="history-gallery",
+                        format="jpeg"
+                    )
 
         presetable_comps = [
             model_comp,
@@ -538,7 +571,8 @@ def run(comfy_address, host, port):
                 model_details = await modules.comfy.get_model_details(comfy_address)
                 # And go ahead and yield here to update the component so we don't
                 # need to do this again
-                yield {server_state_comp: {"model_details": model_details}}
+                server_state = {**(server_state or {}), "model_details": model_details}
+                yield {server_state_comp: server_state}
             else:
                 model_details = server_state["model_details"]
 
@@ -637,8 +671,15 @@ def run(comfy_address, host, port):
                         seed_comp: seed,
                     }
 
+                # If we are now reconnecting, the server side history will be empty
+                if server_state is None or "history" not in server_state:
+                    server_state = {**(server_state or {}), "history": completed_images}
+                else:
+                    server_state["history"].extend(completed_images)
+
                 yield {
                     gallery_comp: gr.Gallery(completed_images, visible=True),
+                    history_comp: gr.Gallery(server_state["history"], visible=True),
                     progress_bar_comp: gr.HTML(visible=False),
                     preview_window_comp: gr.Image(visible=False),
                     stop_btn_comp: gr.Button(visible=False),
@@ -646,6 +687,7 @@ def run(comfy_address, host, port):
                     generate_btn_comp: gr.Button(visible=True),
                     state_comp: state,
                     seed_comp: seed,
+                    server_state_comp: server_state
                 }
             except GeneratorExit:
                 await modules.comfy.clear_queue(comfy_address, state["client_id"])
@@ -687,6 +729,7 @@ def run(comfy_address, host, port):
                 state_comp,
                 server_state_comp,
                 seed_comp,
+                history_comp
             ],
             show_progress="hidden",
         )
