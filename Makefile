@@ -22,3 +22,5 @@ check:
 run: venv
 	source venv/bin/activate
 	python main.py --comfy-addr $(COMFY_ADDR) --listen $(HOST_IP) --port $(HOST_PORT)
+
+all: run

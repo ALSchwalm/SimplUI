@@ -106,6 +106,9 @@ def run(comfy_address, host, port):
         scale_comp,
         vae_comp,
         skip_clip_comp,
+        clip_comp,
+        clip_type_comp,
+        aura_shift_comp,
         steps_comp,
         *lora_comps,
     ):
@@ -146,6 +149,9 @@ def run(comfy_address, host, port):
             vae_comp: "Builtin",
             skip_clip_comp: 2,
             steps_comp: 30,
+            clip_comp: "Builtin",
+            clip_type_comp: "Builtin",
+            aura_shift_comp: 0.0
         }
 
         preset = modules.presets.update_preset_state(
@@ -162,6 +168,9 @@ def run(comfy_address, host, port):
             scale_comp,
             vae_comp,
             skip_clip_comp,
+            clip_comp,
+            clip_type_comp,
+            aura_shift_comp,
             steps_comp,
             *lora_comps,
         )
@@ -189,7 +198,18 @@ def run(comfy_address, host, port):
 
         output[ratio_comp] = gr.Dropdown(choices=ratio_list, value=output[ratio_comp])
         output[skip_clip_comp] = gr.Slider(
-            value=output[skip_clip_comp], maximum=options["skip_max"]
+            value=output[skip_clip_comp], minimum=0, maximum=options["skip_max"]
+        )
+
+        output[clip_comp] = gr.Dropdown(
+            value=output[clip_comp], choices=options["clips"] + ["Builtin"]
+        )
+        output[clip_type_comp] = gr.Dropdown(
+            value=output[clip_type_comp], choices=options["clip_types"] + ["Builtin"]
+        )
+
+        output[aura_shift_comp] = gr.Slider(
+            value=output[aura_shift_comp], minimum=0
         )
 
         for i in range(0, len(lora_comps), 3):
@@ -390,6 +410,19 @@ def run(comfy_address, host, port):
                         )
                         skip_clip_comp = gr.Slider(minimum=1, step=1, label="Skip CLIP")
 
+                    with gr.Row():
+                        clip_comp = gr.Dropdown(
+                            label="CLIP", allow_custom_value=False, filterable=False
+                        )
+                        clip_type_comp = gr.Dropdown(
+                            label="Type", allow_custom_value=False, filterable=False
+                        )
+
+                    with gr.Row():
+                        aura_shift_comp = gr.Slider(
+                            label="Aura Shift", minimum=0.0, maximum=10, step=0.1
+                        )
+
                 with gr.Tab(label="History"):
                     history_comp = gr.Gallery(
                         label="History",
@@ -419,6 +452,9 @@ def run(comfy_address, host, port):
             scale_comp,
             vae_comp,
             skip_clip_comp,
+            clip_comp,
+            clip_type_comp,
+            aura_shift_comp,
             steps_comp,
             *lora_comps,
         ]
@@ -540,6 +576,9 @@ def run(comfy_address, host, port):
             cfg,
             vae,
             skip_clip,
+            clip,
+            clip_type,
+            aura_shift_comp,
             *lora_ctrls,
         ):
             # TODO: this is reflected from the client so we probably shouldn't
@@ -590,6 +629,9 @@ def run(comfy_address, host, port):
                 cfg,
                 vae,
                 skip_clip,
+                clip,
+                clip_type,
+                aura_shift_comp,
                 state["perf_lora"],
                 model_details,
                 lora_ctrls,
@@ -717,6 +759,9 @@ def run(comfy_address, host, port):
                 cfg_comp,
                 vae_comp,
                 skip_clip_comp,
+                clip_comp,
+                clip_type_comp,
+                aura_shift_comp,
                 *lora_comps,
             ],
             outputs=[

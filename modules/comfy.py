@@ -20,6 +20,7 @@ async def get_available_options(comfy_address):
         "LoraLoaderModelOnly",
         "VAELoader",
         "CLIPSetLastLayer",
+        "CLIPLoader"
     ]
     opts = {}
     async with aiohttp.ClientSession(raise_for_status=True) as session:
@@ -47,6 +48,8 @@ async def get_available_options(comfy_address):
                 "min"
             ]
         )
+        opts["clips"] = nodes["CLIPLoader"]["input"]["required"]["clip_name"][0]
+        opts["clip_types"] = nodes["CLIPLoader"]["input"]["required"]["type"][0]
         return opts
 
 

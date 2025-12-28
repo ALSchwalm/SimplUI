@@ -39,6 +39,9 @@ def update_preset_state(
     scale_comp,
     vae_comp,
     skip_clip_comp,
+    clip_comp,
+    clip_type_comp,
+    aura_shift_comp,
     steps_comp,
     *lora_comps
 ):
@@ -82,6 +85,15 @@ def update_preset_state(
 
     if "skip_clip" in preset:
         output[skip_clip_comp] = preset["skip_clip"]
+
+    if "clip" in preset:
+        output[clip_comp] = preset["clip"]
+
+    if "clip_type" in preset:
+        output[clip_type_comp] = preset["clip_type"]
+
+    if "aura_shift" in preset:
+        output[aura_shift_comp] = preset["aura_shift"]
 
     if "steps" in preset:
         output[steps_comp] = preset["steps"]

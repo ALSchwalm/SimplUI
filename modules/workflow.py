@@ -32,6 +32,16 @@ BASIC_WORKFLOW = """
             "steps": 0
         }
     },
+    "aura_shift": {
+        "class_type": "ModelSamplingAuraFlow",
+        "inputs": {
+            "model": [
+                "loader",
+                0
+            ],
+            "shift": 1.0
+        }
+    },
     "upscale_sampler": {
         "class_type": "KSampler",
         "inputs": {
@@ -153,6 +163,13 @@ BASIC_WORKFLOW = """
             "stop_at_clip_layer": -2
         }
     },
+    "clip": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+            "clip_name": "",
+            "clip_type": ""
+        }
+    },
     "save": {
         "class_type": "SaveImageWebsocket",
         "inputs": {
@@ -196,6 +213,9 @@ async def render(
     cfg,
     vae,
     skip_clip,
+    clip,
+    clip_type,
+    aura_shift,
     perf_lora,
     model_details,
     loras,
@@ -213,11 +233,33 @@ async def render(
     workflow["positive_clip"]["inputs"]["text"] = positive
     workflow["negative_clip"]["inputs"]["text"] = negative
 
-    workflow["skip_clip"]["inputs"]["stop_at_clip_layer"] = skip_clip * -1
+    clip_source = ["loader", 1]
+
+    # If there is a specific clip, then that is the source
+    if clip != "Builtin":
+        workflow["clip"]["inputs"]["clip_name"] = clip
+        workflow["clip"]["inputs"]["type"] = clip_type
+        clip_source = ["clip", 0]
+    else:
+        del workflow["clip"]
+
+    # The skip clip takes from the source
+    workflow["skip_clip"]["inputs"]["clip"] = clip_source
+
+    # But if skip clip is off, just bypass the whole skip node
+    if skip_clip != 0:
+        workflow["skip_clip"]["inputs"]["stop_at_clip_layer"] = skip_clip * -1
+    else:
+        workflow["positive_clip"]["inputs"]["clip"] = clip_source
+        workflow["negative_clip"]["inputs"]["clip"] = clip_source
 
     # For now, always use a batch of 1 and queue a request for
     # each image. This way we can skip/cancel and get previews
     workflow["latent_image"]["inputs"]["batch_size"] = 1
+
+    # If there is an aura shift, use it
+    if aura_shift != 0:
+        workflow["sampler"]["inputs"]["model"] = ["aura_shift", 0]
 
     for i in range(0, len(loras), 3):
         enabled, value, weight = loras[i : i + 3]
