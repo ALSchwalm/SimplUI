@@ -1,0 +1,5 @@
+gradio
+requests
+websockets
+pytest
+pytest-cov
