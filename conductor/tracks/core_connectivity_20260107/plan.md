@@ -5,9 +5,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 ## Phase 1: Project Foundation and Basic Connectivity
 
 - [x] Task: Initialize Python project environment and testing framework 0f326fb
-- [ ] Task: ComfyUI Client - Implement health check and basic connectivity
-    - [ ] Sub-task: Write tests for `check_connection`
-    - [ ] Sub-task: Implement `check_connection` using `requests`
+- [x] Task: ComfyUI Client - Implement health check and basic connectivity cec0d23
+    - [x] Sub-task: Write tests for `check_connection`
+    - [x] Sub-task: Implement `check_connection` using `requests`
 - [ ] Task: Configuration Manager - Load ComfyUI URL and workflow list from JSON/YAML
     - [ ] Sub-task: Write tests for config loading
     - [ ] Sub-task: Implement configuration management
