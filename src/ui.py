@@ -4,7 +4,7 @@ import asyncio
 from PIL import Image
 import io
 
-async def handle_generation(workflow_name, config, comfy_client):
+async def handle_generation(workflow_name, prompt_text, config, comfy_client):
     print(f"DEBUG: Starting generation for {workflow_name}")
     # 1. Find workflow path
     workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
@@ -17,7 +17,12 @@ async def handle_generation(workflow_name, config, comfy_client):
         yield None, f"Error loading workflow: {e}"
         return
 
-    # 3. Generate Image (Connect -> Submit -> Listen)
+    # 3. Inject Prompt if provided
+    if prompt_text:
+        print(f"DEBUG: Injecting prompt: {prompt_text}")
+        comfy_client.inject_prompt(workflow_json, prompt_text)
+
+    # 4. Generate Image (Connect -> Submit -> Listen)
     try:
         last_image = None
         async for event in comfy_client.generate_image(workflow_json):
@@ -37,8 +42,8 @@ async def handle_generation(workflow_name, config, comfy_client):
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
-    async def on_generate(workflow_name):
-        async for update in handle_generation(workflow_name, config, comfy_client):
+    async def on_generate(workflow_name, prompt_text):
+        async for update in handle_generation(workflow_name, prompt_text, config, comfy_client):
             yield update
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
@@ -64,7 +69,7 @@ def create_ui(config, comfy_client):
 
         generate_btn.click(
             fn=on_generate,
-            inputs=[workflow_dropdown],
+            inputs=[workflow_dropdown, prompt_input],
             outputs=[output_image, status_text]
         )
         

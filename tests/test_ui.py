@@ -11,6 +11,7 @@ async def test_handle_generation_success():
     config.workflows = [{"name": "Workflow 1", "path": "wf1.json"}]
     
     client = Mock()
+    client.inject_prompt = Mock(return_value=True)
     
     async def mock_generate(workflow):
         yield {"type": "progress", "value": 5, "max": 10}
@@ -23,13 +24,14 @@ async def test_handle_generation_success():
         with patch("json.load", return_value={"mock": "workflow"}):
             with patch("ui.Image.open", return_value="mock_pil_image"):
                 updates = []
-                async for update in handle_generation("Workflow 1", config, client):
+                async for update in handle_generation("Workflow 1", "User Prompt", config, client):
                     updates.append(update)
                 
                 assert len(updates) == 2
                 assert updates[0] == (None, "Progress: 5/10")
                 assert updates[1] == ("mock_pil_image", "Generation complete")
                 
+                client.inject_prompt.assert_called_once_with({"mock": "workflow"}, "User Prompt")
                 client.generate_image.assert_called_once_with({"mock": "workflow"})
 
 def test_ui_components():
