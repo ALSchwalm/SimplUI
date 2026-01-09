@@ -17,7 +17,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: Gradio UI - Add Prompt Textarea component 12c7cd5
     - [x] Sub-task: Write tests for UI component presence and layout
     - [x] Sub-task: Update `create_ui` to include the `Textbox` (lines=3+)
-- [ ] Task: Gradio UI - Integrate prompt into generation flow
-    - [ ] Sub-task: Write integration tests for end-to-end prompt injection
-    - [ ] Sub-task: Update `handle_generation` to pass prompt text to `ComfyClient`
+- [x] Task: Gradio UI - Integrate prompt into generation flow 4416eaa
+    - [x] Sub-task: Write integration tests for end-to-end prompt injection
+    - [x] Sub-task: Update `handle_generation` to pass prompt text to `ComfyClient`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
