@@ -80,3 +80,23 @@ class ComfyClient:
             if node_title.lower() == title:
                 return node_id
         return None
+
+    def inject_prompt(self, workflow, prompt_text):
+        node_id = self.find_node_by_title(workflow, "Prompt")
+        if node_id:
+            # We assume the input field is named 'text' or 'string'.
+            # We prioritize 'text' as it's common for CLIPTextEncode.
+            # A more robust solution would inspect the node type definition, but that requires an API call.
+            inputs = workflow[node_id].get("inputs", {})
+            if "text" in inputs:
+                inputs["text"] = prompt_text
+                return True
+            elif "string" in inputs:
+                inputs["string"] = prompt_text
+                return True
+            # Fallback: if 'text' isn't there, maybe create it? 
+            # Or assume 'text' is the target if inputs is empty?
+            # Let's set 'text' if neither exists, assuming standard CLIPTextEncode behavior.
+            inputs["text"] = prompt_text
+            return True
+        return False

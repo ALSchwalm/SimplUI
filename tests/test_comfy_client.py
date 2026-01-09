@@ -70,3 +70,22 @@ def test_find_node_by_title():
     # Not found
     node_id = client.find_node_by_title(workflow, "NonExistent")
     assert node_id is None
+
+def test_inject_prompt():
+    client = ComfyClient("http://localhost:8188")
+    workflow = {
+        "1": {"_meta": {"title": "Prompt"}, "inputs": {"text": "default"}},
+        "2": {"_meta": {"title": "KSampler"}, "inputs": {}},
+        "3": {"inputs": {"text": "should not change"}}
+    }
+    
+    # Successful injection
+    success = client.inject_prompt(workflow, "New Prompt Value")
+    assert success is True
+    assert workflow["1"]["inputs"]["text"] == "New Prompt Value"
+    assert workflow["3"]["inputs"]["text"] == "should not change"
+    
+    # Injection failure (no node)
+    workflow_no_prompt = {"2": {"_meta": {"title": "KSampler"}, "inputs": {}}}
+    success = client.inject_prompt(workflow_no_prompt, "New Prompt Value")
+    assert success is False
