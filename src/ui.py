@@ -51,6 +51,11 @@ def create_ui(config, comfy_client):
                     label="Select Workflow",
                     value=workflow_names[0] if workflow_names else None
                 )
+                prompt_input = gr.Textbox(
+                    label="Prompt", 
+                    lines=3, 
+                    placeholder="Enter your description here..."
+                )
                 generate_btn = gr.Button("Generate", variant="primary")
                 
             with gr.Column(scale=2):

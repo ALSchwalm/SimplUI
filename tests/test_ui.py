@@ -43,4 +43,8 @@ def test_ui_components():
     assert isinstance(demo, gr.Blocks)
     config_json = demo.get_config_file()
     assert "Workflow 1" in str(config_json)
+    # Check for Generate button
     assert "Generate" in str(config_json)
+    
+    # Check for Prompt textarea
+    assert "Prompt" in str(config_json)
