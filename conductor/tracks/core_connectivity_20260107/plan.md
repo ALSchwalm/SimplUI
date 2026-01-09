@@ -25,9 +25,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 
 ## Phase 3: Basic Gradio Interface
 
-- [ ] Task: Gradio UI - Implement main layout and workflow selection
-    - [ ] Sub-task: Write tests for UI component initialization
-    - [ ] Sub-task: Implement Gradio `Dropdown` and "Generate" `Button`
+- [x] Task: Gradio UI - Implement main layout and workflow selection 6c60d07
+    - [x] Sub-task: Write tests for UI component initialization
+    - [x] Sub-task: Implement Gradio `Dropdown` and "Generate" `Button`
 - [ ] Task: Gradio UI - Integrate image generation and display logic
     - [ ] Sub-task: Write integration tests for end-to-end generation flow
     - [ ] Sub-task: Implement Gradio callback for image generation
