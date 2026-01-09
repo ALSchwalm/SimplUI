@@ -20,3 +20,31 @@ def test_check_connection_exception():
     with patch("requests.get") as mock_get:
         mock_get.side_effect = requests.exceptions.RequestException()
         assert client.check_connection() is False
+
+def test_submit_workflow_success():
+    client = ComfyClient("http://localhost:8188")
+    workflow = {"3": {"inputs": {"seed": 5}}}
+    response_data = {"prompt_id": "12345", "number": 1, "node_errors": {}}
+    
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = response_data
+        
+        prompt_id = client.submit_workflow(workflow)
+        
+        assert prompt_id == "12345"
+        mock_post.assert_called_once_with(
+            "http://localhost:8188/prompt",
+            json={"prompt": workflow}
+        )
+
+def test_submit_workflow_failure():
+    client = ComfyClient("http://localhost:8188")
+    workflow = {}
+    
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.status_code = 400
+        mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError()
+        
+        with pytest.raises(requests.exceptions.HTTPError):
+            client.submit_workflow(workflow)

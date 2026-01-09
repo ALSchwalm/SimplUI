@@ -10,3 +10,8 @@ class ComfyClient:
             return response.status_code == 200
         except requests.exceptions.RequestException:
             return False
+
+    def submit_workflow(self, workflow):
+        response = requests.post(f"{self.base_url}/prompt", json={"prompt": workflow})
+        response.raise_for_status()
+        return response.json().get("prompt_id")
