@@ -50,3 +50,23 @@ def test_submit_workflow_failure():
         
         with pytest.raises(requests.exceptions.HTTPError):
             client.submit_workflow(workflow)
+
+def test_find_node_by_title():
+    client = ComfyClient("http://localhost:8188")
+    workflow = {
+        "1": {"_meta": {"title": "Prompt"}, "inputs": {"text": "default"}},
+        "2": {"_meta": {"title": "KSampler"}, "inputs": {}},
+        "3": {"inputs": {}} # No meta
+    }
+    
+    # Exact match
+    node_id = client.find_node_by_title(workflow, "Prompt")
+    assert node_id == "1"
+    
+    # Case insensitive
+    node_id = client.find_node_by_title(workflow, "prompt")
+    assert node_id == "1"
+    
+    # Not found
+    node_id = client.find_node_by_title(workflow, "NonExistent")
+    assert node_id is None

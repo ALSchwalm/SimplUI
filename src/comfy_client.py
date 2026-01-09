@@ -71,3 +71,12 @@ class ComfyClient:
             params={"filename": filename, "subfolder": subfolder, "type": folder_type}
         )
         return response.content
+
+    def find_node_by_title(self, workflow, title):
+        title = title.lower()
+        for node_id, node_data in workflow.items():
+            meta = node_data.get("_meta", {})
+            node_title = meta.get("title", "")
+            if node_title.lower() == title:
+                return node_id
+        return None
