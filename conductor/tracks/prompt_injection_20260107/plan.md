@@ -7,9 +7,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: ComfyClient - Implement node discovery by title dc6af58
     - [x] Sub-task: Write tests for `find_node_by_title` (case-insensitive)
     - [x] Sub-task: Implement `find_node_by_title` in `ComfyClient`
-- [ ] Task: ComfyClient - Implement prompt injection logic
-    - [ ] Sub-task: Write tests for `inject_prompt`
-    - [ ] Sub-task: Implement `inject_prompt` which updates the workflow dictionary
+- [x] Task: ComfyClient - Implement prompt injection logic 1d5fb3c
+    - [x] Sub-task: Write tests for `inject_prompt`
+    - [x] Sub-task: Implement `inject_prompt` which updates the workflow dictionary
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: UI Integration
