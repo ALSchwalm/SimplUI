@@ -18,9 +18,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: ComfyUI Client - Implement prompt submission 3568978
     - [x] Sub-task: Write tests for `submit_workflow`
     - [x] Sub-task: Implement `submit_workflow` (POST /prompt)
-- [ ] Task: ComfyUI Client - Implement WebSocket listener for progress and output
-    - [ ] Sub-task: Write tests for WebSocket message handling (mocked)
-    - [ ] Sub-task: Implement WebSocket client for image streaming
+- [x] Task: ComfyUI Client - Implement WebSocket listener for progress and output 3e660b9
+    - [x] Sub-task: Write tests for WebSocket message handling (mocked)
+    - [x] Sub-task: Implement WebSocket client for image streaming
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Basic Gradio Interface
