@@ -64,6 +64,9 @@ class ComfyClient:
                                         image_data = self._get_image(filename, subfolder, image["type"])
                                         yield {"type": "image", "data": image_data}
                             break # End loop after receiving images for this prompt
+                elif isinstance(message, bytes):
+                    # Binary message is a preview
+                    yield {"type": "preview", "data": message[8:]}
 
     def _get_image(self, filename, subfolder, folder_type):
         response = requests.get(

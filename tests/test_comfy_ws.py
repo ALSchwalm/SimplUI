@@ -71,3 +71,45 @@ async def test_generate_image_success():
                 
                 # Verify workflow submission
                 mock_post.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_generate_image_with_previews():
+    client = ComfyClient("http://localhost:8188")
+    client.client_id = "conductor_client"
+    prompt_id = "test-prompt-id"
+    workflow = {"test": "workflow"}
+    
+    # Mock WebSocket connection and messages
+    mock_ws = AsyncMock()
+    mock_ws.__aenter__.return_value = mock_ws
+    
+    preview_bytes = b"\x00\x00\x00\x01\x00\x00\x00\x02fake_preview_data"
+    
+    messages = [
+        json.dumps({"type": "status", "data": {"status": {}}}),
+        preview_bytes, # Binary message
+        json.dumps({
+            "type": "executed", 
+            "data": {
+                "prompt_id": prompt_id, 
+                "output": {"images": []}
+            }
+        })
+    ]
+    
+    mock_ws.recv.side_effect = messages
+    
+    with patch("websockets.connect", return_value=mock_ws):
+        with patch("requests.post") as mock_post:
+            mock_post.return_value.status_code = 200
+            mock_post.return_value.json.return_value = {"prompt_id": prompt_id}
+            
+            events = []
+            async for event in client.generate_image(workflow):
+                events.append(event)
+            
+            # Check for preview event
+            assert any(e["type"] == "preview" for e in events)
+            preview_event = next(e for e in events if e["type"] == "preview")
+            # We strip the 8-byte header in implementation
+            assert preview_event["data"] == preview_bytes[8:]
