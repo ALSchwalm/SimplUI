@@ -23,11 +23,22 @@ class ComfyClient:
         response.raise_for_status()
         return response.json().get("prompt_id")
 
-    async def listen_for_images(self, prompt_id):
+    async def generate_image(self, workflow):
         ws_url = self.base_url.replace("http://", "ws://").replace("https://", "wss://")
-        async with websockets.connect(f"{ws_url}/ws?clientId={self.client_id}") as websocket:
+        async with websockets.connect(f"{ws_url}/ws?clientId={self.client_id}", max_size=10 * 1024 * 1024) as websocket:
+            print(f"DEBUG: WebSocket connected to {ws_url}")
+            
+            # Submit workflow AFTER connecting
+            try:
+                prompt_id = self.submit_workflow(workflow)
+                print(f"DEBUG: Workflow submitted. Prompt ID: {prompt_id}")
+            except Exception as e:
+                print(f"DEBUG: Submission failed: {e}")
+                raise e
+
             while True:
                 message = await websocket.recv()
+                # print(f"DEBUG: WS Received (raw): {str(message)[:100]}...")
                 if isinstance(message, str):
                     message = json.loads(message)
                     if message["type"] == "progress":
@@ -39,12 +50,14 @@ class ComfyClient:
                                 "max": data["max"]
                             }
                     elif message["type"] == "executed":
+                        print(f"DEBUG: Executed event received: {message}")
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
                             outputs = data["output"]
                             for key in outputs:
                                 for image in outputs[key]:
-                                    if image["type"] == "output":
+                                    print(f"DEBUG: Found image: {image}")
+                                    if image.get("type") in ["output", "temp"]:
                                         filename = image["filename"]
                                         subfolder = image["subfolder"]
                                         # Note: Blocking call in async loop

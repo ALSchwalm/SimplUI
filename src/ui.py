@@ -1,8 +1,11 @@
 import gradio as gr
 import json
 import asyncio
+from PIL import Image
+import io
 
 async def handle_generation(workflow_name, config, comfy_client):
+    print(f"DEBUG: Starting generation for {workflow_name}")
     # 1. Find workflow path
     workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
     
@@ -14,21 +17,22 @@ async def handle_generation(workflow_name, config, comfy_client):
         yield None, f"Error loading workflow: {e}"
         return
 
-    # 3. Submit to ComfyUI
+    # 3. Generate Image (Connect -> Submit -> Listen)
     try:
-        prompt_id = comfy_client.submit_workflow(workflow_json)
+        last_image = None
+        async for event in comfy_client.generate_image(workflow_json):
+            print(f"DEBUG: Received event: {event['type']}")
+            if event["type"] == "progress":
+                yield last_image, f"Progress: {event['value']}/{event['max']}"
+            elif event["type"] == "image":
+                image_bytes = event["data"]
+                try:
+                    last_image = Image.open(io.BytesIO(image_bytes))
+                    yield last_image, "Generation complete"
+                except Exception as e:
+                    yield last_image, f"Error processing image: {e}"
     except Exception as e:
-        yield None, f"Error submitting workflow: {e}"
-        return
-
-    # 4. Listen for events
-    last_image = None
-    async for event in comfy_client.listen_for_images(prompt_id):
-        if event["type"] == "progress":
-            yield last_image, f"Progress: {event['value']}/{event['max']}"
-        elif event["type"] == "image":
-            last_image = event["data"]
-            yield last_image, "Generation complete"
+        yield None, f"Error during generation: {e}"
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -50,7 +54,7 @@ def create_ui(config, comfy_client):
                 generate_btn = gr.Button("Generate", variant="primary")
                 
             with gr.Column(scale=2):
-                output_image = gr.Image(label="Generated Image")
+                output_image = gr.Image(label="Generated Image", type="pil")
                 status_text = gr.Markdown("Ready")
 
         generate_btn.click(
