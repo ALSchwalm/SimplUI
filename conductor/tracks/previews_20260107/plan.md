@@ -11,7 +11,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 
 ## Phase 2: UI Integration for Live Previews
 
-- [ ] Task: Gradio UI - Update generation loop to handle preview events
-    - [ ] Sub-task: Write integration tests verifying previews are yielded to the UI
-    - [ ] Sub-task: Update `handle_generation` in `src/ui.py` to process `preview` events
+- [x] Task: Gradio UI - Update generation loop to handle preview events d391a19
+    - [x] Sub-task: Write integration tests verifying previews are yielded to the UI
+    - [x] Sub-task: Update `handle_generation` in `src/ui.py` to process `preview` events
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
