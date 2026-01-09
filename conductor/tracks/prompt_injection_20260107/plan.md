@@ -2,7 +2,7 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: Core Logic for Node Discovery and Injection
+## Phase 1: Core Logic for Node Discovery and Injection [checkpoint: 2fdea8c]
 
 - [x] Task: ComfyClient - Implement node discovery by title dc6af58
     - [x] Sub-task: Write tests for `find_node_by_title` (case-insensitive)
@@ -10,7 +10,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: ComfyClient - Implement prompt injection logic 1d5fb3c
     - [x] Sub-task: Write tests for `inject_prompt`
     - [x] Sub-task: Implement `inject_prompt` which updates the workflow dictionary
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 2fdea8c
 
 ## Phase 2: UI Integration
 
