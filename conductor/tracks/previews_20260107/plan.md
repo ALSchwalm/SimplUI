@@ -2,12 +2,12 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: ComfyClient Binary Message Handling
+## Phase 1: ComfyClient Binary Message Handling [checkpoint: 20a264d]
 
 - [x] Task: ComfyClient - Implement binary message detection and decoding 0618bca
     - [x] Sub-task: Write tests for binary message handling in `generate_image` (Mocked WS)
     - [x] Sub-task: Update `generate_image` to detect binary messages and yield `{"type": "preview", "data": bytes}`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 20a264d
 
 ## Phase 2: UI Integration for Live Previews
 
