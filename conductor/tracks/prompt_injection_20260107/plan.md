@@ -12,7 +12,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
     - [x] Sub-task: Implement `inject_prompt` which updates the workflow dictionary
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 2fdea8c
 
-## Phase 2: UI Integration
+## Phase 2: UI Integration [checkpoint: 612dc16]
 
 - [x] Task: Gradio UI - Add Prompt Textarea component 12c7cd5
     - [x] Sub-task: Write tests for UI component presence and layout
@@ -20,4 +20,4 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: Gradio UI - Integrate prompt into generation flow 4416eaa
     - [x] Sub-task: Write integration tests for end-to-end prompt injection
     - [x] Sub-task: Update `handle_generation` to pass prompt text to `ComfyClient`
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) 612dc16
