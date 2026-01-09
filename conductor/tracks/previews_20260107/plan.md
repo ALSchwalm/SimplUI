@@ -9,9 +9,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
     - [x] Sub-task: Update `generate_image` to detect binary messages and yield `{"type": "preview", "data": bytes}`
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 20a264d
 
-## Phase 2: UI Integration for Live Previews
+## Phase 2: UI Integration for Live Previews [checkpoint: 0a9ce80]
 
 - [x] Task: Gradio UI - Update generation loop to handle preview events d391a19
     - [x] Sub-task: Write integration tests verifying previews are yielded to the UI
     - [x] Sub-task: Update `handle_generation` in `src/ui.py` to process `preview` events
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) 0a9ce80
