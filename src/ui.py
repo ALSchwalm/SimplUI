@@ -25,10 +25,18 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client):
     # 4. Generate Image (Connect -> Submit -> Listen)
     try:
         last_image = None
+        last_status = "Starting..."
         async for event in comfy_client.generate_image(workflow_json):
             print(f"DEBUG: Received event: {event['type']}")
             if event["type"] == "progress":
-                yield last_image, f"Progress: {event['value']}/{event['max']}"
+                last_status = f"Progress: {event['value']}/{event['max']}"
+                yield last_image, last_status
+            elif event["type"] == "preview":
+                try:
+                    last_image = Image.open(io.BytesIO(event["data"]))
+                    yield last_image, last_status
+                except Exception as e:
+                    print(f"DEBUG: Error decoding preview: {e}")
             elif event["type"] == "image":
                 image_bytes = event["data"]
                 try:
