@@ -2,7 +2,7 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: Project Foundation and Basic Connectivity
+## Phase 1: Project Foundation and Basic Connectivity [checkpoint: 6955e26]
 
 - [x] Task: Initialize Python project environment and testing framework 0f326fb
 - [x] Task: ComfyUI Client - Implement health check and basic connectivity cec0d23
@@ -11,7 +11,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: Configuration Manager - Load ComfyUI URL and workflow list from JSON/YAML 7bfea68
     - [x] Sub-task: Write tests for config loading
     - [x] Sub-task: Implement configuration management
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 6955e26
 
 ## Phase 2: Workflow Execution and WebSocket Integration
 
