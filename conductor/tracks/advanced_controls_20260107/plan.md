@@ -14,9 +14,9 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 
 ## Phase 2: Dynamic UI Generation
 
-- [ ] Task: Gradio UI - Create Advanced Sidebar layout
-    - [ ] Sub-task: Write tests for sidebar presence
-    - [ ] Sub-task: Implement `gr.Accordion` for "Advanced Controls"
+- [x] Task: Gradio UI - Create Advanced Sidebar layout 7c46364
+    - [x] Sub-task: Write tests for sidebar presence
+    - [x] Sub-task: Implement `gr.Accordion` for "Advanced Controls"
 - [ ] Task: Gradio UI - Implement dynamic form generator
     - [ ] Sub-task: Write tests for dynamic component creation (mocked)
     - [ ] Sub-task: Implement logic to render inputs based on the selected workflow
