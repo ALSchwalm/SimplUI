@@ -17,12 +17,29 @@ def test_extract_workflow_inputs():
             "inputs": {
                 "ckpt_name": "v1-5-pruned-emaonly.ckpt"
             }
+        },
+        "3": {
+            "_meta": {"title": "Prompt"},
+            "inputs": {
+                "text": "This should be filtered",
+                "other_param": 123
+            }
         }
     }
     
     extracted = extract_workflow_inputs(workflow)
     
-    assert len(extracted) == 2
+    # KSampler and CheckpointLoader should be there
+    assert len(extracted) == 3
+    
+    # Check Prompt node
+    prompt_node = next(n for n in extracted if n["title"] == "Prompt")
+    assert prompt_node["node_id"] == "3"
+    
+    # 'text' input should be missing
+    input_names = [i["name"] for i in prompt_node["inputs"]]
+    assert "text" not in input_names
+    assert "other_param" in input_names
     
     # Check KSampler
     ksampler = next(n for n in extracted if n["title"] == "KSampler")
@@ -69,3 +86,24 @@ def test_merge_workflow_overrides():
     
     # Original should be untouched (optional, but good practice)
     assert workflow["1"]["inputs"]["steps"] == 20
+
+def test_get_prompt_default_value():
+    from ui import get_prompt_default_value
+    
+    # Workflow with a Prompt node
+    workflow_with_prompt = {
+        "1": {"_meta": {"title": "Prompt"}, "inputs": {"text": "A photo of a cat"}}
+    }
+    assert get_prompt_default_value(workflow_with_prompt) == "A photo of a cat"
+    
+    # Workflow with a Prompt node (case insensitive)
+    workflow_case = {
+        "1": {"_meta": {"title": "PROMPT"}, "inputs": {"string": "A photo of a dog"}}
+    }
+    assert get_prompt_default_value(workflow_case) == "A photo of a dog"
+    
+    # Workflow without Prompt node
+    workflow_no_prompt = {
+        "1": {"_meta": {"title": "KSampler"}, "inputs": {}}
+    }
+    assert get_prompt_default_value(workflow_no_prompt) == ""

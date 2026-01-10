@@ -10,9 +10,15 @@ def extract_workflow_inputs(workflow):
     for node_id, node_data in workflow.items():
         title = node_data.get("_meta", {}).get("title", f"Node {node_id}")
         inputs = []
+        is_prompt_node = title.lower() == "prompt"
+        
         for name, value in node_data.get("inputs", {}).items():
             if isinstance(value, list):
                 continue  # Skip links
+            
+            # Filter out the primary prompt input from advanced controls
+            if is_prompt_node and name in ["text", "string"]:
+                continue
             
             input_type = "str"
             if isinstance(value, bool):
@@ -45,8 +51,18 @@ def merge_workflow_overrides(workflow, overrides):
                 merged[node_id]["inputs"][input_name] = value
     return merged
 
+def get_prompt_default_value(workflow):
+    for node_data in workflow.values():
+        title = node_data.get("_meta", {}).get("title", "")
+        if title.lower() == "prompt":
+            inputs = node_data.get("inputs", {})
+            if "text" in inputs:
+                return str(inputs["text"])
+            if "string" in inputs:
+                return str(inputs["string"])
+    return ""
+
 async def handle_generation(workflow_name, prompt_text, config, comfy_client, overrides=None):
-    print(f"DEBUG: Starting generation for {workflow_name}")
     # 1. Find workflow path
     workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
     
@@ -60,12 +76,10 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
 
     # 2.5 Apply Overrides
     if overrides:
-        print(f"DEBUG: Applying overrides: {overrides}")
         workflow_json = merge_workflow_overrides(workflow_json, overrides)
 
     # 3. Inject Prompt if provided
     if prompt_text:
-        print(f"DEBUG: Injecting prompt: {prompt_text}")
         comfy_client.inject_prompt(workflow_json, prompt_text)
 
     # 4. Generate Image (Connect -> Submit -> Listen)
@@ -81,7 +95,7 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                     last_image = Image.open(io.BytesIO(event["data"]))
                     yield last_image, last_status
                 except Exception as e:
-                    print(f"DEBUG: Error decoding preview: {e}")
+                    pass
             elif event["type"] == "image":
                 image_bytes = event["data"]
                 try:
@@ -121,9 +135,8 @@ def create_ui(config, comfy_client):
                 generate_btn = gr.Button("Generate", variant="primary")
                 
                 with gr.Accordion("Advanced Controls", open=False):
-                    @gr.render(inputs=[workflow_dropdown], triggers=[workflow_dropdown.change])
+                    @gr.render(inputs=[workflow_dropdown])
                     def render_dynamic_interface(workflow_name):
-                        print(f"DEBUG: Rendering interface for: {workflow_name}")
                         if not workflow_name:
                             gr.Markdown("Please select a workflow to continue.")
                             return
