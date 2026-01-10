@@ -2,7 +2,7 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: Workflow Parsing and Property Extraction
+## Phase 1: Workflow Parsing and Property Extraction [checkpoint: db4cef5]
 
 - [x] Task: UI Logic - Implement workflow parser for input extraction ef3ef97
     - [x] Sub-task: Write tests for `extract_workflow_inputs`
@@ -10,7 +10,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: UI Logic - Implement state merging logic ef3ef97
     - [x] Sub-task: Write tests for merging user overrides into the workflow
     - [x] Sub-task: Implement merge logic in `handle_generation`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) db4cef5
 
 ## Phase 2: Dynamic UI Generation
 
