@@ -95,20 +95,10 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
-    async def on_generate(workflow_name, prompt_text, overrides):
-        async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-            yield update
-
-    def update_state(current_state, key, val):
-        new_state = copy.deepcopy(current_state)
-        new_state[key] = val
-        return new_state
-
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
         
-        overrides_state = gr.State({})
-        
+        # We assume output components are static
         with gr.Row():
             with gr.Column(scale=1):
                 workflow_dropdown = gr.Dropdown(
@@ -116,60 +106,71 @@ def create_ui(config, comfy_client):
                     label="Select Workflow",
                     value=workflow_names[0] if workflow_names else None
                 )
+                
+                # Container for dynamic inputs and generate button
+                dynamic_area = gr.Column()
+                
+            with gr.Column(scale=2):
+                output_image = gr.Image(label="Generated Image", type="pil")
+                status_text = gr.Markdown("Ready")
+
+        @gr.render(inputs=[workflow_dropdown], triggers=[workflow_dropdown.change])
+        def render_dynamic_interface(workflow_name):
+            if not workflow_name:
+                return
+            
+            workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+            try:
+                with open(workflow_info["path"], "r") as f:
+                    workflow_json = json.load(f)
+            except Exception as e:
+                gr.Markdown(f"Error loading workflow: {e}")
+                return
+
+            extracted = extract_workflow_inputs(workflow_json)
+            
+            # Place prompt input here so it's part of the form
+            with gr.Column(): # Ensure vertical layout
                 prompt_input = gr.Textbox(
                     label="Prompt", 
                     lines=3, 
                     placeholder="Enter your description here..."
                 )
-                generate_btn = gr.Button("Generate", variant="primary")
+                
+                dynamic_components = []
+                dynamic_keys = []
                 
                 with gr.Accordion("Advanced Controls", open=False):
-                    @gr.render(inputs=[workflow_dropdown])
-                    def render_advanced_params(workflow_name):
-                        if not workflow_name:
-                            return
-                        
-                        # Reset state when workflow changes? Or keep it?
-                        # For now, let's just render the current defaults
-                        
-                        workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
-                        try:
-                            with open(workflow_info["path"], "r") as f:
-                                workflow_json = json.load(f)
-                        except Exception as e:
-                            gr.Markdown(f"Error loading workflow: {e}")
-                            return
+                    for node in extracted:
+                        with gr.Group():
+                            gr.Markdown(f"#### {node['title']} ({node['node_id']})")
+                            for inp in node["inputs"]:
+                                key = f"{node['node_id']}.{inp['name']}"
+                                dynamic_keys.append(key)
+                                
+                                if inp["type"] == "number":
+                                    comp = gr.Number(label=inp["name"], value=inp["value"], scale=1, interactive=True)
+                                elif inp["type"] == "bool":
+                                    comp = gr.Checkbox(label=inp["name"], value=inp["value"], interactive=True)
+                                else:
+                                    comp = gr.Textbox(label=inp["name"], value=str(inp["value"]), interactive=True)
+                                dynamic_components.append(comp)
 
-                        extracted = extract_workflow_inputs(workflow_json)
-                        
-                        for node in extracted:
-                            with gr.Group():
-                                gr.Markdown(f"#### {node['title']} ({node['node_id']})")
-                                for inp in node["inputs"]:
-                                    key = f"{node['node_id']}.{inp['name']}"
-                                    
-                                    if inp["type"] == "number":
-                                        comp = gr.Number(label=inp["name"], value=inp["value"], scale=1)
-                                    elif inp["type"] == "bool":
-                                        comp = gr.Checkbox(label=inp["name"], value=inp["value"])
-                                    else:
-                                        comp = gr.Textbox(label=inp["name"], value=str(inp["value"]))
-                                    
-                                    # Use a lambda with closure to capture the key
-                                    comp.change(
-                                        fn=lambda val, k=key, s=overrides_state: update_state(s, k, val),
-                                        inputs=[comp, overrides_state],
-                                        outputs=[overrides_state]
-                                    )
+                generate_btn = gr.Button("Generate", variant="primary")
 
-            with gr.Column(scale=2):
-                output_image = gr.Image(label="Generated Image", type="pil")
-                status_text = gr.Markdown("Ready")
+                async def dynamic_on_generate(prompt, *args):
+                    overrides = {}
+                    for i, val in enumerate(args):
+                        key = dynamic_keys[i]
+                        overrides[key] = val
+                    
+                    async for update in handle_generation(workflow_name, prompt, config, comfy_client, overrides):
+                        yield update
 
-        generate_btn.click(
-            fn=on_generate,
-            inputs=[workflow_dropdown, prompt_input, overrides_state],
-            outputs=[output_image, status_text]
-        )
-        
+                generate_btn.click(
+                    fn=dynamic_on_generate,
+                    inputs=[prompt_input, *dynamic_components],
+                    outputs=[output_image, status_text]
+                )
+
     return demo
