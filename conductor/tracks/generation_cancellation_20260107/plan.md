@@ -2,12 +2,12 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: ComfyClient Interruption Logic
+## Phase 1: ComfyClient Interruption Logic [checkpoint: b4d0f9d]
 
 - [x] Task: ComfyClient - Implement interrupt and queue clearing 6b5097c
     - [x] Sub-task: Write tests for `interrupt` and `clear_queue` methods
     - [x] Sub-task: Implement `interrupt` (POST /interrupt) and `clear_queue` (POST /queue)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) b4d0f9d
 
 ## Phase 2: UI Integration for Stop Control
 
