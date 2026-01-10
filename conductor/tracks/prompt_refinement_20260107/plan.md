@@ -2,7 +2,7 @@
 
 This plan follows Test-Driven Development (TDD). Each feature task requires writing failing tests before implementation.
 
-## Phase 1: Logic Refinement
+## Phase 1: Logic Refinement [checkpoint: 39dca57]
 
 - [x] Task: UI Logic - Implement prompt value extraction 14eb6b8
     - [x] Sub-task: Write tests for `get_prompt_default_value`
@@ -10,7 +10,7 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: UI Logic - Implement input filtering for advanced controls 14eb6b8
     - [x] Sub-task: Write tests for filtering out the primary prompt input
     - [x] Sub-task: Implement filtering in `extract_workflow_inputs` or `render_dynamic_interface`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 39dca57
 
 ## Phase 2: UI Implementation
 
