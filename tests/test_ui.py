@@ -50,7 +50,7 @@ def test_ui_components():
     config_json = demo.get_config_file()
     assert "Workflow 1" in str(config_json)
     
-    # Generate button and Prompt textarea are now dynamic, so they won't appear in static config
-    # assert "Generate" in str(config_json)
-    # assert "Prompt" in str(config_json)
-    # assert "Advanced Controls" in str(config_json)
+    # Generate button and Prompt textarea are static again
+    assert "Generate" in str(config_json)
+    assert "Prompt" in str(config_json)
+    assert "Advanced Controls" in str(config_json)
