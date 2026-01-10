@@ -49,6 +49,7 @@ def test_ui_components():
     assert "Workflow 1" in str(config_json)
     # Check for Generate button
     assert "Generate" in str(config_json)
-    
     # Check for Prompt textarea
     assert "Prompt" in str(config_json)
+    # Check for Advanced Controls
+    assert "Advanced Controls" in str(config_json)

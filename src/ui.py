@@ -117,6 +117,9 @@ def create_ui(config, comfy_client):
                 )
                 generate_btn = gr.Button("Generate", variant="primary")
                 
+                with gr.Accordion("Advanced Controls", open=False):
+                    advanced_params_area = gr.Column()
+                    
             with gr.Column(scale=2):
                 output_image = gr.Image(label="Generated Image", type="pil")
                 status_text = gr.Markdown("Ready")
