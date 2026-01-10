@@ -17,10 +17,8 @@ def extract_workflow_inputs(workflow):
             input_type = "str"
             if isinstance(value, bool):
                 input_type = "bool"
-            elif isinstance(value, int):
-                input_type = "int"
-            elif isinstance(value, float):
-                input_type = "float"
+            elif isinstance(value, (int, float)):
+                input_type = "number"
             
             inputs.append({
                 "name": name,
@@ -38,6 +36,8 @@ def extract_workflow_inputs(workflow):
 
 def merge_workflow_overrides(workflow, overrides):
     merged = copy.deepcopy(workflow)
+    if not overrides:
+        return merged
     for key, value in overrides.items():
         if "." in key:
             node_id, input_name = key.split(".", 1)
@@ -73,7 +73,6 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
         last_image = None
         last_status = "Starting..."
         async for event in comfy_client.generate_image(workflow_json):
-            print(f"DEBUG: Received event: {event['type']}")
             if event["type"] == "progress":
                 last_status = f"Progress: {event['value']}/{event['max']}"
                 yield last_image, last_status
@@ -96,12 +95,19 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
-    async def on_generate(workflow_name, prompt_text):
-        async for update in handle_generation(workflow_name, prompt_text, config, comfy_client):
+    async def on_generate(workflow_name, prompt_text, overrides):
+        async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
             yield update
+
+    def update_state(current_state, key, val):
+        new_state = copy.deepcopy(current_state)
+        new_state[key] = val
+        return new_state
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
+        
+        overrides_state = gr.State({})
         
         with gr.Row():
             with gr.Column(scale=1):
@@ -118,15 +124,51 @@ def create_ui(config, comfy_client):
                 generate_btn = gr.Button("Generate", variant="primary")
                 
                 with gr.Accordion("Advanced Controls", open=False):
-                    advanced_params_area = gr.Column()
-                    
+                    @gr.render(inputs=[workflow_dropdown])
+                    def render_advanced_params(workflow_name):
+                        if not workflow_name:
+                            return
+                        
+                        # Reset state when workflow changes? Or keep it?
+                        # For now, let's just render the current defaults
+                        
+                        workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+                        try:
+                            with open(workflow_info["path"], "r") as f:
+                                workflow_json = json.load(f)
+                        except Exception as e:
+                            gr.Markdown(f"Error loading workflow: {e}")
+                            return
+
+                        extracted = extract_workflow_inputs(workflow_json)
+                        
+                        for node in extracted:
+                            with gr.Group():
+                                gr.Markdown(f"#### {node['title']} ({node['node_id']})")
+                                for inp in node["inputs"]:
+                                    key = f"{node['node_id']}.{inp['name']}"
+                                    
+                                    if inp["type"] == "number":
+                                        comp = gr.Number(label=inp["name"], value=inp["value"], scale=1)
+                                    elif inp["type"] == "bool":
+                                        comp = gr.Checkbox(label=inp["name"], value=inp["value"])
+                                    else:
+                                        comp = gr.Textbox(label=inp["name"], value=str(inp["value"]))
+                                    
+                                    # Use a lambda with closure to capture the key
+                                    comp.change(
+                                        fn=lambda val, k=key, s=overrides_state: update_state(s, k, val),
+                                        inputs=[comp, overrides_state],
+                                        outputs=[overrides_state]
+                                    )
+
             with gr.Column(scale=2):
                 output_image = gr.Image(label="Generated Image", type="pil")
                 status_text = gr.Markdown("Ready")
 
         generate_btn.click(
             fn=on_generate,
-            inputs=[workflow_dropdown, prompt_input],
+            inputs=[workflow_dropdown, prompt_input, overrides_state],
             outputs=[output_image, status_text]
         )
         

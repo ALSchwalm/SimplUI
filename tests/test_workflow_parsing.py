@@ -31,11 +31,11 @@ def test_extract_workflow_inputs():
     
     steps_input = next(i for i in ksampler["inputs"] if i["name"] == "steps")
     assert steps_input["value"] == 20
-    assert steps_input["type"] == "int"
+    assert steps_input["type"] == "number"
     
     cfg_input = next(i for i in ksampler["inputs"] if i["name"] == "cfg")
     assert cfg_input["value"] == 8.0
-    assert cfg_input["type"] == "float"
+    assert cfg_input["type"] == "number"
     
     sampler_input = next(i for i in ksampler["inputs"] if i["name"] == "sampler_name")
     assert sampler_input["value"] == "euler"
