@@ -3,8 +3,49 @@ import json
 import asyncio
 from PIL import Image
 import io
+import copy
 
-async def handle_generation(workflow_name, prompt_text, config, comfy_client):
+def extract_workflow_inputs(workflow):
+    extracted = []
+    for node_id, node_data in workflow.items():
+        title = node_data.get("_meta", {}).get("title", f"Node {node_id}")
+        inputs = []
+        for name, value in node_data.get("inputs", {}).items():
+            if isinstance(value, list):
+                continue  # Skip links
+            
+            input_type = "str"
+            if isinstance(value, bool):
+                input_type = "bool"
+            elif isinstance(value, int):
+                input_type = "int"
+            elif isinstance(value, float):
+                input_type = "float"
+            
+            inputs.append({
+                "name": name,
+                "type": input_type,
+                "value": value
+            })
+        
+        if inputs:
+            extracted.append({
+                "node_id": node_id,
+                "title": title,
+                "inputs": inputs
+            })
+    return extracted
+
+def merge_workflow_overrides(workflow, overrides):
+    merged = copy.deepcopy(workflow)
+    for key, value in overrides.items():
+        if "." in key:
+            node_id, input_name = key.split(".", 1)
+            if node_id in merged and "inputs" in merged[node_id]:
+                merged[node_id]["inputs"][input_name] = value
+    return merged
+
+async def handle_generation(workflow_name, prompt_text, config, comfy_client, overrides=None):
     print(f"DEBUG: Starting generation for {workflow_name}")
     # 1. Find workflow path
     workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
@@ -16,6 +57,11 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client):
     except Exception as e:
         yield None, f"Error loading workflow: {e}"
         return
+
+    # 2.5 Apply Overrides
+    if overrides:
+        print(f"DEBUG: Applying overrides: {overrides}")
+        workflow_json = merge_workflow_overrides(workflow_json, overrides)
 
     # 3. Inject Prompt if provided
     if prompt_text:
