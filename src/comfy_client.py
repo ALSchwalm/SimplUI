@@ -6,7 +6,6 @@ import websockets
 class ComfyClient:
     def __init__(self, base_url):
         self.base_url = base_url.rstrip("/")
-        self.client_id = str(uuid.uuid4())
 
     def check_connection(self):
         try:
@@ -15,21 +14,22 @@ class ComfyClient:
         except requests.exceptions.RequestException:
             return False
 
-    def submit_workflow(self, workflow):
+    def submit_workflow(self, workflow, client_id):
         response = requests.post(
             f"{self.base_url}/prompt", 
-            json={"prompt": workflow, "client_id": self.client_id}
+            json={"prompt": workflow, "client_id": client_id}
         )
         response.raise_for_status()
         return response.json().get("prompt_id")
 
     async def generate_image(self, workflow):
+        client_id = str(uuid.uuid4())
         ws_url = self.base_url.replace("http://", "ws://").replace("https://", "wss://")
-        async with websockets.connect(f"{ws_url}/ws?clientId={self.client_id}", max_size=10 * 1024 * 1024) as websocket:
+        async with websockets.connect(f"{ws_url}/ws?clientId={client_id}", max_size=10 * 1024 * 1024) as websocket:
             
             # Submit workflow AFTER connecting
             try:
-                prompt_id = self.submit_workflow(workflow)
+                prompt_id = self.submit_workflow(workflow, client_id)
             except Exception as e:
                 raise e
 
