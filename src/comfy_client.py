@@ -26,19 +26,15 @@ class ComfyClient:
     async def generate_image(self, workflow):
         ws_url = self.base_url.replace("http://", "ws://").replace("https://", "wss://")
         async with websockets.connect(f"{ws_url}/ws?clientId={self.client_id}", max_size=10 * 1024 * 1024) as websocket:
-            print(f"DEBUG: WebSocket connected to {ws_url}")
             
             # Submit workflow AFTER connecting
             try:
                 prompt_id = self.submit_workflow(workflow)
-                print(f"DEBUG: Workflow submitted. Prompt ID: {prompt_id}")
             except Exception as e:
-                print(f"DEBUG: Submission failed: {e}")
                 raise e
 
             while True:
                 message = await websocket.recv()
-                # print(f"DEBUG: WS Received (raw): {str(message)[:100]}...")
                 if isinstance(message, str):
                     message = json.loads(message)
                     if message["type"] == "progress":
@@ -50,13 +46,11 @@ class ComfyClient:
                                 "max": data["max"]
                             }
                     elif message["type"] == "executed":
-                        print(f"DEBUG: Executed event received: {message}")
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
                             outputs = data["output"]
                             for key in outputs:
                                 for image in outputs[key]:
-                                    print(f"DEBUG: Found image: {image}")
                                     if image.get("type") in ["output", "temp"]:
                                         filename = image["filename"]
                                         subfolder = image["subfolder"]
@@ -103,3 +97,15 @@ class ComfyClient:
             inputs["text"] = prompt_text
             return True
         return False
+
+    def interrupt(self):
+        try:
+            requests.post(f"{self.base_url}/interrupt")
+        except Exception:
+            pass
+
+    def clear_queue(self):
+        try:
+            requests.post(f"{self.base_url}/queue", json={"clear": True})
+        except Exception:
+            pass

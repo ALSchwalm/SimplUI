@@ -89,3 +89,20 @@ def test_inject_prompt():
     workflow_no_prompt = {"2": {"_meta": {"title": "KSampler"}, "inputs": {}}}
     success = client.inject_prompt(workflow_no_prompt, "New Prompt Value")
     assert success is False
+
+def test_interrupt_success():
+    client = ComfyClient("http://localhost:8188")
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.status_code = 200
+        client.interrupt()
+        mock_post.assert_called_once_with("http://localhost:8188/interrupt")
+
+def test_clear_queue_success():
+    client = ComfyClient("http://localhost:8188")
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.status_code = 200
+        client.clear_queue()
+        mock_post.assert_called_once_with(
+            "http://localhost:8188/queue",
+            json={"clear": True}
+        )
