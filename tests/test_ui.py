@@ -52,5 +52,6 @@ def test_ui_components():
     
     # Generate button and Prompt textarea are static again
     assert "Generate" in str(config_json)
+    assert "Stop" in str(config_json)
     assert "Prompt" in str(config_json)
     assert "Advanced Controls" in str(config_json)

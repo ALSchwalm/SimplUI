@@ -110,6 +110,13 @@ def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
     async def on_generate(workflow_name, prompt_text, overrides):
+        # Auto-stop previous runs
+        try:
+            comfy_client.interrupt()
+            comfy_client.clear_queue()
+        except Exception:
+            pass
+            
         async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
             yield update
 
@@ -158,7 +165,9 @@ def create_ui(config, comfy_client):
                     outputs=[prompt_input]
                 )
                 
-                generate_btn = gr.Button("Generate", variant="primary")
+                with gr.Row():
+                    generate_btn = gr.Button("Generate", variant="primary")
+                    stop_btn = gr.Button("Stop", variant="stop")
                 
                 with gr.Accordion("Advanced Controls", open=False):
                     @gr.render(inputs=[workflow_dropdown])
@@ -202,6 +211,16 @@ def create_ui(config, comfy_client):
             fn=on_generate,
             inputs=[workflow_dropdown, prompt_input, overrides_store],
             outputs=[output_image, status_text]
+        )
+        
+        def stop_generation():
+            comfy_client.interrupt()
+            return gr.update(value="Interrupted")
+
+        stop_btn.click(
+            fn=stop_generation,
+            inputs=[],
+            outputs=[status_text]
         )
         
     return demo
