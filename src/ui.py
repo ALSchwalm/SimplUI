@@ -120,6 +120,18 @@ def create_ui(config, comfy_client):
         # This JSON component holds the state in the browser.
         overrides_store = gr.JSON(value={}, visible=False)
         
+        def update_prompt_on_change(workflow_name):
+            if not workflow_name:
+                return ""
+            try:
+                workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+                with open(workflow_info["path"], "r") as f:
+                    workflow_json = json.load(f)
+                return get_prompt_default_value(workflow_json)
+            except Exception as e:
+                print(f"Error updating prompt: {e}")
+                return ""
+
         with gr.Row():
             with gr.Column(scale=1):
                 workflow_dropdown = gr.Dropdown(
@@ -127,11 +139,25 @@ def create_ui(config, comfy_client):
                     label="Select Workflow",
                     value=workflow_names[0] if workflow_names else None
                 )
+                
+                initial_prompt = ""
+                if workflow_names:
+                    initial_prompt = update_prompt_on_change(workflow_names[0])
+                
                 prompt_input = gr.Textbox(
                     label="Prompt", 
                     lines=3, 
+                    value=initial_prompt,
                     placeholder="Enter your description here..."
                 )
+                
+                # Bind prompt update
+                workflow_dropdown.change(
+                    fn=update_prompt_on_change,
+                    inputs=[workflow_dropdown],
+                    outputs=[prompt_input]
+                )
+                
                 generate_btn = gr.Button("Generate", variant="primary")
                 
                 with gr.Accordion("Advanced Controls", open=False):
