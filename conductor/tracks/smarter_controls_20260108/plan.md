@@ -2,7 +2,7 @@
 
 This plan follows Test-Driven Development (TDD).
 
-## Phase 1: Metadata Retrieval
+## Phase 1: Metadata Retrieval [checkpoint: e369635]
 
 - [x] Task: ComfyClient - Implement object info fetching a09174e
     - [x] Sub-task: Write tests for `get_object_info` (Mocked API)
@@ -10,7 +10,7 @@ This plan follows Test-Driven Development (TDD).
 - [x] Task: UI Logic - Integrate metadata into extraction 90b8514
     - [x] Sub-task: Write tests for `extract_workflow_inputs` with object info (identifying enums)
     - [x] Sub-task: Update `extract_workflow_inputs` to tag list-based inputs as "enum"
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) e369635
 
 ## Phase 2: Enhanced UI Rendering
 
