@@ -6,7 +6,7 @@ import io
 import copy
 import random
 
-def extract_workflow_inputs(workflow, object_info=None):
+def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
     extracted = []
     for node_id, node_data in workflow.items():
         title = node_data.get("_meta", {}).get("title", f"Node {node_id}")
@@ -29,19 +29,30 @@ def extract_workflow_inputs(workflow, object_info=None):
             
             input_type = "str"
             options = None
+            slider_params = {}
             
-            # Check for Enum in object_info
+            # Check for Enum/Number in object_info
             if node_def:
                 # Inputs can be in 'required' or 'optional'
                 input_def = node_def.get("input", {}).get("required", {}).get(name)
                 if not input_def:
                     input_def = node_def.get("input", {}).get("optional", {}).get(name)
                 
-                # If input definition is a list, it's an enum
-                if isinstance(input_def, list) and len(input_def) > 0 and isinstance(input_def[0], list):
-                    input_type = "enum"
-                    options = input_def[0]
-            
+                # If input definition is a list
+                if isinstance(input_def, list) and len(input_def) > 0:
+                    # Enum
+                    if isinstance(input_def[0], list):
+                        input_type = "enum"
+                        options = input_def[0]
+                    # Number definition from object_info
+                    elif len(input_def) > 1 and isinstance(input_def[1], dict):
+                         # Format: ["INT", {"default": 20, "min": 1, "max": 10000}]
+                         meta_params = input_def[1]
+                         if "min" in meta_params and "max" in meta_params:
+                             slider_params["min"] = meta_params["min"]
+                             slider_params["max"] = meta_params["max"]
+                             slider_params.setdefault("step", meta_params.get("step")) # step might be missing
+
             if input_type != "enum":
                 if isinstance(value, bool):
                     input_type = "bool"
@@ -50,6 +61,19 @@ def extract_workflow_inputs(workflow, object_info=None):
                         input_type = "seed"
                     else:
                         input_type = "number"
+                        
+                        # Check config override/default first
+                        if slider_config and name in slider_config:
+                            input_type = "slider"
+                            slider_params.update(slider_config[name])
+                        # If no config but metadata found a range, treat as slider?
+                        # Spec says: "If no override exists but object_info provides a min/max, use gr.Slider with those values."
+                        # However, ComfyUI max is often HUGE (10000+).
+                        # Let's trust the spec: "use gr.Slider with those values."
+                        # BUT "Automatic Range Adoption... risk of bad UX". 
+                        # User selected B: "Use gr.Slider with the server-provided range (risk of bad UX)".
+                        elif "min" in slider_params and "max" in slider_params:
+                             input_type = "slider"
             
             input_data = {
                 "name": name,
@@ -61,6 +85,9 @@ def extract_workflow_inputs(workflow, object_info=None):
                 
             if options:
                 input_data["options"] = options
+            
+            if input_type == "slider":
+                input_data.update(slider_params)
             
             inputs.append(input_data)
         
@@ -80,6 +107,12 @@ def merge_workflow_overrides(workflow, overrides):
         if "." in key and not key.endswith(".randomize"):
             node_id, input_name = key.split(".", 1)
             if node_id in merged and "inputs" in merged[node_id]:
+                # Special handling for seed inputs to ensure they are ints
+                # We identify them by checking if the existing value is int/float/str that looks like int?
+                # Or relying on the extracted type? We don't have extracted type here easily.
+                # But typically ComfyUI accepts ints. If it's a digit string, convert.
+                if isinstance(value, str) and value.isdigit():
+                    value = int(value)
                 merged[node_id]["inputs"][input_name] = value
     return merged
 
@@ -88,10 +121,14 @@ def apply_random_seeds(overrides):
     for key, value in overrides.items():
         if key.endswith(".randomize") and value is True:
             base_key = key[:-10] # remove .randomize
-            # Generate random seed
+            # Generate random seed (Full 64-bit range)
             new_seed = random.randint(0, 18446744073709551615)
-            # print(f"DEBUG: Randomizing seed for {base_key}: {new_seed}")
-            updated[base_key] = new_seed
+            # Store as string to preserve precision in UI if needed, 
+            # or rely on JSON handling? If we put int in JSON, Gradio/JS might round it?
+            # Safe bet: Store as int in Python backend, but UI component handles it.
+            # But overrides_store is gr.JSON -> JS.
+            # So we MUST store as string in overrides_store if we want precision in UI.
+            updated[base_key] = str(new_seed)
     return updated
 
 def get_prompt_default_value(workflow):
@@ -178,9 +215,7 @@ def create_ui(config, comfy_client):
         seed_info = []
         if overrides:
             for k, v in overrides.items():
-                # Check if this key has a corresponding .randomize flag set to True
                 if f"{k}.randomize" in overrides and overrides[f"{k}.randomize"] is True:
-                    # Extract node ID and name for display if possible, or just value
                     seed_info.append(f"Seed: {v}")
         
         seed_suffix = f" ({', '.join(seed_info)})" if seed_info else ""
@@ -279,7 +314,8 @@ def create_ui(config, comfy_client):
                                         comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                     elif inp["type"] == "seed":
                                         with gr.Row():
-                                            comp = gr.Number(label=inp["name"], value=current_val, scale=3, interactive=True)
+                                            # Use Textbox to preserve 64-bit integer precision
+                                            comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=3, interactive=True)
                                             # Check randomization state from overrides
                                             random_key = f"{key}.randomize"
                                             random_default = inp.get("randomize", False)
@@ -287,7 +323,7 @@ def create_ui(config, comfy_client):
                                             
                                             random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
                                         
-                                        # Bind number input
+                                        # Bind number input (as text)
                                         comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                         
                                         # Bind randomize checkbox

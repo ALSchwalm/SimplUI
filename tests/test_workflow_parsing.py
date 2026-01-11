@@ -167,3 +167,43 @@ def test_get_prompt_default_value():
         "1": {"_meta": {"title": "KSampler"}, "inputs": {}}
     }
     assert get_prompt_default_value(workflow_no_prompt) == ""
+
+def test_extract_workflow_inputs_sliders():
+    from ui import extract_workflow_inputs
+    
+    workflow = {
+        "1": {
+            "_meta": {"title": "KSampler"},
+            "class_type": "KSampler",
+            "inputs": {
+                "steps": 20,
+                "cfg": 8.0,
+                "other": 50
+            }
+        }
+    }
+    
+    # Mock slider config
+    slider_config = {
+        "steps": {"min": 1, "max": 100, "step": 1},
+        "cfg": {"min": 0.0, "max": 20.0, "step": 0.1}
+    }
+    
+    extracted = extract_workflow_inputs(workflow, slider_config=slider_config)
+    
+    node = extracted[0]
+    
+    # steps should be slider
+    steps = next(i for i in node["inputs"] if i["name"] == "steps")
+    assert steps["type"] == "slider"
+    assert steps["min"] == 1
+    assert steps["max"] == 100
+    
+    # cfg should be slider
+    cfg = next(i for i in node["inputs"] if i["name"] == "cfg")
+    assert cfg["type"] == "slider"
+    assert cfg["step"] == 0.1
+    
+    # other should be number
+    other = next(i for i in node["inputs"] if i["name"] == "other")
+    assert other["type"] == "number"

@@ -28,3 +28,27 @@ def test_load_config_invalid_json(tmp_path):
     
     with pytest.raises(json.JSONDecodeError):
         ConfigManager(str(config_file))
+
+def test_slider_config_overrides(tmp_path):
+    config_data = {
+        "comfy_url": "http://localhost",
+        "slider_overrides": {
+            "steps": {"max": 50},
+            "custom_param": {"min": 0, "max": 10, "step": 1}
+        }
+    }
+    config_file = tmp_path / "config.json"
+    config_file.write_text(json.dumps(config_data))
+    
+    manager = ConfigManager(str(config_file))
+    
+    # Check default (cfg should exist)
+    assert "cfg" in manager.sliders
+    assert manager.sliders["cfg"]["max"] == 20.0
+    
+    # Check override (steps max changed)
+    assert manager.sliders["steps"]["max"] == 50
+    assert manager.sliders["steps"]["min"] == 1 # Default preserved
+    
+    # Check new
+    assert manager.sliders["custom_param"]["max"] == 10
