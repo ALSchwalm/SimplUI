@@ -14,9 +14,9 @@ This plan follows Test-Driven Development (TDD).
 
 ## Phase 2: UI Implementation and Feedback
 
-- [ ] Task: Gradio UI - Render Randomize checkboxes
-    - [ ] Sub-task: Write UI automation test verifying checkbox presence and default state
-    - [ ] Sub-task: Update `render_dynamic_interface` to show `gr.Checkbox` for seeds
-- [ ] Task: Gradio UI - Implement seed value feedback
-    - [ ] Sub-task: Update `on_generate` to yield component updates for the seed inputs
+- [x] Task: Gradio UI - Render Randomize checkboxes 6743f32
+    - [x] Sub-task: Write UI automation test verifying checkbox presence and default state
+    - [x] Sub-task: Update `render_dynamic_interface` to show `gr.Checkbox` for seeds
+- [x] Task: Gradio UI - Implement seed value feedback 6743f32
+    - [x] Sub-task: Update `on_generate` to yield component updates for the seed inputs
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
