@@ -19,7 +19,7 @@ def mock_config():
     if not os.path.exists("workflows"):
         os.makedirs("workflows")
     with open("workflows/test.json", "w") as f:
-        f.write('{"3": {"inputs": {"seed": 5, "steps": 20}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}}')
+        f.write('{"3": {"inputs": {"seed": 5, "steps": 20, "sampler_name": "euler"}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}}')
     return config
 
 # Mock Comfy Client
@@ -29,6 +29,26 @@ def mock_comfy_client():
     # Mock methods used by UI
     client.check_connection.return_value = True
     client.submit_workflow.return_value = "mock-prompt-id"
+    
+    # Mock Object Info for Smarter Controls
+    client.get_object_info.return_value = {
+        "KSampler": {
+            "input": {
+                "required": {
+                    "sampler_name": [["euler", "ddim", "heun"]],
+                    "scheduler": [["normal", "karras", "exponential"]],
+                    "steps": ["INT", {"default": 20}]
+                }
+            }
+        },
+        "CheckpointLoaderSimple": {
+            "input": {
+                "required": {
+                    "ckpt_name": [["v1-5.ckpt", "sdxl.safetensors"]]
+                }
+            }
+        }
+    }
     
     # Mock generator
     async def mock_generate(*args, **kwargs):

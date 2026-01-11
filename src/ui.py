@@ -134,6 +134,9 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
+    # Fetch node definitions from ComfyUI
+    object_info = comfy_client.get_object_info()
+    
     async def on_generate(workflow_name, prompt_text, overrides):
         # Initial status and show stop button
         yield None, "Initializing...", gr.update(visible=True)
@@ -220,7 +223,7 @@ def create_ui(config, comfy_client):
                             gr.Markdown(f"Error loading workflow: {e}")
                             return
 
-                        extracted = extract_workflow_inputs(workflow_json)
+                        extracted = extract_workflow_inputs(workflow_json, object_info)
                         
                         for node in extracted:
                             with gr.Group():
@@ -228,7 +231,14 @@ def create_ui(config, comfy_client):
                                 for inp in node["inputs"]:
                                     key = f"{node['node_id']}.{inp['name']}"
                                     
-                                    if inp["type"] == "number":
+                                    if inp["type"] == "enum":
+                                        comp = gr.Dropdown(
+                                            choices=inp["options"],
+                                            label=inp["name"],
+                                            value=inp["value"],
+                                            interactive=True
+                                        )
+                                    elif inp["type"] == "number":
                                         comp = gr.Number(label=inp["name"], value=inp["value"], scale=1, interactive=True)
                                     elif inp["type"] == "bool":
                                         comp = gr.Checkbox(label=inp["name"], value=inp["value"], interactive=True)
