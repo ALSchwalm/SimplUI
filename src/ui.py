@@ -164,27 +164,30 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
 
     # 4. Generate Image (Connect -> Submit -> Listen)
     try:
-        last_image = None
+        completed_images = []
         last_status = "Starting..."
         async for event in comfy_client.generate_image(workflow_json):
             if event["type"] == "progress":
                 last_status = f"Progress: {event['value']}/{event['max']}"
-                yield last_image, last_status
+                # Yield completed images so far
+                yield list(completed_images), last_status
             elif event["type"] == "preview":
                 try:
-                    last_image = Image.open(io.BytesIO(event["data"]))
-                    yield last_image, last_status
+                    preview_image = Image.open(io.BytesIO(event["data"]))
+                    # Show preview as the next potential image
+                    yield completed_images + [preview_image], last_status
                 except Exception as e:
                     pass
             elif event["type"] == "image":
                 image_bytes = event["data"]
                 try:
-                    last_image = Image.open(io.BytesIO(image_bytes))
-                    yield last_image, "Generation complete"
+                    final_image = Image.open(io.BytesIO(image_bytes))
+                    completed_images.append(final_image)
+                    yield list(completed_images), "Generation complete"
                 except Exception as e:
-                    yield last_image, f"Error processing image: {e}"
+                    yield list(completed_images), f"Error processing image: {e}"
     except Exception as e:
-        yield None, f"Error during generation: {e}"
+        yield [], f"Error during generation: {e}"
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -293,7 +296,7 @@ def create_ui(config, comfy_client):
                             gr.Markdown(f"Error loading workflow: {e}")
                             return
 
-                        extracted = extract_workflow_inputs(workflow_json, object_info)
+                        extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
                         
                         for node in extracted:
                             with gr.Group():
@@ -328,6 +331,16 @@ def create_ui(config, comfy_client):
                                         
                                         # Bind randomize checkbox
                                         random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
+                                    elif inp["type"] == "slider":
+                                        comp = gr.Slider(
+                                            label=inp["name"], 
+                                            value=current_val, 
+                                            minimum=inp["min"],
+                                            maximum=inp["max"],
+                                            step=inp.get("step", 1),
+                                            interactive=True
+                                        )
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                     elif inp["type"] == "number":
                                         comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
                                         comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])

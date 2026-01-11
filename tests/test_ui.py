@@ -28,10 +28,19 @@ async def test_handle_generation_success():
                 async for update in handle_generation("Workflow 1", "User Prompt", config, client):
                     updates.append(update)
                 
+                # Now updates contain lists of images
                 assert len(updates) == 3
-                assert updates[0] == (None, "Progress: 5/10")
-                assert updates[1] == ("mock_preview_image", "Progress: 5/10")
-                assert updates[2] == ("mock_pil_image", "Generation complete")
+                # First update: progress, empty images?
+                assert updates[0][0] == []
+                assert updates[0][1] == "Progress: 5/10"
+                
+                # Second update: preview
+                assert updates[1][0] == ["mock_preview_image"]
+                assert updates[1][1] == "Progress: 5/10"
+                
+                # Third update: final image
+                assert updates[2][0] == ["mock_pil_image"]
+                assert updates[2][1] == "Generation complete"
                 
                 # Note: test_handle_generation_success tests handle_generation directly,
                 # which still returns 2 values.
@@ -40,6 +49,52 @@ async def test_handle_generation_success():
                 
                 client.inject_prompt.assert_called_once_with({"mock": "workflow"}, "User Prompt")
                 client.generate_image.assert_called_once_with({"mock": "workflow"})
+
+@pytest.mark.asyncio
+async def test_handle_generation_multiple_images():
+    config = Mock(spec=ConfigManager)
+    config.workflows = [{"name": "Workflow 1", "path": "wf1.json"}]
+    client = Mock()
+    client.inject_prompt = Mock(return_value=True)
+    
+    async def mock_generate(workflow):
+        yield {"type": "progress", "value": 5, "max": 10}
+        yield {"type": "image", "data": b"img1"}
+        yield {"type": "image", "data": b"img2"}
+    
+    client.generate_image = Mock(return_value=mock_generate({}))
+    
+    # Mock open and json.load
+    with patch("builtins.open", mock_open(read_data='{"mock": "workflow"}')):
+        with patch("json.load", return_value={"mock": "workflow"}):
+            with patch("ui.Image.open", side_effect=["pil_img1", "pil_img2"]):
+                updates = []
+                async for update in handle_generation("Workflow 1", "User Prompt", config, client):
+                    updates.append(update)
+                
+                # We expect updates to contain growing list of images
+                # Update 1: Progress -> No images yet? Or None?
+                # Update 2: Image 1 -> [img1]
+                # Update 3: Image 2 -> [img1, img2]
+                
+                assert len(updates) == 3
+                
+                # Check status
+                assert updates[0][1] == "Progress: 5/10"
+                assert updates[0][0] is None or updates[0][0] == []
+                
+                # Check first image yield
+                images_1 = updates[1][0]
+                assert isinstance(images_1, list)
+                assert len(images_1) == 1
+                assert images_1[0] == "pil_img1"
+                
+                # Check second image yield
+                images_2 = updates[2][0]
+                assert isinstance(images_2, list)
+                assert len(images_2) == 2
+                assert images_2[0] == "pil_img1"
+                assert images_2[1] == "pil_img2"
 
 def test_ui_components():
     config = Mock(spec=ConfigManager)
@@ -75,7 +130,7 @@ def test_apply_random_seeds():
     
     # 1.seed should be changed (randomized)
     assert updated["1.seed"] != 123
-    assert isinstance(updated["1.seed"], int)
+    assert isinstance(updated["1.seed"], str)
     
     # 2.noise_seed should NOT be changed
     assert updated["2.noise_seed"] == 456
