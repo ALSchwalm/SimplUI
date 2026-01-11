@@ -104,3 +104,12 @@ class ComfyClient:
             requests.post(f"{self.base_url}/queue", json={"clear": True}, timeout=5)
         except Exception:
             pass
+
+    def get_object_info(self):
+        try:
+            response = requests.get(f"{self.base_url}/object_info", timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception:
+            pass
+        return {}

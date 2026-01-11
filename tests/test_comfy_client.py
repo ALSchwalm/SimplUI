@@ -108,20 +108,146 @@ def test_interrupt_success():
 
 def test_clear_queue_success():
 
+
+
     client = ComfyClient("http://localhost:8188")
+
+
 
     with patch("requests.post") as mock_post:
 
+
+
         mock_post.return_value.status_code = 200
+
+
 
         client.clear_queue()
 
+
+
         mock_post.assert_called_once_with(
+
+
 
             "http://localhost:8188/queue",
 
+
+
             json={"clear": True},
+
+
 
             timeout=5
 
+
+
         )
+
+
+
+
+
+
+
+def test_get_object_info_success():
+
+
+
+    client = ComfyClient("http://localhost:8188")
+
+
+
+    mock_response = {"KSampler": {"input": {"required": {"sampler_name": [["euler", "ddim"]]}}}}
+
+
+
+    
+
+
+
+    with patch("requests.get") as mock_get:
+
+
+
+        mock_get.return_value.status_code = 200
+
+
+
+        mock_get.return_value.json.return_value = mock_response
+
+
+
+        
+
+
+
+        info = client.get_object_info()
+
+
+
+        assert info == mock_response
+
+
+
+        mock_get.assert_called_once_with("http://localhost:8188/object_info", timeout=10)
+
+
+
+
+
+
+
+def test_get_object_info_failure():
+
+
+
+    client = ComfyClient("http://localhost:8188")
+
+
+
+    with patch("requests.get") as mock_get:
+
+
+
+        mock_get.return_value.status_code = 500
+
+
+
+        mock_get.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError()
+
+
+
+        
+
+
+
+        # It should probably return empty dict or raise. 
+
+
+
+        # For robustness, let's say it returns empty dict or raises. 
+
+
+
+        # Given existing patterns, let's assume it raises or returns empty.
+
+
+
+        # Let's implementation decide: robust UI usually prefers empty dict over crash.
+
+
+
+        
+
+
+
+        info = client.get_object_info()
+
+
+
+        assert info == {}
+
+
+
+
