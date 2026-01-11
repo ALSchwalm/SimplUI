@@ -29,17 +29,66 @@ def test_extract_workflow_inputs():
     
     extracted = extract_workflow_inputs(workflow)
     
-    # KSampler and CheckpointLoader should be there
-    assert len(extracted) == 3
+    # Check KSampler
+    ksampler = next(n for n in extracted if n["title"] == "KSampler")
+    assert ksampler["node_id"] == "1"
+    assert len(ksampler["inputs"]) == 3
     
-    # Check Prompt node
-    prompt_node = next(n for n in extracted if n["title"] == "Prompt")
-    assert prompt_node["node_id"] == "3"
+    steps_input = next(i for i in ksampler["inputs"] if i["name"] == "steps")
+    assert steps_input["value"] == 20
+    assert steps_input["type"] == "number"
     
-    # 'text' input should be missing
-    input_names = [i["name"] for i in prompt_node["inputs"]]
-    assert "text" not in input_names
-    assert "other_param" in input_names
+    cfg_input = next(i for i in ksampler["inputs"] if i["name"] == "cfg")
+    assert cfg_input["value"] == 8.0
+    assert cfg_input["type"] == "number"
+    
+    # Check CheckpointLoader
+    ckpt = next(n for n in extracted if n["title"] == "CheckpointLoader")
+    assert ckpt["node_id"] == "2"
+    ckpt_input = next(i for i in ckpt["inputs"] if i["name"] == "ckpt_name")
+    assert ckpt_input["value"] == "v1-5-pruned-emaonly.ckpt"
+
+def test_extract_workflow_inputs_seed_randomization():
+    from ui import extract_workflow_inputs
+    
+    workflow = {
+        "1": {
+            "_meta": {"title": "KSampler"},
+            "inputs": {
+                "seed": 0, # Should default to random
+                "steps": 20
+            }
+        },
+        "2": {
+            "_meta": {"title": "AnotherSampler"},
+            "inputs": {
+                "seed": 12345, # Should NOT default to random
+                "noise_seed": 0 # Should detect "seed" in name
+            }
+        }
+    }
+    
+    extracted = extract_workflow_inputs(workflow)
+    
+    # Check Node 1
+    node1 = next(n for n in extracted if n["node_id"] == "1")
+    seed_input = next(i for i in node1["inputs"] if i["name"] == "seed")
+    assert seed_input["type"] == "seed" # New type
+    assert seed_input["randomize"] is True
+    
+    steps_input = next(i for i in node1["inputs"] if i["name"] == "steps")
+    assert steps_input["type"] == "number"
+    
+    # Check Node 2
+    node2 = next(n for n in extracted if n["node_id"] == "2")
+    seed2_input = next(i for i in node2["inputs"] if i["name"] == "seed")
+    assert seed2_input["type"] == "seed"
+    assert seed2_input["randomize"] is False
+    
+    noise_seed_input = next(i for i in node2["inputs"] if i["name"] == "noise_seed")
+    assert noise_seed_input["type"] == "seed"
+    assert noise_seed_input["randomize"] is True
+
 
 def test_extract_workflow_inputs_with_metadata():
     from ui import extract_workflow_inputs

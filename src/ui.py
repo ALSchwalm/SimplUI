@@ -45,13 +45,19 @@ def extract_workflow_inputs(workflow, object_info=None):
                 if isinstance(value, bool):
                     input_type = "bool"
                 elif isinstance(value, (int, float)):
-                    input_type = "number"
+                    if "seed" in name.lower():
+                        input_type = "seed"
+                    else:
+                        input_type = "number"
             
             input_data = {
                 "name": name,
                 "type": input_type,
                 "value": value
             }
+            if input_type == "seed":
+                input_data["randomize"] = (value == 0 or value == "0")
+                
             if options:
                 input_data["options"] = options
             
