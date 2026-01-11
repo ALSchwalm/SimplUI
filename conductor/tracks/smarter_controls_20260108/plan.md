@@ -14,7 +14,7 @@ This plan follows Test-Driven Development (TDD).
 
 ## Phase 2: Enhanced UI Rendering
 
-- [ ] Task: Gradio UI - Implement Dropdown rendering
-    - [ ] Sub-task: Write UI automation test (Playwright) verifying dropdown existence for sampler_name
-    - [ ] Sub-task: Update `render_dynamic_interface` to render `gr.Dropdown` for "enum" types
+- [x] Task: Gradio UI - Implement Dropdown rendering cca79f1
+    - [x] Sub-task: Write UI automation test (Playwright) verifying dropdown existence for sampler_name
+    - [x] Sub-task: Update `render_dynamic_interface` to render `gr.Dropdown` for "enum" types
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
