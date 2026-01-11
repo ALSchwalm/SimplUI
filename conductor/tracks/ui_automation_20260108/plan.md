@@ -11,11 +11,11 @@ This plan follows Test-Driven Development (TDD) where applicable, although UI te
     - [x] Sub-task: Implement `gradio_server` fixture to launch app in a background thread/process
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) ac1d3a3
 
-## Phase 2: Mocking and Initial Tests
+## Phase 2: Mocking and Initial Tests [checkpoint: 5d4668a]
 
 - [x] Task: Mocking - Implement ComfyUI Mock Backend 0dc63a4
     - [x] Sub-task: Create a simple FastAPI or Flask mock to simulate ComfyUI endpoints
 - [x] Task: Testing - Implement first UI test case 0dc63a4
     - [x] Sub-task: Write `tests/ui/test_basic_layout.py`
     - [x] Sub-task: Verify components visibility and basic interaction
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) 5d4668a
