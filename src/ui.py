@@ -174,14 +174,25 @@ def create_ui(config, comfy_client):
             # Update store with new seeds
             yield None, "Randomizing seeds...", gr.update(visible=True), overrides
 
+        # Construct seed info for status
+        seed_info = []
+        if overrides:
+            for k, v in overrides.items():
+                # Check if this key has a corresponding .randomize flag set to True
+                if f"{k}.randomize" in overrides and overrides[f"{k}.randomize"] is True:
+                    # Extract node ID and name for display if possible, or just value
+                    seed_info.append(f"Seed: {v}")
+        
+        seed_suffix = f" ({', '.join(seed_info)})" if seed_info else ""
+
         last_image = None
         last_status = "Processing..."
         async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
             last_image, last_status = update
-            yield last_image, last_status, gr.update(visible=True), overrides
+            yield last_image, last_status + seed_suffix, gr.update(visible=True), overrides
         
         # Hide stop button when done
-        yield last_image, last_status, gr.update(visible=False), overrides
+        yield last_image, "Generation complete" + seed_suffix, gr.update(visible=False), overrides
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
