@@ -56,4 +56,7 @@ def test_advanced_controls_toggle(page: Page):
     # Verify that a node parameter appears (e.g. "steps")
     # Using a slightly looser search since it's dynamic
     expect(page.get_by_text("KSampler")).to_be_visible()
-    expect(page.get_by_label("steps")).to_be_visible()
+    
+    # Steps might be a slider now, which has multiple inputs (number and range) sharing the label
+    # We just want to ensure it's visible.
+    expect(page.get_by_label("steps").first).to_be_visible()

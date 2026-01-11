@@ -352,13 +352,13 @@ def create_ui(config, comfy_client):
                                         comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
             with gr.Column(scale=2):
-                output_image = gr.Image(label="Generated Image", type="pil")
+                output_gallery = gr.Gallery(label="Generated Images", show_label=True, elem_id="gallery", columns=[2], rows=[2], object_fit="contain", height="auto")
                 status_text = gr.Markdown("Ready")
 
         gen_event = generate_btn.click(
             fn=on_generate,
             inputs=[workflow_dropdown, prompt_input, overrides_store],
-            outputs=[output_image, status_text, stop_btn, overrides_store]
+            outputs=[output_gallery, status_text, stop_btn, overrides_store]
         )
         
         # Clicking Generate again cancels the previous run
