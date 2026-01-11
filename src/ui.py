@@ -90,7 +90,7 @@ def apply_random_seeds(overrides):
             base_key = key[:-10] # remove .randomize
             # Generate random seed
             new_seed = random.randint(0, 18446744073709551615)
-            print(f"DEBUG: Randomizing seed for {base_key}: {new_seed}")
+            # print(f"DEBUG: Randomizing seed for {base_key}: {new_seed}")
             updated[base_key] = new_seed
     return updated
 
@@ -156,6 +156,9 @@ def create_ui(config, comfy_client):
     object_info = comfy_client.get_object_info()
     
     async def on_generate(workflow_name, prompt_text, overrides):
+        # Initial status and show stop button
+        yield None, "Initializing...", gr.update(visible=True), overrides
+        
         # Auto-stop previous runs
         try:
             comfy_client.interrupt()
@@ -168,9 +171,17 @@ def create_ui(config, comfy_client):
         # Apply random seeds
         if overrides:
             overrides = apply_random_seeds(overrides)
+            # Update store with new seeds
+            yield None, "Randomizing seeds...", gr.update(visible=True), overrides
 
+        last_image = None
+        last_status = "Processing..."
         async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-            yield update
+            last_image, last_status = update
+            yield last_image, last_status, gr.update(visible=True), overrides
+        
+        # Hide stop button when done
+        yield last_image, last_status, gr.update(visible=False), overrides
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
@@ -222,8 +233,8 @@ def create_ui(config, comfy_client):
                     stop_btn = gr.Button("Stop", variant="stop", visible=False)
                 
                 with gr.Accordion("Advanced Controls", open=False):
-                    @gr.render(inputs=[workflow_dropdown])
-                    def render_dynamic_interface(workflow_name):
+                    @gr.render(inputs=[workflow_dropdown, overrides_store])
+                    def render_dynamic_interface(workflow_name, overrides):
                         if not workflow_name:
                             gr.Markdown("Please select a workflow to continue.")
                             return
@@ -244,23 +255,41 @@ def create_ui(config, comfy_client):
                                 for inp in node["inputs"]:
                                     key = f"{node['node_id']}.{inp['name']}"
                                     
+                                    # Use value from overrides if available, else default
+                                    current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
+                                    
                                     if inp["type"] == "enum":
                                         comp = gr.Dropdown(
                                             choices=inp["options"],
                                             label=inp["name"],
-                                            value=inp["value"],
+                                            value=current_val,
                                             interactive=True
                                         )
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                    elif inp["type"] == "seed":
+                                        with gr.Row():
+                                            comp = gr.Number(label=inp["name"], value=current_val, scale=3, interactive=True)
+                                            # Check randomization state from overrides
+                                            random_key = f"{key}.randomize"
+                                            random_default = inp.get("randomize", False)
+                                            random_val = overrides.get(random_key, random_default) if overrides else random_default
+                                            
+                                            random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
+                                        
+                                        # Bind number input
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        
+                                        # Bind randomize checkbox
+                                        random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
                                     elif inp["type"] == "number":
-                                        comp = gr.Number(label=inp["name"], value=inp["value"], scale=1, interactive=True)
+                                        comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                     elif inp["type"] == "bool":
-                                        comp = gr.Checkbox(label=inp["name"], value=inp["value"], interactive=True)
+                                        comp = gr.Checkbox(label=inp["name"], value=current_val, interactive=True)
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                     else:
-                                        comp = gr.Textbox(label=inp["name"], value=str(inp["value"]), interactive=True)
-                                    
-                                    # JavaScript to update the store client-side
-                                    js_update = f"(val, store) => {{ store['{key}'] = val; return store; }}"
-                                    comp.change(fn=None, js=js_update, inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
+                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
             with gr.Column(scale=2):
                 output_image = gr.Image(label="Generated Image", type="pil")
@@ -269,7 +298,7 @@ def create_ui(config, comfy_client):
         gen_event = generate_btn.click(
             fn=on_generate,
             inputs=[workflow_dropdown, prompt_input, overrides_store],
-            outputs=[output_image, status_text, stop_btn]
+            outputs=[output_image, status_text, stop_btn, overrides_store]
         )
         
         # Clicking Generate again cancels the previous run
