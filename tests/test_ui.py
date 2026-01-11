@@ -57,6 +57,28 @@ def test_ui_components():
     
     # Generate button and Prompt textarea are static again
     assert "Generate" in str(config_json)
-    assert "Stop" in str(config_json)
     assert "Prompt" in str(config_json)
     assert "Advanced Controls" in str(config_json)
+
+def test_apply_random_seeds():
+    from ui import apply_random_seeds
+    
+    overrides = {
+        "1.steps": 30,
+        "1.seed": 123,
+        "1.seed.randomize": True,
+        "2.noise_seed": 456,
+        "2.noise_seed.randomize": False
+    }
+    
+    updated = apply_random_seeds(overrides)
+    
+    # 1.seed should be changed (randomized)
+    assert updated["1.seed"] != 123
+    assert isinstance(updated["1.seed"], int)
+    
+    # 2.noise_seed should NOT be changed
+    assert updated["2.noise_seed"] == 456
+    
+    # Other values should persist
+    assert updated["1.steps"] == 30

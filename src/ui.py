@@ -4,6 +4,7 @@ import asyncio
 from PIL import Image
 import io
 import copy
+import random
 
 def extract_workflow_inputs(workflow, object_info=None):
     extracted = []
@@ -76,11 +77,22 @@ def merge_workflow_overrides(workflow, overrides):
     if not overrides:
         return merged
     for key, value in overrides.items():
-        if "." in key:
+        if "." in key and not key.endswith(".randomize"):
             node_id, input_name = key.split(".", 1)
             if node_id in merged and "inputs" in merged[node_id]:
                 merged[node_id]["inputs"][input_name] = value
     return merged
+
+def apply_random_seeds(overrides):
+    updated = copy.deepcopy(overrides)
+    for key, value in overrides.items():
+        if key.endswith(".randomize") and value is True:
+            base_key = key[:-10] # remove .randomize
+            # Generate random seed
+            new_seed = random.randint(0, 18446744073709551615)
+            print(f"DEBUG: Randomizing seed for {base_key}: {new_seed}")
+            updated[base_key] = new_seed
+    return updated
 
 def get_prompt_default_value(workflow):
     for node_data in workflow.values():
@@ -144,9 +156,6 @@ def create_ui(config, comfy_client):
     object_info = comfy_client.get_object_info()
     
     async def on_generate(workflow_name, prompt_text, overrides):
-        # Initial status and show stop button
-        yield None, "Initializing...", gr.update(visible=True)
-        
         # Auto-stop previous runs
         try:
             comfy_client.interrupt()
@@ -156,14 +165,12 @@ def create_ui(config, comfy_client):
         except Exception:
             pass
 
-        last_image = None
-        last_status = "Processing..."
+        # Apply random seeds
+        if overrides:
+            overrides = apply_random_seeds(overrides)
+
         async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-            last_image, last_status = update
-            yield last_image, last_status, gr.update(visible=True)
-        
-        # Hide stop button when done
-        yield last_image, last_status, gr.update(visible=False)
+            yield update
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
