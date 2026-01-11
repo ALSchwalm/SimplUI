@@ -13,9 +13,9 @@ This plan follows Test-Driven Development (TDD) where applicable, although UI te
 
 ## Phase 2: Mocking and Initial Tests
 
-- [ ] Task: Mocking - Implement ComfyUI Mock Backend
-    - [ ] Sub-task: Create a simple FastAPI or Flask mock to simulate ComfyUI endpoints
-- [ ] Task: Testing - Implement first UI test case
-    - [ ] Sub-task: Write `tests/ui/test_basic_layout.py`
-    - [ ] Sub-task: Verify components visibility and basic interaction
+- [x] Task: Mocking - Implement ComfyUI Mock Backend 0dc63a4
+    - [x] Sub-task: Create a simple FastAPI or Flask mock to simulate ComfyUI endpoints
+- [x] Task: Testing - Implement first UI test case 0dc63a4
+    - [x] Sub-task: Write `tests/ui/test_basic_layout.py`
+    - [x] Sub-task: Verify components visibility and basic interaction
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
