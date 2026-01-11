@@ -33,6 +33,11 @@ async def test_handle_generation_success():
                 assert updates[1] == ("mock_preview_image", "Progress: 5/10")
                 assert updates[2] == ("mock_pil_image", "Generation complete")
                 
+                # Note: test_handle_generation_success tests handle_generation directly,
+                # which still returns 2 values.
+                # The on_generate wrapper returns 3. 
+                # This test is still valid for handle_generation.
+                
                 client.inject_prompt.assert_called_once_with({"mock": "workflow"}, "User Prompt")
                 client.generate_image.assert_called_once_with({"mock": "workflow"})
 

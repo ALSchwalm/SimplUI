@@ -9,7 +9,7 @@ class ComfyClient:
 
     def check_connection(self):
         try:
-            response = requests.get(f"{self.base_url}/system_stats")
+            response = requests.get(f"{self.base_url}/system_stats", timeout=5)
             return response.status_code == 200
         except requests.exceptions.RequestException:
             return False
@@ -17,7 +17,8 @@ class ComfyClient:
     def submit_workflow(self, workflow, client_id):
         response = requests.post(
             f"{self.base_url}/prompt", 
-            json={"prompt": workflow, "client_id": client_id}
+            json={"prompt": workflow, "client_id": client_id},
+            timeout=10
         )
         response.raise_for_status()
         return response.json().get("prompt_id")
@@ -54,7 +55,6 @@ class ComfyClient:
                                     if image.get("type") in ["output", "temp"]:
                                         filename = image["filename"]
                                         subfolder = image["subfolder"]
-                                        # Note: Blocking call in async loop
                                         image_data = self._get_image(filename, subfolder, image["type"])
                                         yield {"type": "image", "data": image_data}
                             break # End loop after receiving images for this prompt
@@ -65,7 +65,8 @@ class ComfyClient:
     def _get_image(self, filename, subfolder, folder_type):
         response = requests.get(
             f"{self.base_url}/view", 
-            params={"filename": filename, "subfolder": subfolder, "type": folder_type}
+            params={"filename": filename, "subfolder": subfolder, "type": folder_type},
+            timeout=30
         )
         return response.content
 
@@ -81,9 +82,6 @@ class ComfyClient:
     def inject_prompt(self, workflow, prompt_text):
         node_id = self.find_node_by_title(workflow, "Prompt")
         if node_id:
-            # We assume the input field is named 'text' or 'string'.
-            # We prioritize 'text' as it's common for CLIPTextEncode.
-            # A more robust solution would inspect the node type definition, but that requires an API call.
             inputs = workflow[node_id].get("inputs", {})
             if "text" in inputs:
                 inputs["text"] = prompt_text
@@ -91,21 +89,18 @@ class ComfyClient:
             elif "string" in inputs:
                 inputs["string"] = prompt_text
                 return True
-            # Fallback: if 'text' isn't there, maybe create it? 
-            # Or assume 'text' is the target if inputs is empty?
-            # Let's set 'text' if neither exists, assuming standard CLIPTextEncode behavior.
             inputs["text"] = prompt_text
             return True
         return False
 
     def interrupt(self):
         try:
-            requests.post(f"{self.base_url}/interrupt")
+            requests.post(f"{self.base_url}/interrupt", timeout=5)
         except Exception:
             pass
 
     def clear_queue(self):
         try:
-            requests.post(f"{self.base_url}/queue", json={"clear": True})
+            requests.post(f"{self.base_url}/queue", json={"clear": True}, timeout=5)
         except Exception:
             pass

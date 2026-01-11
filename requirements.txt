@@ -3,3 +3,5 @@ requests
 websockets
 pytest
 pytest-cov
+pytest-asyncio
+pytest-playwright

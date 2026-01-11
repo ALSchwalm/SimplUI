@@ -37,7 +37,8 @@ def test_submit_workflow_success():
         assert prompt_id == "12345"
         mock_post.assert_called_once_with(
             "http://localhost:8188/prompt",
-            json={"prompt": workflow, "client_id": client_id}
+            json={"prompt": workflow, "client_id": client_id},
+            timeout=10
         )
 
 def test_submit_workflow_failure():
@@ -92,18 +93,35 @@ def test_inject_prompt():
     assert success is False
 
 def test_interrupt_success():
+
     client = ComfyClient("http://localhost:8188")
+
     with patch("requests.post") as mock_post:
+
         mock_post.return_value.status_code = 200
+
         client.interrupt()
-        mock_post.assert_called_once_with("http://localhost:8188/interrupt")
+
+        mock_post.assert_called_once_with("http://localhost:8188/interrupt", timeout=5)
+
+
 
 def test_clear_queue_success():
+
     client = ComfyClient("http://localhost:8188")
+
     with patch("requests.post") as mock_post:
+
         mock_post.return_value.status_code = 200
+
         client.clear_queue()
+
         mock_post.assert_called_once_with(
+
             "http://localhost:8188/queue",
-            json={"clear": True}
+
+            json={"clear": True},
+
+            timeout=5
+
         )

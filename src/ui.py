@@ -110,15 +110,26 @@ def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     
     async def on_generate(workflow_name, prompt_text, overrides):
+        # Initial status and show stop button
+        yield None, "Initializing...", gr.update(visible=True)
+        
         # Auto-stop previous runs
         try:
             comfy_client.interrupt()
             comfy_client.clear_queue()
+            # Small delay to ensure server processes interrupt before new submission
+            await asyncio.sleep(0.1)
         except Exception:
             pass
-            
+
+        last_image = None
+        last_status = "Processing..."
         async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-            yield update
+            last_image, last_status = update
+            yield last_image, last_status, gr.update(visible=True)
+        
+        # Hide stop button when done
+        yield last_image, last_status, gr.update(visible=False)
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
@@ -167,7 +178,7 @@ def create_ui(config, comfy_client):
                 
                 with gr.Row():
                     generate_btn = gr.Button("Generate", variant="primary")
-                    stop_btn = gr.Button("Stop", variant="stop")
+                    stop_btn = gr.Button("Stop", variant="stop", visible=False)
                 
                 with gr.Accordion("Advanced Controls", open=False):
                     @gr.render(inputs=[workflow_dropdown])
@@ -207,20 +218,24 @@ def create_ui(config, comfy_client):
                 output_image = gr.Image(label="Generated Image", type="pil")
                 status_text = gr.Markdown("Ready")
 
-        generate_btn.click(
+        gen_event = generate_btn.click(
             fn=on_generate,
             inputs=[workflow_dropdown, prompt_input, overrides_store],
-            outputs=[output_image, status_text]
+            outputs=[output_image, status_text, stop_btn]
         )
+        
+        # Clicking Generate again cancels the previous run
+        gen_event.cancels = [gen_event]
         
         def stop_generation():
             comfy_client.interrupt()
-            return gr.update(value="Interrupted")
+            return gr.update(value="Interrupted"), gr.update(visible=False)
 
         stop_btn.click(
             fn=stop_generation,
             inputs=[],
-            outputs=[status_text]
+            outputs=[status_text, stop_btn],
+            cancels=[gen_event] # Stop button cancels the generation task
         )
         
     return demo
