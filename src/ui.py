@@ -5,12 +5,18 @@ from PIL import Image
 import io
 import copy
 
-def extract_workflow_inputs(workflow):
+def extract_workflow_inputs(workflow, object_info=None):
     extracted = []
     for node_id, node_data in workflow.items():
         title = node_data.get("_meta", {}).get("title", f"Node {node_id}")
+        class_type = node_data.get("class_type", "")
         inputs = []
         is_prompt_node = title.lower() == "prompt"
+        
+        # Get node definition from object_info
+        node_def = None
+        if object_info and class_type in object_info:
+            node_def = object_info[class_type]
         
         for name, value in node_data.get("inputs", {}).items():
             if isinstance(value, list):
@@ -21,16 +27,35 @@ def extract_workflow_inputs(workflow):
                 continue
             
             input_type = "str"
-            if isinstance(value, bool):
-                input_type = "bool"
-            elif isinstance(value, (int, float)):
-                input_type = "number"
+            options = None
             
-            inputs.append({
+            # Check for Enum in object_info
+            if node_def:
+                # Inputs can be in 'required' or 'optional'
+                input_def = node_def.get("input", {}).get("required", {}).get(name)
+                if not input_def:
+                    input_def = node_def.get("input", {}).get("optional", {}).get(name)
+                
+                # If input definition is a list, it's an enum
+                if isinstance(input_def, list) and len(input_def) > 0 and isinstance(input_def[0], list):
+                    input_type = "enum"
+                    options = input_def[0]
+            
+            if input_type != "enum":
+                if isinstance(value, bool):
+                    input_type = "bool"
+                elif isinstance(value, (int, float)):
+                    input_type = "number"
+            
+            input_data = {
                 "name": name,
                 "type": input_type,
                 "value": value
-            })
+            }
+            if options:
+                input_data["options"] = options
+            
+            inputs.append(input_data)
         
         if inputs:
             extracted.append({

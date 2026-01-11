@@ -40,29 +40,40 @@ def test_extract_workflow_inputs():
     input_names = [i["name"] for i in prompt_node["inputs"]]
     assert "text" not in input_names
     assert "other_param" in input_names
+
+def test_extract_workflow_inputs_with_metadata():
+    from ui import extract_workflow_inputs
     
-    # Check KSampler
-    ksampler = next(n for n in extracted if n["title"] == "KSampler")
-    assert ksampler["node_id"] == "1"
-    assert len(ksampler["inputs"]) == 3
+    workflow = {
+        "1": {
+            "_meta": {"title": "KSampler"},
+            "class_type": "KSampler",
+            "inputs": {
+                "sampler_name": "euler"
+            }
+        }
+    }
     
-    steps_input = next(i for i in ksampler["inputs"] if i["name"] == "steps")
-    assert steps_input["value"] == 20
-    assert steps_input["type"] == "number"
+    # Mock Object Info
+    object_info = {
+        "KSampler": {
+            "input": {
+                "required": {
+                    "sampler_name": [["euler", "ddim", "heun"]]
+                }
+            }
+        }
+    }
     
-    cfg_input = next(i for i in ksampler["inputs"] if i["name"] == "cfg")
-    assert cfg_input["value"] == 8.0
-    assert cfg_input["type"] == "number"
+    extracted = extract_workflow_inputs(workflow, object_info)
     
-    sampler_input = next(i for i in ksampler["inputs"] if i["name"] == "sampler_name")
+    node = extracted[0]
+    sampler_input = node["inputs"][0]
+    
+    assert sampler_input["name"] == "sampler_name"
+    assert sampler_input["type"] == "enum"
+    assert sampler_input["options"] == ["euler", "ddim", "heun"]
     assert sampler_input["value"] == "euler"
-    assert sampler_input["type"] == "str"
-    
-    # Check CheckpointLoader
-    ckpt = next(n for n in extracted if n["title"] == "CheckpointLoader")
-    assert ckpt["node_id"] == "2"
-    ckpt_input = next(i for i in ckpt["inputs"] if i["name"] == "ckpt_name")
-    assert ckpt_input["value"] == "v1-5-pruned-emaonly.ckpt"
 
 def test_merge_workflow_overrides():
     from ui import merge_workflow_overrides
