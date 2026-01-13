@@ -11,9 +11,9 @@ This plan follows Test-Driven Development (TDD).
 
 ## Phase 2: UI Implementation
 
-- [ ] Task: Gradio UI - Replace Image with Gallery
-    - [ ] Sub-task: Update `create_ui` to use `gr.Gallery`
-    - [ ] Sub-task: Update `on_generate` output mapping
-- [ ] Task: Testing - UI Automation
-    - [ ] Sub-task: Write Playwright test verifying that multiple items appear in the gallery for a mock batch
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Gradio UI - Replace Image with Gallery 566134c
+    - [x] Sub-task: Update `create_ui` to use `gr.Gallery`
+    - [x] Sub-task: Update `on_generate` output mapping
+- [x] Task: Testing - UI Automation 566134c
+    - [x] Sub-task: Write Playwright test verifying that multiple items appear in the gallery for a mock batch
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) 566134c
