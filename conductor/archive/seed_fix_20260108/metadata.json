@@ -1,0 +1,8 @@
+{
+  "track_id": "seed_fix_20260108",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-08T00:55:00Z",
+  "updated_at": "2026-01-08T00:55:00Z",
+  "description": "Fix bug where seed value in UI does not update on randomization"
+}

@@ -1,0 +1,8 @@
+{
+  "track_id": "batch_gallery_20260108",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-08T01:30:00Z",
+  "updated_at": "2026-01-08T01:30:00Z",
+  "description": "Support multiple image outputs using gr.Gallery for batch generations"
+}

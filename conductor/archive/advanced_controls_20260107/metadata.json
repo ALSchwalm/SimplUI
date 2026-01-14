@@ -1,0 +1,8 @@
+{
+  "track_id": "advanced_controls_20260107",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-07T23:20:00Z",
+  "updated_at": "2026-01-07T23:20:00Z",
+  "description": "Implement advanced node property controls in the UI"
+}

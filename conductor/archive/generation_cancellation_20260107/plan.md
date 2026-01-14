@@ -14,6 +14,6 @@ This plan follows Test-Driven Development (TDD). Each feature task requires writ
 - [x] Task: Gradio UI - Add Stop button and state tracking 3fc07f2
     - [x] Sub-task: Write tests for Stop button presence and click handler (mocked)
     - [x] Sub-task: Update `create_ui` to include Stop button and bind events
-- [ ] Task: Gradio UI - Implement Auto-Stop on Re-Generate
-    - [ ] Sub-task: Update `handle_generation` to check state and interrupt previous run
+- [x] Task: Gradio UI - Implement Auto-Stop on Re-Generate 3fc07f2
+    - [x] Sub-task: Update `handle_generation` to check state and interrupt previous run
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
