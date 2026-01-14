@@ -165,15 +165,20 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
     # 4. Generate Image (Connect -> Submit -> Listen)
     try:
         completed_images = []
+        latest_preview = None
         last_status = "Starting..."
         async for event in comfy_client.generate_image(workflow_json):
             if event["type"] == "progress":
                 last_status = f"Progress: {event['value']}/{event['max']}"
-                # Yield completed images so far
-                yield list(completed_images), last_status
+                # Yield completed images + latest preview if available
+                current_images = list(completed_images)
+                if latest_preview:
+                    current_images.append(latest_preview)
+                yield current_images, last_status
             elif event["type"] == "preview":
                 try:
                     preview_image = Image.open(io.BytesIO(event["data"]))
+                    latest_preview = preview_image
                     # Show preview as the next potential image
                     yield completed_images + [preview_image], last_status
                 except Exception as e:
@@ -183,6 +188,7 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                 try:
                     final_image = Image.open(io.BytesIO(image_bytes))
                     completed_images.append(final_image)
+                    latest_preview = None # Clear preview as it is replaced by final image
                     yield list(completed_images), "Generation complete"
                 except Exception as e:
                     yield list(completed_images), f"Error processing image: {e}"

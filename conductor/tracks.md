@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Build core connectivity and basic Gradio UI for ComfyUI workflow execution
-*Link: [./conductor/tracks/core_connectivity_20260107/](./conductor/tracks/core_connectivity_20260107/)*
+## [~] Track: Fix flickering in the preview panel during image generation
+*Link: [./conductor/tracks/preview_flicker_fix_20260113/](./conductor/tracks/preview_flicker_fix_20260113/)*
