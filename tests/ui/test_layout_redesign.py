@@ -50,6 +50,10 @@ def test_layout_structure():
     # The sidebar is the one containing the render block or the markdown "Advanced Controls"
     sidebar = next(c for c in components if c["type"] == "column" and c["props"].get("visible") is False)
     assert sidebar is not None, "Sidebar column should be invisible by default"
+    
+    # Check for Tabs inside sidebar (or generally present)
+    tabs = [c for c in components if c["type"] == "tabs"]
+    assert len(tabs) >= 1, "Should have a Tabs component"
 
 def test_vertical_stack():
     config = Mock(spec=ConfigManager)
