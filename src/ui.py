@@ -243,11 +243,17 @@ def create_ui(config, comfy_client):
         display: flex !important;
         flex-direction: column !important;
         height: 100% !important;
+        min-height: 100% !important;
         gap: 0 !important;
     }
-    .vertical-buttons > button {
-        flex: 1 1 auto !important;
+    .vertical-buttons > .block {
+        flex: 1 1 0% !important;
+        display: flex !important;
+        min-height: 0 !important;
+    }
+    .vertical-buttons button {
         height: 100% !important;
+        width: 100% !important;
     }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
@@ -271,7 +277,7 @@ def create_ui(config, comfy_client):
                 return ""
 
         with gr.Row():
-            with gr.Column(scale=3):
+            with gr.Column(scale=3) as main_col:
                 output_gallery = gr.Gallery(
                     label="Generated Images", 
                     show_label=True, 
@@ -303,7 +309,7 @@ def create_ui(config, comfy_client):
                         )
                     
                     with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
-                        generate_btn = gr.Button("Generate", variant="primary")
+                        generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                         stop_btn = gr.Button("Stop", variant="stop", visible=False)
                 
                 # Advanced Controls Toggle
@@ -387,11 +393,11 @@ def create_ui(config, comfy_client):
                                     comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
                                     comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
-        # Bind sidebar visibility
+        # Bind sidebar visibility and main column scale
         advanced_toggle.change(
-            fn=lambda x: gr.update(visible=x),
+            fn=lambda x: (gr.update(visible=x), gr.update(scale=3 if x else 1)),
             inputs=[advanced_toggle],
-            outputs=[sidebar_col]
+            outputs=[sidebar_col, main_col]
         )
 
         gen_event = generate_btn.click(

@@ -22,7 +22,7 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Sidebar Toggle & Dynamic Rendering' (Protocol in workflow.md)
 
 ## Phase 3: Verification & Polish
-- [ ] Task: Testing - Update UI Tests
-    - [ ] Sub-task: Update `tests/test_ui.py` to reflect the new component nesting and hierarchy.
-    - [ ] Sub-task: Write/Update Playwright tests to verify the sidebar toggle works and "pushes" content.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Verification & Polish' (Protocol in workflow.md)
+- [x] Task: Testing - Update UI Tests
+    - [x] Sub-task: Update `tests/test_ui.py` to reflect the new component nesting and hierarchy.
+    - [x] Sub-task: Write/Update Playwright tests to verify the sidebar toggle works and "pushes" content.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Verification & Polish' (Protocol in workflow.md)
