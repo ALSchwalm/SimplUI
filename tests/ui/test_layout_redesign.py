@@ -38,6 +38,19 @@ def test_layout_structure():
     checkboxes = [c for c in components if c["type"] == "checkbox" and c["props"].get("label") == "Advanced Controls"]
     assert len(checkboxes) == 1, "Should have an 'Advanced Controls' checkbox"
 
+    # Check for vertical buttons column
+    btn_cols = [c for c in components if c["type"] == "column" and "vertical-buttons" in c["props"].get("elem_classes", [])]
+    assert len(btn_cols) == 1, "Should have a column with 'vertical-buttons' class"
+    
+    # Check for equal_height Row
+    prompt_rows = [c for c in components if c["type"] == "row" and c["props"].get("equal_height") is True]
+    assert len(prompt_rows) >= 1, "Prompt row should have equal_height=True"
+    
+    # Check for sidebar column and its visibility
+    # The sidebar is the one containing the render block or the markdown "Advanced Controls"
+    sidebar = next(c for c in components if c["type"] == "column" and c["props"].get("visible") is False)
+    assert sidebar is not None, "Sidebar column should be invisible by default"
+
 def test_vertical_stack():
     config = Mock(spec=ConfigManager)
     config.workflows = [{"name": "Workflow 1", "path": "path1"}]

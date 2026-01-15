@@ -238,7 +238,20 @@ def create_ui(config, comfy_client):
         # Hide stop button when done
         yield last_image, "Generation complete" + seed_suffix, gr.update(visible=False), overrides
 
+    css = """
+    .vertical-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        gap: 0 !important;
+    }
+    .vertical-buttons > button {
+        flex: 1 1 auto !important;
+        height: 100% !important;
+    }
+    """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
+        gr.HTML(f"<style>{css}</style>")
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
         
         # Client-side store for overrides.
@@ -276,7 +289,7 @@ def create_ui(config, comfy_client):
                     value=workflow_names[0] if workflow_names else None
                 )
                 
-                with gr.Row():
+                with gr.Row(equal_height=True):
                     with gr.Column(scale=4):
                         initial_prompt = ""
                         if workflow_names:
@@ -289,7 +302,7 @@ def create_ui(config, comfy_client):
                             placeholder="Enter your description here..."
                         )
                     
-                    with gr.Column(scale=1, min_width=100):
+                    with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
                         generate_btn = gr.Button("Generate", variant="primary")
                         stop_btn = gr.Button("Stop", variant="stop", visible=False)
                 
