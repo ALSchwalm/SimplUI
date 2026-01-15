@@ -18,8 +18,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Verification
-- [~] Task: Verify Fix
-    - [ ] Sub-task: Run the test workflow again.
-    - [ ] Sub-task: Visually confirm that the flickering is gone.
-    - [ ] Sub-task: Ensure that the final image still renders correctly.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Verification' (Protocol in workflow.md)
+- [x] Task: Verify Fix
+    - [x] Sub-task: Run the test workflow again.
+    - [x] Sub-task: Visually confirm that the flickering is gone.
+    - [x] Sub-task: Ensure that the final image still renders correctly.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Verification' (Protocol in workflow.md)

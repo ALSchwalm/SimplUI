@@ -1,0 +1,13 @@
+{
+    "comfy_url": "http://10.10.10.65:8188",
+    "workflows": [
+        {
+            "name": "Test Workflow",
+            "path": "workflows/test.json"
+        },
+	{
+            "name": "Real Workflow",
+            "path": "workflows/real.json"
+        }
+    ]
+}

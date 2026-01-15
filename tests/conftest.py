@@ -14,6 +14,11 @@ def mock_config():
     config.workflows = [
         {"name": "Test Workflow", "path": "workflows/test.json"}
     ]
+    # Default sliders mock
+    config.sliders = {
+        "steps": {"min": 1, "max": 100, "step": 1},
+        "cfg": {"min": 0.0, "max": 20.0, "step": 0.1}
+    }
     # Ensure workflow file exists for reading
     import os
     if not os.path.exists("workflows"):
