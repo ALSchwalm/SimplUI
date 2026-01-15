@@ -17,7 +17,7 @@
     - [x] Sub-task: Apply the fix to `src/ui.py`.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
-## Phase 3: Verification
+## Phase 3: Verification [checkpoint: a3ead85]
 - [x] Task: Verify Fix
     - [x] Sub-task: Run the test workflow again.
     - [x] Sub-task: Visually confirm that the flickering is gone.

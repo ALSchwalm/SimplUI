@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Fix flickering in the preview panel during image generation
-*Link: [./conductor/tracks/preview_flicker_fix_20260113/](./conductor/tracks/preview_flicker_fix_20260113/)*
+## [~] Track: UI Layout Redesign
+*Link: [./conductor/tracks/ui_layout_redesign_20260113/](./conductor/tracks/ui_layout_redesign_20260113/)*
