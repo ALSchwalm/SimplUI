@@ -13,12 +13,12 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Layout Skeleton & Component Migration' (Protocol in workflow.md)
 
 ## Phase 2: Sidebar Toggle & Dynamic Rendering
-- [ ] Task: Gradio UI - Implement Sidebar Visibility Toggle
-    - [ ] Sub-task: Add the "Advanced Controls" `gr.Checkbox` below the prompt area.
-    - [ ] Sub-task: Bind the checkbox change event to update the `visible` state of `sidebar_col`.
-- [ ] Task: Gradio UI - Migrate Dynamic Controls to Sidebar
-    - [ ] Sub-task: Move the `@gr.render` block (Advanced Controls) into the `sidebar_col`.
-    - [ ] Sub-task: Remove the old `gr.Accordion`.
+- [x] Task: Gradio UI - Implement Sidebar Visibility Toggle 197cc01
+    - [x] Sub-task: Add the "Advanced Controls" `gr.Checkbox` below the prompt area.
+    - [x] Sub-task: Bind the checkbox change event to update the `visible` state of `sidebar_col`.
+- [x] Task: Gradio UI - Migrate Dynamic Controls to Sidebar 197cc01
+    - [x] Sub-task: Move the `@gr.render` block (Advanced Controls) into the `sidebar_col`.
+    - [x] Sub-task: Remove the old `gr.Accordion`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Sidebar Toggle & Dynamic Rendering' (Protocol in workflow.md)
 
 ## Phase 3: Verification & Polish
