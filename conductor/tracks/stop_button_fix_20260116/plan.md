@@ -12,7 +12,7 @@
     - [x] Ensure the visibility toggle handles success, manual stop, and error cases.
 - [x] Task: Update Progress & Status Logic 2d0ea52, d2a40e4
     - [x] Modify `src/ui.py` to reset the progress bar and update the status label to "Ready" in all termination paths.
-- [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: 0357a59]
 
 ## Phase 3: Verification
 - [ ] Task: Run Reproduction Tests
