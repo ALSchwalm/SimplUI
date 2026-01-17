@@ -290,112 +290,113 @@ def create_ui(config, comfy_client):
                     with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
                         generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                         stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
-            # Advanced Controls Toggle
-            advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False)
+                # Advanced Controls Toggle
+                with gr.Row():
+                    advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False)
+    
+                # Bind prompt update
+                workflow_dropdown.change(
+                    fn=update_prompt_on_change,
+                    inputs=[workflow_dropdown],
+                    outputs=[prompt_input]
+                )
 
-            # Bind prompt update
-            workflow_dropdown.change(
-                fn=update_prompt_on_change,
-                inputs=[workflow_dropdown],
-                outputs=[prompt_input]
+            with gr.Column(scale=1, visible=False, min_width=0) as sidebar_col:
+                with gr.Tabs():
+                    with gr.Tab("Node Controls"):
+                        @gr.render(inputs=[workflow_dropdown, overrides_store, advanced_toggle])
+                        def render_dynamic_interface(workflow_name, overrides, show_advanced):
+                            if not show_advanced or not workflow_name:
+                                return
+    
+                            workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+                            try:
+                                with open(workflow_info["path"], "r") as f:
+                                    workflow_json = json.load(f)
+                            except Exception as e:
+                                gr.Markdown(f"Error loading workflow: {e}")
+                                return
+    
+                            extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
+    
+                            for node in extracted:
+                                with gr.Group():
+                                    gr.Markdown(f"#### {node['title']} ({node['node_id']})")
+                                    for inp in node["inputs"]:
+                                        key = f"{node['node_id']}.{inp['name']}"
+    
+                                        # Use value from overrides if available, else default
+                                        current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
+    
+                                        if inp["type"] == "enum":
+                                            comp = gr.Dropdown(
+                                                choices=inp["options"],
+                                                label=inp["name"],
+                                                value=current_val,
+                                                interactive=True
+                                            )
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        elif inp["type"] == "seed":
+                                            with gr.Row():
+                                                # Use Textbox to preserve 64-bit integer precision
+                                                comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=3, interactive=True)
+                                                # Check randomization state from overrides
+                                                random_key = f"{key}.randomize"
+                                                random_default = inp.get("randomize", False)
+                                                random_val = overrides.get(random_key, random_default) if overrides else random_default
+    
+                                                random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
+    
+                                            # Bind number input (as text)
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+    
+                                            # Bind randomize checkbox
+                                            random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
+                                        elif inp["type"] == "slider":
+                                            comp = gr.Slider(
+                                                label=inp["name"],
+                                                value=current_val,
+                                                minimum=inp["min"],
+                                                maximum=inp["max"],
+                                                step=inp.get("step", 1),
+                                                interactive=True
+                                            )
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        elif inp["type"] == "number":
+                                            comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        elif inp["type"] == "bool":
+                                            comp = gr.Checkbox(label=inp["name"], value=current_val, interactive=True)
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                        else:
+                                            comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
+                                            comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+    
+            # Bind sidebar visibility
+            advanced_toggle.change(
+                fn=lambda x: gr.update(visible=x),
+                inputs=[advanced_toggle],
+                outputs=[sidebar_col]
             )
-
-        with gr.Column(scale=1, visible=False, min_width=0) as sidebar_col:
-            with gr.Tabs():
-                with gr.Tab("Node Controls"):
-                    @gr.render(inputs=[workflow_dropdown, overrides_store, advanced_toggle])
-                    def render_dynamic_interface(workflow_name, overrides, show_advanced):
-                        if not show_advanced or not workflow_name:
-                            return
-
-                        workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
-                        try:
-                            with open(workflow_info["path"], "r") as f:
-                                workflow_json = json.load(f)
-                        except Exception as e:
-                            gr.Markdown(f"Error loading workflow: {e}")
-                            return
-
-                        extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
-
-                        for node in extracted:
-                            with gr.Group():
-                                gr.Markdown(f"#### {node['title']} ({node['node_id']})")
-                                for inp in node["inputs"]:
-                                    key = f"{node['node_id']}.{inp['name']}"
-
-                                    # Use value from overrides if available, else default
-                                    current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
-
-                                    if inp["type"] == "enum":
-                                        comp = gr.Dropdown(
-                                            choices=inp["options"],
-                                            label=inp["name"],
-                                            value=current_val,
-                                            interactive=True
-                                        )
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-                                    elif inp["type"] == "seed":
-                                        with gr.Row():
-                                            # Use Textbox to preserve 64-bit integer precision
-                                            comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=3, interactive=True)
-                                            # Check randomization state from overrides
-                                            random_key = f"{key}.randomize"
-                                            random_default = inp.get("randomize", False)
-                                            random_val = overrides.get(random_key, random_default) if overrides else random_default
-
-                                            random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
-
-                                        # Bind number input (as text)
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-
-                                        # Bind randomize checkbox
-                                        random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
-                                    elif inp["type"] == "slider":
-                                        comp = gr.Slider(
-                                            label=inp["name"],
-                                            value=current_val,
-                                            minimum=inp["min"],
-                                            maximum=inp["max"],
-                                            step=inp.get("step", 1),
-                                            interactive=True
-                                        )
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-                                    elif inp["type"] == "number":
-                                        comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-                                    elif inp["type"] == "bool":
-                                        comp = gr.Checkbox(label=inp["name"], value=current_val, interactive=True)
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-                                    else:
-                                        comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
-                                        comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-
-        # Bind sidebar visibility
-        advanced_toggle.change(
-            fn=lambda x: gr.update(visible=x),
-            inputs=[advanced_toggle],
-            outputs=[sidebar_col]
-        )
-
-        gen_event = generate_btn.click(
-            fn=on_generate,
-            inputs=[workflow_dropdown, prompt_input, overrides_store],
-            outputs=[output_gallery, status_text, stop_btn, overrides_store]
-        )
-
-        # Clicking Generate again cancels the previous run
-        gen_event.cancels = [gen_event]
-
-        def stop_generation():
-            comfy_client.interrupt()
-            return gr.update(value="Interrupted"), gr.update(visible=False)
-
-        stop_btn.click(
-            fn=stop_generation,
-            inputs=[],
-            outputs=[status_text, stop_btn],
-            cancels=[gen_event] # Stop button cancels the generation task
-        )
-
-    return demo
+    
+            gen_event = generate_btn.click(
+                fn=on_generate,
+                inputs=[workflow_dropdown, prompt_input, overrides_store],
+                outputs=[output_gallery, status_text, stop_btn, overrides_store]
+            )
+    
+            # Clicking Generate again cancels the previous run
+            gen_event.cancels = [gen_event]
+    
+            def stop_generation():
+                comfy_client.interrupt()
+                return gr.update(value="Interrupted"), gr.update(visible=False)
+    
+            stop_btn.click(
+                fn=stop_generation,
+                inputs=[],
+                outputs=[status_text, stop_btn],
+                cancels=[gen_event] # Stop button cancels the generation task
+            )
+    
+        return demo
