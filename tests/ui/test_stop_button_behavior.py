@@ -16,6 +16,8 @@ def test_stop_button_hides_after_success(page: Page):
     # 2. Wait for Processing
     expect(page.get_by_text("Initializing").first).to_be_visible()
     expect(stop_btn).to_be_visible()
+    expect(generate_btn).to_be_visible()
+    expect(generate_btn).to_be_enabled()
     
     # 3. Wait for Completion
     expect(page.get_by_text("Generation complete").first).to_be_visible(timeout=10000)
