@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: UI Layout Redesign
-*Link: [./conductor/tracks/ui_layout_redesign_20260113/](./conductor/tracks/ui_layout_redesign_20260113/)*
+- [x] **Track: Stop button remains visible after generation completes or errors.**
+*Link: [./tracks/stop_button_fix_20260116/](./tracks/stop_button_fix_20260116/)*
