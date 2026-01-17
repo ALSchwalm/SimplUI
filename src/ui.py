@@ -201,9 +201,9 @@ def create_ui(config, comfy_client):
     # Fetch node definitions from ComfyUI
     object_info = comfy_client.get_object_info()
 
-    async def on_generate(workflow_name, prompt_text, overrides):
-        # Initial status and show stop button
-        yield None, "Initializing...", gr.update(visible=True), overrides
+    async def on_generate(workflow_name, prompt_text, overrides, progress=gr.Progress()):
+        # Initial status: Disable Generate, Show Stop
+        yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), overrides
 
         # Auto-stop previous runs
         try:
@@ -218,7 +218,7 @@ def create_ui(config, comfy_client):
         if overrides:
             overrides = apply_random_seeds(overrides)
             # Update store with new seeds
-            yield None, "Randomizing seeds...", gr.update(visible=True), overrides
+            yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), overrides
 
         # Construct seed info for status
         seed_info = []
@@ -231,9 +231,34 @@ def create_ui(config, comfy_client):
 
         last_image = None
         last_status = "Processing..."
-        async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-            last_image, last_status = update
-            yield last_image, last_status + seed_suffix, gr.update(visible=True), overrides
+        
+        # Use a flag to track if we finished naturally
+        finished_naturally = False
+        
+        try:
+            async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
+                last_image, last_status = update
+                
+                # Update progress bar if status contains progress info
+                if "Progress:" in last_status:
+                    try:
+                        # expected format: "Progress: 5/10"
+                        parts = last_status.split(" ")[1].split("/")
+                        curr = int(parts[0])
+                        total = int(parts[1])
+                        progress((curr, total), desc="Generating...")
+                    except:
+                        pass
+                
+                yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), overrides
+            finished_naturally = True
+        finally:
+            # If finished naturally (success or error caught inside handle_generation which yields final status),
+            # we need to hide Stop and show Generate.
+            # If cancelled (finished_naturally is False), this block still runs, but yielding might be ignored by Gradio 
+            # if the connection is closed. However, stop_btn.click handles the UI update for cancellation.
+            if finished_naturally:
+                 yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
 
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
@@ -382,7 +407,7 @@ def create_ui(config, comfy_client):
             gen_event = generate_btn.click(
                 fn=on_generate,
                 inputs=[workflow_dropdown, prompt_input, overrides_store],
-                outputs=[output_gallery, status_text, stop_btn, overrides_store]
+                outputs=[output_gallery, status_text, generate_btn, stop_btn, overrides_store]
             )
     
             # Clicking Generate again cancels the previous run
@@ -390,12 +415,13 @@ def create_ui(config, comfy_client):
     
             def stop_generation():
                 comfy_client.interrupt()
-                return gr.update(value="Interrupted"), gr.update(visible=False)
+                # Return status, show Generate, hide Stop
+                return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False)
     
             stop_btn.click(
                 fn=stop_generation,
                 inputs=[],
-                outputs=[status_text, stop_btn],
+                outputs=[status_text, generate_btn, stop_btn],
                 cancels=[gen_event] # Stop button cancels the generation task
             )
     
