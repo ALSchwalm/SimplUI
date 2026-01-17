@@ -7,10 +7,10 @@
     - [x] Implement a test that simulates an error state and asserts the Stop button remains visible (proving the bug).
 
 ## Phase 2: Implementation
-- [x] Task: Update UI State Management 2d0ea52
+- [x] Task: Update UI State Management 2d0ea52, d2a40e4
     - [x] Modify `src/ui.py` to ensure the Stop/Generate button visibility is toggled correctly in the `generation_complete` callback (or equivalent).
     - [x] Ensure the visibility toggle handles success, manual stop, and error cases.
-- [x] Task: Update Progress & Status Logic 2d0ea52
+- [x] Task: Update Progress & Status Logic 2d0ea52, d2a40e4
     - [x] Modify `src/ui.py` to reset the progress bar and update the status label to "Ready" in all termination paths.
 - [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
 
