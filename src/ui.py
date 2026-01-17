@@ -246,7 +246,12 @@ def create_ui(config, comfy_client):
             if finished_naturally:
                  yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
 
-    with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
+    css = """
+    #gallery {
+        height: 70vh !important;
+    }
+    """
+    with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
         
         # Client-side store for overrides.
@@ -274,7 +279,7 @@ def create_ui(config, comfy_client):
                     columns=[2],
                     rows=[2],
                     object_fit="contain",
-                    height="auto"
+                    height="70vh"
                 )
                 status_text = gr.Markdown("Ready")
 
