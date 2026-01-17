@@ -15,8 +15,8 @@
 - [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: 0357a59]
 
 ## Phase 3: Verification
-- [ ] Task: Run Reproduction Tests
-    - [ ] Run `tests/ui/test_stop_button_behavior.py` and ensure it now passes (Stop button becomes hidden).
-- [ ] Task: Run Regression Tests
-    - [ ] Run existing UI tests (`tests/ui/`) to ensure no regressions in layout or other button behaviors.
+- [x] Task: Run Reproduction Tests
+    - [x] Run `tests/ui/test_stop_button_behavior.py` and ensure it now passes (Stop button becomes hidden).
+- [x] Task: Run Regression Tests
+    - [x] Run existing UI tests (`tests/ui/`) to ensure no regressions in layout or other button behaviors.
 - [ ] Task: Conductor - User Manual Verification 'Verification' (Protocol in workflow.md)
