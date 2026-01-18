@@ -250,15 +250,25 @@ def create_ui(config, comfy_client):
     #gallery {
         height: 50vh !important;
         overflow: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+    }
+    #gallery .grid-wrap, #gallery .grid-container, #gallery button {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        height: auto !important;
+        min-height: 0 !important;
     }
     #gallery img {
         height: 40vh !important;
-        min-height: 100px !important;
         width: auto !important;
         max-width: 100% !important;
         object-fit: contain !important;
         display: block !important;
-        margin: 0 auto !important;
+        margin-top: 0 !important;
     }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
