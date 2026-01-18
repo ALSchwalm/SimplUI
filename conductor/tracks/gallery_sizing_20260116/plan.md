@@ -10,10 +10,10 @@
 - [x] Task: Apply Height Constraints f395f36
     - [x] Modify `src/ui.py` to update the `gr.Gallery` component with `height="50vh"`.
     - [x] Add custom CSS to the `gr.Blocks` constructor to ensure the gallery and its child images respect the height limit without overflow issues.
-- [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: 5aa22f4]
 
 ## Phase 3: Verification
-- [ ] Task: Run Regression and Layout Tests
-    - [ ] Execute `pytest tests/ui/test_gallery_layout.py`.
-    - [ ] Execute existing UI tests (`tests/ui/test_basic_layout.py`) to ensure no layout regressions.
-- [ ] Task: Conductor - User Manual Verification 'Verification' (Protocol in workflow.md)
+- [x] Task: Run Regression and Layout Tests 5aa22f4
+    - [x] Execute `pytest tests/ui/test_gallery_layout.py`.
+    - [x] Execute existing UI tests (`tests/ui/test_basic_layout.py`) to ensure no layout regressions.
+- [x] Task: Conductor - User Manual Verification 'Verification' (Protocol in workflow.md) [checkpoint: 5aa22f4]
