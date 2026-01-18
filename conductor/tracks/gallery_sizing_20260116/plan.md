@@ -7,7 +7,7 @@
     - [x] Implement a test that verifies the gallery's `object-fit` property is set to `contain`.
 
 ## Phase 2: Implementation
-- [x] Task: Apply Height Constraints f395f36, 5aa22f4, b5615e0, 995714b, 72f18a2
+- [x] Task: Apply Height Constraints f395f36, 5aa22f4, b5615e0, 995714b, 72f18a2, e9f72f7
     - [x] Modify `src/ui.py` to update the `gr.Gallery` component with `height="50vh"`.
     - [x] Add custom CSS to the `gr.Blocks` constructor to ensure the gallery and its child images respect the height limit without overflow issues.
 - [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: 5aa22f4]
