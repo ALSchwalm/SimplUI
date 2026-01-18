@@ -3,7 +3,7 @@ from playwright.sync_api import Page, expect
 
 def test_gallery_height_constraint(page: Page):
     """
-    Verifies that the gallery component has a height constraint of 70vh.
+    Verifies that the gallery component has a height constraint of 50vh.
     """
     # The gallery is created with elem_id="gallery"
     gallery = page.locator("#gallery")
@@ -11,18 +11,18 @@ def test_gallery_height_constraint(page: Page):
     
     # We evaluate the style property directly on the element to see if our forced style is applied.
     # Note: Gradio might apply it to a wrapper, but usually elem_id targets the main container.
-    # If the user sets height="70vh" in python, it should reflect in the styles.
+    # If the user sets height="50vh" in python, it should reflect in the styles.
     
-    # We check if the height style is explicitly set to 70vh
+    # We check if the height style is explicitly set to 50vh
     # We look at the inline style or computed style if we can trace it back to the rule.
     # But for a specific constraint applied via code, checking inline style or specific CSS rule is best.
     
     # Let's check computed height against viewport as a fallback, 
-    # but the most robust check for "is it set to 70vh" is checking the style.
+    # but the most robust check for "is it set to 50vh" is checking the style.
     
-    # However, Gradio's `height` param might not set inline style 'height: 70vh'. 
+    # However, Gradio's `height` param might not set inline style 'height: 50vh'. 
     # It might set a class or something else.
-    # But usually it sets style="height: 70vh;".
+    # But usually it sets style="height: 50vh;".
     
     # We'll assert that the element or its parent has the height restriction.
     # Let's start by checking the #gallery element.
@@ -30,20 +30,20 @@ def test_gallery_height_constraint(page: Page):
     # We wait for it to be visible first
     expect(gallery).to_be_visible()
     
-    # We use a custom expectation: "height" style should be "70vh"
+    # We use a custom expectation: "height" style should be "50vh"
     # This might fail if Gradio puts it on a wrapper. 
     # If so, we'll adjust the test (and the implementation) to match.
     
     # For the RED phase, failure is expected.
     # style_height = gallery.evaluate("el => el.style.height")
-    # assert style_height == "70vh", f"Expected inline style height='70vh', got '{style_height}'"
+    # assert style_height == "50vh", f"Expected inline style height='50vh', got '{style_height}'"
     
     # We check computed height to allow for CSS class/stylesheet application
     computed_height_px = gallery.evaluate("el => window.getComputedStyle(el).height")
     
     viewport = page.viewport_size
     assert viewport is not None
-    expected_px = viewport["height"] * 0.7
+    expected_px = viewport["height"] * 0.5
     
     # Clean up the string (e.g., "500px")
     if computed_height_px and "px" in computed_height_px:
@@ -52,7 +52,7 @@ def test_gallery_height_constraint(page: Page):
         actual_px = 0
     
     # Allow margin (e.g. 2 pixels for rounding)
-    assert abs(actual_px - expected_px) < 5, f"Expected approx {expected_px}px (70vh), got {actual_px}px (from {computed_height_px})"
+    assert abs(actual_px - expected_px) < 5, f"Expected approx {expected_px}px (50vh), got {actual_px}px (from {computed_height_px})"
 
 def test_gallery_image_contain(page: Page):
     """

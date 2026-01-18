@@ -248,7 +248,7 @@ def create_ui(config, comfy_client):
 
     css = """
     #gallery {
-        height: 70vh !important;
+        height: 50vh !important;
     }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
@@ -279,7 +279,7 @@ def create_ui(config, comfy_client):
                     columns=[2],
                     rows=[2],
                     object_fit="contain",
-                    height="70vh"
+                    height="50vh"
                 )
                 status_text = gr.Markdown("Ready")
 

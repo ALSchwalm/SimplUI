@@ -8,7 +8,7 @@
 
 ## Phase 2: Implementation
 - [x] Task: Apply Height Constraints f395f36
-    - [x] Modify `src/ui.py` to update the `gr.Gallery` component with `height="70vh"`.
+    - [x] Modify `src/ui.py` to update the `gr.Gallery` component with `height="50vh"`.
     - [x] Add custom CSS to the `gr.Blocks` constructor to ensure the gallery and its child images respect the height limit without overflow issues.
 - [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
 
