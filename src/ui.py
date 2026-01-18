@@ -250,6 +250,10 @@ def create_ui(config, comfy_client):
     #gallery {
         height: 50vh !important;
     }
+    #gallery img {
+        object-fit: contain !important;
+        max-height: 100% !important;
+    }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
