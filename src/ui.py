@@ -231,10 +231,10 @@ def create_ui(config, comfy_client):
 
         last_image = None
         last_status = "Processing..."
-        
+
         # Use a flag to track if we finished naturally
         finished_naturally = False
-        
+
         try:
             async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
                 last_image, last_status = update
@@ -247,33 +247,13 @@ def create_ui(config, comfy_client):
                  yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
 
     css = """
-    #gallery {
-        height: 50vh !important;
-        overflow: auto !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-    }
-    #gallery .grid-wrap, #gallery .grid-container, #gallery button {
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: center !important;
-        height: auto !important;
-        min-height: 0 !important;
-    }
-    #gallery img {
-        height: 40vh !important;
-        width: auto !important;
-        max-width: 100% !important;
-        object-fit: contain !important;
-        display: block !important;
-        margin-top: 0 !important;
+    #gallery .grid-container {
+        height: 50vh;
     }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         gr.Markdown("# Simpl2 ComfyUI Wrapper")
-        
+
         # Client-side store for overrides.
         # This JSON component holds the state in the browser.
         overrides_store = gr.JSON(value={}, visible=False)
@@ -296,8 +276,6 @@ def create_ui(config, comfy_client):
                     label="Generated Images",
                     show_label=True,
                     elem_id="gallery",
-                    columns=[2],
-                    rows=[2],
                     object_fit="contain",
                     height="50vh"
                 )
@@ -329,7 +307,7 @@ def create_ui(config, comfy_client):
                 # Advanced Controls Toggle
                 with gr.Row():
                     advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False)
-    
+
                 # Bind prompt update
                 workflow_dropdown.change(
                     fn=update_prompt_on_change,
@@ -344,7 +322,7 @@ def create_ui(config, comfy_client):
                         def render_dynamic_interface(workflow_name, overrides, show_advanced):
                             if not show_advanced or not workflow_name:
                                 return
-    
+
                             workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
                             try:
                                 with open(workflow_info["path"], "r") as f:
@@ -352,18 +330,18 @@ def create_ui(config, comfy_client):
                             except Exception as e:
                                 gr.Markdown(f"Error loading workflow: {e}")
                                 return
-    
+
                             extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
-    
+
                             for node in extracted:
                                 with gr.Group():
                                     gr.Markdown(f"#### {node['title']} ({node['node_id']})")
                                     for inp in node["inputs"]:
                                         key = f"{node['node_id']}.{inp['name']}"
-    
+
                                         # Use value from overrides if available, else default
                                         current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
-    
+
                                         if inp["type"] == "enum":
                                             comp = gr.Dropdown(
                                                 choices=inp["options"],
@@ -380,12 +358,12 @@ def create_ui(config, comfy_client):
                                                 random_key = f"{key}.randomize"
                                                 random_default = inp.get("randomize", False)
                                                 random_val = overrides.get(random_key, random_default) if overrides else random_default
-    
+
                                                 random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
-    
+
                                             # Bind number input (as text)
                                             comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-    
+
                                             # Bind randomize checkbox
                                             random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
                                         elif inp["type"] == "slider":
@@ -407,33 +385,33 @@ def create_ui(config, comfy_client):
                                         else:
                                             comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
                                             comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
-    
+
             # Bind sidebar visibility
             advanced_toggle.change(
                 fn=lambda x: gr.update(visible=x),
                 inputs=[advanced_toggle],
                 outputs=[sidebar_col]
             )
-    
+
             gen_event = generate_btn.click(
                 fn=on_generate,
                 inputs=[workflow_dropdown, prompt_input, overrides_store],
                 outputs=[output_gallery, status_text, generate_btn, stop_btn, overrides_store]
             )
-    
+
             # Clicking Generate again cancels the previous run
             gen_event.cancels = [gen_event]
-    
+
             def stop_generation():
                 comfy_client.interrupt()
                 # Return status, show Generate, hide Stop
                 return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False)
-    
+
             stop_btn.click(
                 fn=stop_generation,
                 inputs=[],
                 outputs=[status_text, generate_btn, stop_btn],
                 cancels=[gen_event] # Stop button cancels the generation task
             )
-    
+
         return demo
