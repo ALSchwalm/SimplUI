@@ -1,0 +1,8 @@
+{
+  "track_id": "gallery_sizing_20260116",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-16T12:00:00Z",
+  "updated_at": "2026-01-16T12:00:00Z",
+  "description": "Limit gallery and preview image size to viewport height to prevent excessive scrolling."
+}
