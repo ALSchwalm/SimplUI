@@ -28,7 +28,7 @@ def main():
         print("Launching Gradio UI at http://localhost:7860")
         
         # Launching with debug=True can help see errors in the console
-        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True)
+        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, css=demo.css)
         
     except Exception as e:
         print(f"Failed to launch UI: {e}")

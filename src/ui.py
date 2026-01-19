@@ -247,13 +247,15 @@ def create_ui(config, comfy_client):
                  yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
 
     css = """
-    #gallery .grid-container {
-        height: 50vh;
+    #gallery, #gallery .grid-container {
+        height: 50vh !important;
+    }
+    .gradio-container {
+        max-width: 1280px !important;
+        margin: 0 auto !important;
     }
     """
-    with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
-        gr.Markdown("# Simpl2 ComfyUI Wrapper")
-
+    with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
         # Client-side store for overrides.
         # This JSON component holds the state in the browser.
         overrides_store = gr.JSON(value={}, visible=False)
@@ -414,4 +416,5 @@ def create_ui(config, comfy_client):
                 cancels=[gen_event] # Stop button cancels the generation task
             )
 
-        return demo
+    demo.css = css
+    return demo

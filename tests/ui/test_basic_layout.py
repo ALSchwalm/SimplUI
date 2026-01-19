@@ -5,8 +5,8 @@ def test_basic_layout_and_generation(page: Page):
     """
     Verifies that the main UI components are visible and interaction triggers generation.
     """
-    # 1. Verify Page Title/Header
-    expect(page.get_by_text("Simpl2 ComfyUI Wrapper", exact=False).first).to_be_visible()
+    # 1. Verify Page Title (Browser Tab)
+    expect(page).to_have_title("Simpl2 ComfyUI Wrapper")
     
     # 2. Verify Workflow Dropdown
     expect(page.get_by_label("Select Workflow")).to_be_visible()

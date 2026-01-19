@@ -91,7 +91,8 @@ def gradio_server(mock_config, mock_comfy_client, app_port):
             "server_name": "127.0.0.1", 
             "server_port": app_port, 
             "prevent_thread_lock": True,
-            "quiet": True
+            "quiet": True,
+            "css": demo.css
         }
     )
     server_thread.start()
