@@ -16,10 +16,10 @@
             margin: 0 auto !important;
         }
         ```
-- [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: d30071a]
 
 ## Phase 3: Verification
 - [x] Task: Run Verification Tests ba95cc5
     - [x] Execute `pytest tests/ui/test_layout_constraints.py`.
     - [x] Execute `pytest tests/ui/test_basic_layout.py` (and update it if it explicitly checked for the header).
-- [ ] Task: Conductor - User Manual Verification 'Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Verification' (Protocol in workflow.md) [checkpoint: d30071a]
