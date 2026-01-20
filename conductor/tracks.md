@@ -1,9 +1,3 @@
 # Project Tracks
 
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
-
----
-
-- [x] **Track: Seed value reverts to a prior value when 'randomize' is deselected.**
-*Link: [./tracks/seed_reversion_fix_20260117/](./tracks/seed_reversion_fix_20260117/)*
-

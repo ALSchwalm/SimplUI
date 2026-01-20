@@ -1,0 +1,8 @@
+{
+  "track_id": "seed_reversion_fix_20260117",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-17T12:00:00Z",
+  "updated_at": "2026-01-17T12:00:00Z",
+  "description": "Seed value reverts to a prior value when 'randomize' is deselected after a generation."
+}
