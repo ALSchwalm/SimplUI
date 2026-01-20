@@ -16,27 +16,27 @@ def test_header_removal(page: Page):
     expect(header).not_to_be_visible()
 
 def test_max_width_constraint(page: Page):
+
     """
+
     Verifies that the main container has a max-width constraint of 1280px.
+
     """
-    # Dump classes for debugging
-    divs = page.locator("div").all()
-    print("\nAvailable div classes:")
-    for d in divs[:20]:
-        cls = d.get_attribute("class")
-        if cls:
-            print(f" - {cls}")
-            
-    # Try multiple common Gradio container classes
-    for selector in [".gradio-container", ".container", "div[class*='container']", "body > div"]:
-        container = page.locator(selector).first
-        if container.count() > 0:
-            max_width = container.evaluate("el => window.getComputedStyle(el).maxWidth")
-            print(f"Selector '{selector}' computed maxWidth: {max_width}")
-            if max_width == "1280px":
-                return # SUCCESS
+
+    # We wrapped the app in a Column with ID app_container
+
+    container = page.locator("#app_container")
+
     
-    # Final check
-    container = page.locator(".gradio-container")
+
+    # Check computed style
+
     max_width = container.evaluate("el => window.getComputedStyle(el).maxWidth")
+
+    
+
+    # This should FAIL initially if not implemented, or PASS if implemented correctly
+
     assert max_width == "1280px"
+
+
