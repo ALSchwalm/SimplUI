@@ -352,7 +352,7 @@ def create_ui(config, comfy_client):
                                                     value=current_val,
                                                     interactive=True
                                                 )
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "seed":
                                                 with gr.Row():
                                                     # Use Textbox to preserve 64-bit integer precision
@@ -365,10 +365,10 @@ def create_ui(config, comfy_client):
                                                     random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
 
                                                 # Bind number input (as text)
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
                                                 # Bind randomize checkbox
-                                                random_box.change(fn=None, js=f"(val, store) => {{ store['{random_key}'] = val; return store; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
+                                                random_box.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{random_key}'] = val; return newStore; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "slider":
                                                 comp = gr.Slider(
                                                     label=inp["name"],
@@ -378,16 +378,16 @@ def create_ui(config, comfy_client):
                                                     step=inp.get("step", 1),
                                                     interactive=True
                                                 )
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "number":
                                                 comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "bool":
                                                 comp = gr.Checkbox(label=inp["name"], value=current_val, interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             else:
                                                 comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ store['{key}'] = val; return store; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
                 # Bind sidebar visibility
                 advanced_toggle.change(
