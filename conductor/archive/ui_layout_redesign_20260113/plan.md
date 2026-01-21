@@ -21,7 +21,7 @@
     - [x] Sub-task: Remove the old `gr.Accordion`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Sidebar Toggle & Dynamic Rendering' (Protocol in workflow.md)
 
-## Phase 3: Verification & Polish
+## Phase 3: Verification & Polish [checkpoint: 93b754e]
 - [x] Task: Testing - Update UI Tests
     - [x] Sub-task: Update `tests/test_ui.py` to reflect the new component nesting and hierarchy.
     - [x] Sub-task: Write/Update Playwright tests to verify the sidebar toggle works and "pushes" content.

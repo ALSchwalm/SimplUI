@@ -10,6 +10,7 @@ This track involves a significant redesign of the application's layout to improv
 - **Prompt Area Layout:**
     - The Prompt textbox will occupy the left portion of this area.
     - The **Generate** and **Stop** buttons will be positioned to the right of the Prompt textbox, stacked vertically.
+    - The **Generate** button should expand to take the full height of the row when the **Stop** button is hidden.
 - **Advanced Controls Sidebar:**
     - An "Advanced Controls" checkbox will be placed below the Prompt/Generate area.
     - Checking this box will reveal a panel on the right side of the screen.
