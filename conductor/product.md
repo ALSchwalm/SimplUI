@@ -1,14 +1,15 @@
 # Initial Concept
 
-This will be a gradio project that acts as a wrapper/proxy for comfyui workflows. It will allow a user that knows nothing about comfy to select a workflow and generate an image. It will also allow more advanced users to access controls to manpulate the nodes in the workflow.
+This will be a gradio project that acts as a wrapper/proxy for comfyui workflows. It will allow a user that knows nothing about comfy to immediately generate an image using a default workflow. It will also allow more advanced users to switch workflows and access granular controls within the "Advanced Controls" sidebar.
 
 # Product Guide
 
 ## Core Features
 
 ### Workflow Selection
-- **Configurable Dropdown:** Users will select workflows via a simple dropdown menu.
-- **Dynamic Loading:** The available workflows in the list will be configurable by an administrator. Ideally, the system will attempt to programmatically fetch available workflows from the ComfyUI instance if an API is available.
+- **Hidden by Default:** To simplify the experience for basic users, the workflow selection is hidden from the main interface. The application defaults to the first available workflow.
+- **Advanced Access:** Users can access the "Select Workflow" dropdown within the "Advanced Controls" sidebar to switch between different workflows.
+- **Dynamic Loading:** The available workflows in the list are configurable and update the UI controls dynamically based on the selected workflow's nodes.
 
 ### User Inputs
 - **Dynamic Prompt Injection:** Users can enter custom text descriptions via a multi-line textarea.
