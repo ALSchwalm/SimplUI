@@ -257,8 +257,14 @@ def create_ui(config, comfy_client):
         max-width: 1280px !important;
         margin: 0 auto !important;
     }
+    #advanced-checkbox {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
     """
-    with gr.Blocks(title="Simpl2 ComfyUI Wrapper") as demo:
+    with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
             # Client-side store for overrides.
             # This JSON component holds the state in the browser.
@@ -311,9 +317,8 @@ def create_ui(config, comfy_client):
                             generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
                     # Advanced Controls Toggle
-                    with gr.Row():
-                        advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
-                                                      container=False)
+                    advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
+                                                  container=False, elem_id="advanced-checkbox")
 
                     # Bind prompt update
                     workflow_dropdown.change(
