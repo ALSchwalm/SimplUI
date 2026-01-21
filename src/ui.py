@@ -247,8 +247,11 @@ def create_ui(config, comfy_client):
                  yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
 
     css = """
+    #gallery {
+        min-height: 50vh;
+    }
     #gallery .grid-container {
-        height: 50vh;
+        height: 50vh !important;
     }
     #app_container {
         max-width: 1280px !important;
@@ -309,7 +312,8 @@ def create_ui(config, comfy_client):
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
                     # Advanced Controls Toggle
                     with gr.Row():
-                        advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False)
+                        advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
+                                                      container=False)
 
                     # Bind prompt update
                     workflow_dropdown.change(
