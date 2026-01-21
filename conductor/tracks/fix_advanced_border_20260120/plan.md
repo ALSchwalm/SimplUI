@@ -11,8 +11,8 @@ Fix the layout issue where an unwanted border appears around the "Advanced Contr
 - [x] Task: Investigate and fix persistent border issue (removing `gr.Row` was insufficient).
     - [x] Sub-task: Pass the missing `css` argument to `gr.Blocks`.
     - [x] Sub-task: Add `elem_id="advanced-checkbox"` to the toggle and target it with custom CSS to force removal of borders/padding.
-- [ ] Task: Verify the visual fix and ensure no regressions in layout or functionality.
-- [ ] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md)
+- [x] Task: Verify the visual fix and ensure no regressions in layout or functionality.
+- [x] Task: Conductor - User Manual Verification 'Implementation' (Protocol in workflow.md) [checkpoint: b1cc6b1]
 
 ## Phase 3: Final Validation
-- [ ] Task: Run all UI tests to ensure the selector for "Advanced Controls" is still valid and functioning.
+- [x] Task: Run all UI tests to ensure the selector for "Advanced Controls" is still valid and functioning. [checkpoint: b1cc6b1]
