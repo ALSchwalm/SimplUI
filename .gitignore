@@ -1,0 +1,4 @@
+__pycache__/
+.coverage
+current_ui_config.json
+dump_ui_config.py
