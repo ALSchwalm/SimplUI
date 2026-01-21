@@ -1,0 +1,8 @@
+{
+  "track_id": "workflow_selection_sidebar_20260120",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-20T12:00:00Z",
+  "updated_at": "2026-01-20T12:00:00Z",
+  "description": "Move workflow selection dropdown to the advanced controls sidebar"
+}
