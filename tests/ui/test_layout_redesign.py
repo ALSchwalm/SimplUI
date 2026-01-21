@@ -50,6 +50,12 @@ def test_layout_structure():
     # The sidebar is the one containing the render block or the markdown "Advanced Controls"
     sidebar = next(c for c in components if c["type"] == "column" and c["props"].get("visible") is False)
     assert sidebar is not None, "Sidebar column should be invisible by default"
+
+    # Check for Workflow Dropdown
+    # It should eventually be inside the sidebar, but for now we just verify it exists
+    # and we will soon move it.
+    workflow_dropdowns = [c for c in components if c["type"] == "dropdown" and c["props"].get("label") == "Select Workflow"]
+    assert len(workflow_dropdowns) == 1, "Should have a 'Select Workflow' dropdown"
     
     # Check for Tabs inside sidebar (or generally present)
     tabs = [c for c in components if c["type"] == "tabs"]

@@ -8,8 +8,8 @@ def test_basic_layout_and_generation(page: Page):
     # 1. Verify Page Title (Browser Tab)
     expect(page).to_have_title("Simpl2 ComfyUI Wrapper")
     
-    # 2. Verify Workflow Dropdown
-    expect(page.get_by_label("Select Workflow")).to_be_visible()
+    # 2. Verify Workflow Dropdown is hidden initially
+    expect(page.get_by_label("Select Workflow")).to_be_hidden()
     
     # 3. Verify Prompt Textarea
     expect(page.get_by_label("Prompt")).to_be_visible()
@@ -52,6 +52,9 @@ def test_advanced_controls_toggle(page: Page):
     
     # Click to open
     accordion.click()
+    
+    # Verify that the workflow dropdown becomes visible in the sidebar
+    expect(page.get_by_label("Select Workflow")).to_be_visible()
     
     # Verify that a node parameter appears (e.g. "steps")
     # Using a slightly looser search since it's dynamic

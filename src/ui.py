@@ -293,12 +293,6 @@ def create_ui(config, comfy_client):
                     )
                     status_text = gr.Markdown("Ready")
 
-                    workflow_dropdown = gr.Dropdown(
-                        choices=workflow_names,
-                        label="Select Workflow",
-                        value=workflow_names[0] if workflow_names else None
-                    )
-
                     with gr.Row(equal_height=True):
                         with gr.Column(scale=4):
                             initial_prompt = ""
@@ -316,9 +310,17 @@ def create_ui(config, comfy_client):
                         with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
                             generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
+                    
                     # Advanced Controls Toggle
                     advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
                                                   container=False, elem_id="advanced-checkbox")
+
+                with gr.Column(scale=1, visible=False, min_width=0) as sidebar_col:
+                    workflow_dropdown = gr.Dropdown(
+                        choices=workflow_names,
+                        label="Select Workflow",
+                        value=workflow_names[0] if workflow_names else None
+                    )
 
                     # Bind prompt update
                     workflow_dropdown.change(
@@ -327,7 +329,6 @@ def create_ui(config, comfy_client):
                         outputs=[prompt_input]
                     )
 
-                with gr.Column(scale=1, visible=False, min_width=0) as sidebar_col:
                     with gr.Tabs():
                         with gr.Tab("Node Controls"):
                             @gr.render(inputs=[workflow_dropdown, overrides_store, advanced_toggle])
