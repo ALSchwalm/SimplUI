@@ -248,10 +248,10 @@ def create_ui(config, comfy_client):
 
     css = """
     #gallery {
-        min-height: 50vh;
+        min-height: 70vh;
     }
     #gallery .grid-container {
-        height: 50vh !important;
+        height: 70vh !important;
     }
     #app_container {
         max-width: 1280px !important;
@@ -289,7 +289,7 @@ def create_ui(config, comfy_client):
                         show_label=True,
                         elem_id="gallery",
                         object_fit="contain",
-                        height="50vh"
+                        height="70vh"
                     )
                     status_text = gr.Markdown("Ready")
 
@@ -301,7 +301,7 @@ def create_ui(config, comfy_client):
 
                             prompt_input = gr.Textbox(
                                 label="Prompt",
-                                lines=3,
+                                lines=2,
                                 value=initial_prompt,
                                 placeholder="Enter your description here...",
                                 elem_id="prompt-box"
@@ -310,7 +310,7 @@ def create_ui(config, comfy_client):
                         with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
                             generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
-                    
+
                     # Advanced Controls Toggle
                     advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
                                                   container=False, elem_id="advanced-checkbox")
@@ -319,7 +319,8 @@ def create_ui(config, comfy_client):
                     workflow_dropdown = gr.Dropdown(
                         choices=workflow_names,
                         label="Select Workflow",
-                        value=workflow_names[0] if workflow_names else None
+                        value=workflow_names[0] if workflow_names else None,
+                        filterable=False
                     )
 
                     # Bind prompt update
@@ -360,13 +361,14 @@ def create_ui(config, comfy_client):
                                                     choices=inp["options"],
                                                     label=inp["name"],
                                                     value=current_val,
-                                                    interactive=True
+                                                    interactive=True,
+                                                    filterable=False
                                                 )
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "seed":
                                                 with gr.Row():
                                                     # Use Textbox to preserve 64-bit integer precision
-                                                    comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=3, interactive=True)
+                                                    comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=1, interactive=True)
                                                     # Check randomization state from overrides
                                                     random_key = f"{key}.randomize"
                                                     random_default = inp.get("randomize", False)
