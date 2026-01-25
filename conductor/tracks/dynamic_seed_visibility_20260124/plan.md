@@ -7,7 +7,7 @@
     - [x] Verify `process_generation` in `src/ui.py` correctly yields the updated `overrides` (containing new base seeds) *before* entering the batch loop.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Logic & State Preparation' (Protocol in workflow.md)
 
-## Phase 2: UI Dynamic Visibility
+## Phase 2: UI Dynamic Visibility [checkpoint: 1c0cd3d]
 - [x] Task: Implement conditional visibility in renderer
     - [x] Update the `render_dynamic_interface` function in `src/ui.py`.
     - [x] For `seed` type inputs, set `visible=not random_val` for the numeric Textbox.
@@ -15,7 +15,7 @@
     - [x] Ensure the `random_box.change` event handler correctly triggers a re-render of the dynamic interface by updating the `overrides_store`.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: UI Dynamic Visibility' (Protocol in workflow.md)
 
-## Phase 3: Verification & Integration
+## Phase 3: Verification & Integration [checkpoint: 1c0cd3d]
 - [x] Task: Unit testing visibility logic
     - [x] Add a test case to `tests/test_ui.py` (or a new test file) to verify that the extracted metadata correctly reflects `randomize=True` for seed `0`.
 - [x] Task: UI Automation tests
