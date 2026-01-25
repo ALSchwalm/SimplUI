@@ -20,9 +20,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Core Logic & Seed Derivation' (Protocol in workflow.md)
 
 ## Phase 3: Gallery & Integration
-- [ ] Task: Aggregate Gallery Results
-    - [ ] Ensure the UI gallery correctly appends images from subsequent iterations without clearing previous results within the same batch.
-    - [ ] Verify that live previews still function correctly for each iteration in the batch.
-- [ ] Task: Integration Testing
-    - [ ] Write an integration test (using Playwright) to verify that setting Batch Count > 1 triggers multiple requests and populates the gallery.
+- [x] Task: Aggregate Gallery Results 47b7db7
+    - [x] Ensure the UI gallery correctly appends images from subsequent iterations without clearing previous results within the same batch.
+    - [x] Verify that live previews still function correctly for each iteration in the batch.
+- [x] Task: Integration Testing 47b7db7
+    - [x] Write an integration test (using Playwright) to verify that setting Batch Count > 1 triggers multiple requests and populates the gallery.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Gallery & Integration' (Protocol in workflow.md)
