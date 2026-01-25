@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, AsyncMock, patch, call
 import json
 import sys
 import os
+import copy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
@@ -123,9 +124,44 @@ async def test_batch_aggregation_with_previews():
                 # Filter out None updates
                 image_updates = [u for u in updates if u is not None]
                 
-                # Note: process_generation yields status updates too (Init, Randomize) which yield None images
-                
                 assert ["Preview"] in image_updates
                 assert ["Final"] in image_updates
                 assert ["Final", "Preview"] in image_updates
                 assert ["Final", "Final"] in image_updates
+
+@pytest.mark.asyncio
+async def test_process_generation_history_accumulation():
+    config = MagicMock()
+    config.workflows = [{"name": "test", "path": "test.json"}]
+    config.sliders = {}
+    comfy_client = MagicMock()
+    async def mock_gen(workflow):
+        yield {"type": "preview", "data": b"p1"}
+        yield {"type": "image", "data": b"f1"}
+    comfy_client.generate_image = MagicMock(side_effect=mock_gen)
+    comfy_client.get_object_info.return_value = {}
+    
+    workflow_data = {"1": {"inputs": {}, "class_type": "Node"}}
+    history = []
+    
+    with patch("builtins.open", new_callable=MagicMock) as mock_file:
+        mock_file.return_value.__enter__.return_value = mock_file
+        with patch("json.load", return_value=workflow_data):
+            with patch("ui.Image.open", side_effect=lambda x: f"Img-{x.getvalue().decode()}"):
+                updates = []
+                async for update in process_generation("test", "", {}, 2, config, comfy_client, {}, history):
+                    # Capture a copy of the history state at this yield point
+                    updates.append((update[0], update[1], copy.deepcopy(update[6])))
+                
+                # After 2 batches, each producing 1 final image
+                assert len(history) == 2
+                assert history == ["Img-f1", "Img-f1"]
+                
+                # Verify that intermediate yields also contain the growing history
+                # update[2] is our captured copy of history_state
+                history_yields = [u[2] for u in updates]
+                assert ["Img-f1"] in history_yields
+                assert ["Img-f1", "Img-f1"] in history_yields
+                # Previews should NOT be in history
+                for h in history_yields:
+                    assert "Img-p1" not in h
