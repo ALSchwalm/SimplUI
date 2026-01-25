@@ -10,14 +10,14 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: UI Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Core Logic & Seed Derivation
-- [ ] Task: Implement Deterministic Seed Generator
-    - [ ] Create a utility function/method to generate a sequence of $N$ seeds from a `base_seed` using a deterministic PRNG (e.g., `random.Random(base_seed)`).
-    - [ ] Write unit tests to verify that the same `base_seed` always produces the same sequence.
-- [ ] Task: Update Generation Loop
-    - [ ] Modify the generation trigger in `src/ui.py` or `src/comfy_client.py` to wrap the workflow submission in a loop.
-    - [ ] Ensure the loop respects the Batch Count value.
-    - [ ] Inject the derived seed for each iteration.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Core Logic & Seed Derivation' (Protocol in workflow.md)
+- [x] Task: Implement Deterministic Seed Generator 59a312d
+    - [x] Create a utility function/method to generate a sequence of $N$ seeds from a `base_seed` using a deterministic PRNG (e.g., `random.Random(base_seed)`).
+    - [x] Write unit tests to verify that the same `base_seed` always produces the same sequence.
+- [x] Task: Update Generation Loop 47b7db7
+    - [x] Modify the generation trigger in `src/ui.py` or `src/comfy_client.py` to wrap the workflow submission in a loop.
+    - [x] Ensure the loop respects the Batch Count value.
+    - [x] Inject the derived seed for each iteration.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Core Logic & Seed Derivation' (Protocol in workflow.md)
 
 ## Phase 3: Gallery & Integration
 - [ ] Task: Aggregate Gallery Results
