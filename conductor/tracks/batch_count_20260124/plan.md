@@ -1,12 +1,12 @@
 # Plan - Batch Count Feature
 
 ## Phase 1: UI Implementation
-- [x] Task: Add Batch Count slider to UI
+- [x] Task: Add Batch Count slider to UI bf12271
     - [x] Update `src/ui.py` to include a `gradio.Slider` for batch count in the Advanced Sidebar.
     - [x] Position it below the workflow dropdown.
     - [x] Set range 1-20, step 1, default 2.
-- [~] Task: Persist Batch Count state
-    - [ ] Ensure the batch count value is included in the client-side state persistence logic in `src/ui.py`.
+- [x] Task: Persist Batch Count state bf12271
+    - [x] Ensure the batch count value is included in the client-side state persistence logic in `src/ui.py`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: UI Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Core Logic & Seed Derivation
