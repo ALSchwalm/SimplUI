@@ -201,7 +201,7 @@ def create_ui(config, comfy_client):
     # Fetch node definitions from ComfyUI
     object_info = comfy_client.get_object_info()
 
-    async def on_generate(workflow_name, prompt_text, overrides):
+    async def on_generate(workflow_name, prompt_text, overrides, batch_count=1):
         # Initial status: Ensure Generate is visible/interactive, Show Stop
         yield None, "Initializing...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
 
@@ -323,6 +323,24 @@ def create_ui(config, comfy_client):
                         filterable=False
                     )
 
+                    # Batch Count Slider
+                    batch_count_slider = gr.Slider(
+                        label="Batch Count",
+                        minimum=1,
+                        maximum=20,
+                        step=1,
+                        value=2,
+                        interactive=True,
+                        elem_id="batch-count-slider"
+                    )
+
+                    batch_count_slider.change(
+                        fn=None,
+                        js="(val, store) => { const newStore = {...store}; newStore['_meta.batch_count'] = val; return newStore; }",
+                        inputs=[batch_count_slider, overrides_store],
+                        outputs=[overrides_store]
+                    )
+
                     # Bind prompt update
                     workflow_dropdown.change(
                         fn=update_prompt_on_change,
@@ -410,7 +428,7 @@ def create_ui(config, comfy_client):
 
                 gen_event = generate_btn.click(
                     fn=on_generate,
-                    inputs=[workflow_dropdown, prompt_input, overrides_store],
+                    inputs=[workflow_dropdown, prompt_input, overrides_store, batch_count_slider],
                     outputs=[output_gallery, status_text, generate_btn, stop_btn, overrides_store]
                 )
 
