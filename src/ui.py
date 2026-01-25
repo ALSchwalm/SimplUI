@@ -184,8 +184,8 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
         yield [], f"Error during generation: {e}"
 
 async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info):
-    # Initial status: Ensure Generate is visible/interactive, Show Stop
-    yield None, "Initializing...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+    # Initial status: Hide Generate, Show Stop, Show Skip
+    yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
 
     # Auto-stop previous runs
     try:
@@ -202,7 +202,6 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
         workflow_json = json.load(f)
 
     # Augment overrides with default random seeds
-    # If overrides is None/Empty, initialize it
     if overrides is None:
         overrides = {}
         
@@ -221,20 +220,17 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                     # If not in overrides, use default from extraction (True if value is 0)
                     is_random = inp.get("randomize", False)
                 
-                # If random, ensure we generate a base seed if not already randomized by apply_random_seeds later
-                # Wait, apply_random_seeds only processes keys in overrides.
-                # So we must add it to overrides here if it's not present.
                 if is_random and key not in overrides:
                      # Generate a new random base seed
                      new_seed = random.randint(0, 18446744073709551615)
                      overrides[key] = str(new_seed)
-                     overrides[random_key] = True # Ensure randomize is set in overrides too
+                     overrides[random_key] = True 
 
     # Apply random seeds (handles overrides that are already present)
     if overrides:
         overrides = apply_random_seeds(overrides)
-        # Update store with new seeds
-        yield None, "Randomizing seeds...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+        # Update store with new seeds - Keep button state
+        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
 
     # Calculate Batch Seeds
     # extracted is already calculated above
@@ -272,7 +268,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                  run_images, status = update
                  last_status = status
                  last_image = previous_images + run_images
-                 yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+                 yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
                  
              # Only extend with finished images (handle_generation yields finished list last)
              previous_images.extend(run_images)
@@ -280,7 +276,8 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
         finished_naturally = True
     finally:
          if finished_naturally:
-              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
+              # Finished: Show Generate, Hide Stop, Hide Skip
+              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -356,6 +353,7 @@ def create_ui(config, comfy_client):
                         with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
                             generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
+                            skip_btn = gr.Button("Skip", variant="secondary", visible=False, elem_id="skip-btn")
 
                     # Advanced Controls Toggle
                     advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
@@ -476,7 +474,7 @@ def create_ui(config, comfy_client):
                 gen_event = generate_btn.click(
                     fn=on_generate,
                     inputs=[workflow_dropdown, prompt_input, overrides_store, batch_count_slider],
-                    outputs=[output_gallery, status_text, generate_btn, stop_btn, overrides_store]
+                    outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn, overrides_store]
                 )
 
                 # Clicking Generate again cancels the previous run
@@ -484,13 +482,13 @@ def create_ui(config, comfy_client):
 
                 def stop_generation():
                     comfy_client.interrupt()
-                    # Return status, show Generate, hide Stop
-                    return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False)
+                    # Return status, show Generate, hide Stop, hide Skip
+                    return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False)
 
                 stop_btn.click(
                     fn=stop_generation,
                     inputs=[],
-                    outputs=[status_text, generate_btn, stop_btn],
+                    outputs=[status_text, generate_btn, stop_btn, skip_btn],
                     cancels=[gen_event] # Stop button cancels the generation task
                 )
 
