@@ -5,7 +5,10 @@ from PIL import Image
 import io
 import copy
 import random
-from seed_utils import generate_batch_seeds
+try:
+    from .seed_utils import generate_batch_seeds
+except ImportError:
+    from seed_utils import generate_batch_seeds
 
 def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
     extracted = []
