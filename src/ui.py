@@ -5,6 +5,7 @@ from PIL import Image
 import io
 import copy
 import random
+from seed_utils import generate_batch_seeds
 
 def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
     extracted = []
@@ -66,12 +67,6 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
                         if slider_config and name in slider_config:
                             input_type = "slider"
                             slider_params.update(slider_config[name])
-                        # If no config but metadata found a range, treat as slider?
-                        # Spec says: "If no override exists but object_info provides a min/max, use gr.Slider with those values."
-                        # However, ComfyUI max is often HUGE (10000+).
-                        # Let's trust the spec: "use gr.Slider with those values."
-                        # BUT "Automatic Range Adoption... risk of bad UX".
-                        # User selected B: "Use gr.Slider with the server-provided range (risk of bad UX)".
                         elif "min" in slider_params and "max" in slider_params:
                              input_type = "slider"
 
@@ -107,10 +102,6 @@ def merge_workflow_overrides(workflow, overrides):
         if "." in key and not key.endswith(".randomize"):
             node_id, input_name = key.split(".", 1)
             if node_id in merged and "inputs" in merged[node_id]:
-                # Special handling for seed inputs to ensure they are ints
-                # We identify them by checking if the existing value is int/float/str that looks like int?
-                # Or relying on the extracted type? We don't have extracted type here easily.
-                # But typically ComfyUI accepts ints. If it's a digit string, convert.
                 if isinstance(value, str) and value.isdigit():
                     value = int(value)
                 merged[node_id]["inputs"][input_name] = value
@@ -121,13 +112,7 @@ def apply_random_seeds(overrides):
     for key, value in overrides.items():
         if key.endswith(".randomize") and value is True:
             base_key = key[:-10] # remove .randomize
-            # Generate random seed (Full 64-bit range)
             new_seed = random.randint(0, 18446744073709551615)
-            # Store as string to preserve precision in UI if needed,
-            # or rely on JSON handling? If we put int in JSON, Gradio/JS might round it?
-            # Safe bet: Store as int in Python backend, but UI component handles it.
-            # But overrides_store is gr.JSON -> JS.
-            # So we MUST store as string in overrides_store if we want precision in UI.
             updated[base_key] = str(new_seed)
     return updated
 
@@ -195,6 +180,76 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
     except Exception as e:
         yield [], f"Error during generation: {e}"
 
+async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info):
+    # Initial status: Ensure Generate is visible/interactive, Show Stop
+    yield None, "Initializing...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+
+    # Auto-stop previous runs
+    try:
+        comfy_client.interrupt()
+        comfy_client.clear_queue()
+        # Small delay to ensure server processes interrupt before new submission
+        await asyncio.sleep(0.1)
+    except Exception:
+        pass
+
+    # Load Workflow JSON to find seeds
+    workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+    with open(workflow_info["path"], "r") as f:
+        workflow_json = json.load(f)
+
+    # Apply random seeds
+    if overrides:
+        overrides = apply_random_seeds(overrides)
+        # Update store with new seeds
+        yield None, "Randomizing seeds...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+
+    # Calculate Batch Seeds
+    extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
+    seed_batches = {}
+    for node in extracted:
+        for inp in node["inputs"]:
+            if inp["type"] == "seed":
+                key = f"{node['node_id']}.{inp['name']}"
+                if overrides and key in overrides:
+                    base = int(overrides[key])
+                else:
+                    base = int(inp["value"])
+                seed_batches[key] = generate_batch_seeds(base, batch_count)
+
+    previous_images = []
+    finished_naturally = False
+    last_status = "Processing..."
+    last_image = None
+    
+    try:
+        for i in range(batch_count):
+             iter_overrides = overrides.copy() if overrides else {}
+             
+             current_seeds = {}
+             for key, batch in seed_batches.items():
+                 seed_val = batch[i]
+                 iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
+                 current_seeds[key] = seed_val
+                 
+             seed_info_str = ", ".join([f"{k.split('.')[1].capitalize()}: {v}" for k,v in current_seeds.items()])
+             seed_suffix = f" (Batch {i+1}/{batch_count} - {seed_info_str})"
+             
+             run_images = []
+             async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, iter_overrides):
+                 run_images, status = update
+                 last_status = status
+                 last_image = previous_images + run_images
+                 yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
+                 
+             # Only extend with finished images (handle_generation yields finished list last)
+             previous_images.extend(run_images)
+             
+        finished_naturally = True
+    finally:
+         if finished_naturally:
+              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
+
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
 
@@ -202,49 +257,8 @@ def create_ui(config, comfy_client):
     object_info = comfy_client.get_object_info()
 
     async def on_generate(workflow_name, prompt_text, overrides, batch_count=1):
-        # Initial status: Ensure Generate is visible/interactive, Show Stop
-        yield None, "Initializing...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
-
-        # Auto-stop previous runs
-        try:
-            comfy_client.interrupt()
-            comfy_client.clear_queue()
-            # Small delay to ensure server processes interrupt before new submission
-            await asyncio.sleep(0.1)
-        except Exception:
-            pass
-
-        # Apply random seeds
-        if overrides:
-            overrides = apply_random_seeds(overrides)
-            # Update store with new seeds
-            yield None, "Randomizing seeds...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
-
-        # Construct seed info for status
-        seed_info = []
-        if overrides:
-            for k, v in overrides.items():
-                if f"{k}.randomize" in overrides and overrides[f"{k}.randomize"] is True:
-                    seed_info.append(f"Seed: {v}")
-
-        seed_suffix = f" ({', '.join(seed_info)})" if seed_info else ""
-
-        last_image = None
-        last_status = "Processing..."
-
-        # Use a flag to track if we finished naturally
-        finished_naturally = False
-
-        try:
-            async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, overrides):
-                last_image, last_status = update
-                yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
-            finished_naturally = True
-        finally:
-            # If finished naturally (success or error caught inside handle_generation which yields final status),
-            # we need to hide Stop. Generate remains visible.
-            if finished_naturally:
-                 yield last_image, last_status + seed_suffix, gr.update(visible=True, interactive=True), gr.update(visible=False), overrides
+        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info):
+            yield update
 
     css = """
     #gallery {
