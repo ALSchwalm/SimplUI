@@ -47,7 +47,7 @@ async def test_process_generation_skip_logic():
                             
                             # Run generation (Batch count 2)
                             task = asyncio.create_task(list_async(
-                                process_generation("test", "", {}, 2, config, comfy_client, object_info, skip_event)
+                                process_generation("test", "", {}, 2, config, comfy_client, object_info, [], skip_event)
                             ))
                             
                             # Trigger skip during first batch (after it starts yielding)

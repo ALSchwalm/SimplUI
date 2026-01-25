@@ -55,7 +55,7 @@ async def test_batch_generation_calls():
                  mock_img_open.return_value = "ImageObject"
                  
                  updates = []
-                 async for update in process_generation("test", "", overrides, 2, config, comfy_client, object_info):
+                 async for update in process_generation("test", "", overrides, 2, config, comfy_client, object_info, []):
                      updates.append(update)
                 
                  assert comfy_client.generate_image.call_count == 2
@@ -106,7 +106,7 @@ async def test_batch_aggregation_with_previews():
                 mock_img_open.side_effect = side_effect
                 
                 updates = []
-                async for update in process_generation("test", "", {}, 2, config, comfy_client, {}):
+                async for update in process_generation("test", "", {}, 2, config, comfy_client, {}, []):
                     # update is (images, status, ...)
                     updates.append(update[0])
                 

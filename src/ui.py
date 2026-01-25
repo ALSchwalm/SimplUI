@@ -183,9 +183,9 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
     except Exception as e:
         yield [], f"Error during generation: {e}"
 
-async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, skip_event=None):
+async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, history_state, skip_event=None):
     # Initial status: Hide Generate, Show Stop, Show Skip
-    yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
+    yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
 
     # Auto-stop previous runs
     try:
@@ -216,6 +216,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                 if random_key in overrides:
                     is_random = overrides[random_key]
                 else:
+                    # If not in overrides, use default from extraction (True if value is 0)
                     is_random = inp.get("randomize", False)
                 
                 if is_random and key not in overrides:
@@ -226,7 +227,8 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
     # Apply random seeds
     if overrides:
         overrides = apply_random_seeds(overrides)
-        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
+        # Update store with new seeds - Keep button state
+        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
 
     # Calculate Batch Seeds
     seed_batches = {}
@@ -256,7 +258,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
              current_seeds = {}
              for key, batch in seed_batches.items():
                  seed_val = batch[i]
-                 iter_overrides[key] = str(seed_val)
+                 iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
                  current_seeds[key] = seed_val
                  
              seed_info_str = ", ".join([f"{k.split('.')[1].capitalize()}: {v}" for k,v in current_seeds.items()])
@@ -285,10 +287,6 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                      # Check if skip was triggered
                      if skip_event and skip_event.is_set():
                          next_task.cancel() # Cancel pending generation task
-                         if len(tasks) > 1:
-                             # Cancel skip wait task if next_task finished? No, skip_task is done.
-                             # If skip_task is done, next_task is pending.
-                             pass
                          break # Break inner loop
                      
                      # If we are here, next_task completed successfully
@@ -297,12 +295,15 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                          run_images, status = update
                          last_status = status
                          last_image = previous_images + run_images
-                         yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
+                         yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
                      except StopAsyncIteration:
                          # Generator finished normally
+                         # If we finished naturally, run_images contains the FINAL images for this run.
+                         # Update history state
+                         history_state.extend(run_images)
                          break
                      except Exception as e:
-                         yield last_image, f"Error: {e}", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides
+                         yield last_image, f"Error: {e}", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
                          return # Stop all on error
                          
                      # Cancel skip task if it's still pending
@@ -312,52 +313,13 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                  except Exception:
                      break
              
-             # Only extend with finished images if not skipped?
-             # Spec: "Clicking 'Skip' must immediately remove the active preview... Images from previously completed iterations... must remain visible."
-             # run_images might contain a preview if skipped.
-             # We should NOT append `run_images` to `previous_images` if skipped, unless `run_images` contains completed images?
-             # `handle_generation` returns `completed_images` at the end.
-             # If interrupted, `run_images` is partial.
-             # We want to discard the current partial.
-             # So if skipped, we do NOT extend `previous_images` with `run_images`?
-             # Wait, `run_images` comes from `update`.
-             # `handle_generation` yields `completed_images` + `[preview]`.
-             # If we skip, we discard the preview.
-             # `previous_images` should only contain fully completed images from PREVIOUS batches.
-             # So we should extend `previous_images` only if the batch finished normally?
-             # Or if `run_images` contains completed images?
-             # If we have multiple images per batch, and we skip halfway through the batch?
-             # `handle_generation` handles one prompt.
-             # If prompt produces multiple images, `completed_images` grows.
-             # If we skip, we might keep the ones already completed in this batch?
-             # Spec: "drops the current image".
-             # If batch produced 1/2 images, and we skip 2nd.
-             # We probably want to keep 1st.
-             # `run_images` contains completed images.
-             # So we should strip the preview (last item) and keep the rest.
-             # But `run_images` structure is `[img1, img2, preview]`.
-             # How do we know if last is preview?
-             # `handle_generation` doesn't explicitly flag preview in the return value (it yields list of images).
-             # But it does: `yield completed_images + [preview_image]` (preview is PIL Image).
-             # `yield list(completed_images)` (final).
-             
-             # If skipped, `run_images` likely has a preview at the end.
-             # We should probably filter it?
-             # Or, simpler: We only update `previous_images` with `run_images` if it finished naturally.
-             # If skipped, we discard EVERYTHING from this batch iteration?
-             # "drops the current image".
-             # If batch yields multiple images, ComfyUI executes them.
-             # If we interrupt, ComfyUI stops.
-             # So likely we only have what was fully done.
-             # I'll stick to: If skipped, discard this iteration's output to be safe/simple as per "drops the current image".
-             
              if not (skip_event and skip_event.is_set()):
                  previous_images.extend(run_images)
              
         finished_naturally = True
     finally:
          if finished_naturally:
-              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides
+              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -366,10 +328,10 @@ def create_ui(config, comfy_client):
     # Event for skip signaling
     skip_event = asyncio.Event()
 
-    async def on_generate(workflow_name, prompt_text, overrides, batch_count=1):
+    async def on_generate(workflow_name, prompt_text, overrides, batch_count, history):
         # Clear skip event at start of run
         skip_event.clear()
-        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, skip_event):
+        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, history, skip_event):
             yield update
 
     css = """
@@ -557,8 +519,8 @@ def create_ui(config, comfy_client):
 
                 gen_event = generate_btn.click(
                     fn=on_generate,
-                    inputs=[workflow_dropdown, prompt_input, overrides_store, batch_count_slider],
-                    outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn, overrides_store]
+                    inputs=[workflow_dropdown, prompt_input, overrides_store, batch_count_slider, history_state],
+                    outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn, overrides_store, history_gallery]
                 )
 
                 gen_event.cancels = [gen_event]
@@ -582,7 +544,6 @@ def create_ui(config, comfy_client):
                     fn=on_skip,
                     inputs=[],
                     outputs=[],
-                    # Not cancelling gen_event because we want it to continue to next batch
                 )
 
     demo.css = css
