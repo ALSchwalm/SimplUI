@@ -24,6 +24,7 @@ This will be a gradio project that acts as a wrapper/proxy for comfyui workflows
 - **Resilient State:** Advanced settings are persisted client-side in the browser, ensuring they survive server restarts without interruption.
 - **Smart Widgets:** The UI automatically detects enumeration inputs (like checkpoints or samplers) and replaces textboxes with dropdown menus populated from the server.
 - **Seed Control:** The UI automatically detects "seed" inputs, defaulting them to random if 0, and provides a checkbox to easily toggle between fixed and random seeds.
+- **Batch Count:** Users can set the number of iterations (1-20) to run sequentially. Each iteration uses a unique, deterministic seed derived from the base seed, ensuring variety while maintaining reproducibility.
 
 ### Connectivity
 - **Remote Connection:** The application will connect to a remote ComfyUI server.
