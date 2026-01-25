@@ -1,6 +1,6 @@
 # Plan - Dynamic Seed Visibility
 
-## Phase 1: Logic & State Preparation [checkpoint: b5b657e]
+## Phase 1: Logic & State Preparation [checkpoint: 1cf98e1]
 - [x] Task: Update extraction logic for initial randomization state
     - [x] Modify `extract_workflow_inputs` in `src/ui.py` to ensure that if a seed value is `0`, the `randomize` property in the metadata is explicitly set to `True`.
 - [x] Task: Ensure base seed update timing
