@@ -1,0 +1,8 @@
+{
+  "track_id": "skip_generation_20260124",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-24T13:00:00Z",
+  "updated_at": "2026-01-24T13:00:00Z",
+  "description": "The 'generate' button shown during generation should be replaced with a 'skip' button that drops the current image and moves on to the next generation in the batch. Remove any preview that was visible but keep previously completed images."
+}
