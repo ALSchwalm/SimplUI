@@ -6,15 +6,15 @@
     - [x] Ensure the History gallery is styled consistently with the main gallery (e.g., `object_fit="contain"`).
 - [x] Task: Conductor - User Manual Verification 'Phase 1: UI & State Setup' (Protocol in workflow.md)
 
-## Phase 2: Logic Implementation
-- [ ] Task: Update generation loop for history tracking
-    - [ ] Modify `process_generation` in `src/ui.py` to accept `history_state` as an argument.
-    - [ ] Update the `process_generation` loop to append final images to the `history_state` only when an iteration completes successfully (avoiding previews).
-    - [ ] Update all `yield` statements in `process_generation` to include the `history_state` and the `history_gallery` update.
-- [ ] Task: Update event wiring
-    - [ ] Update the `generate_btn.click` call in `create_ui` to include `history_state` in inputs/outputs and `history_gallery` in outputs.
-    - [ ] Ensure `on_generate` correctly passes through the new state.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Logic Implementation' (Protocol in workflow.md)
+## Phase 2: Logic Implementation [checkpoint: d778bad]
+- [x] Task: Update generation loop for history tracking
+    - [x] Modify `process_generation` in `src/ui.py` to accept `history_state` as an argument.
+    - [x] Update the `process_generation` loop to append final images to the `history_state` only when an iteration completes successfully (avoiding previews).
+    - [x] Update all `yield` statements in `process_generation` to include the `history_state` and the `history_gallery` update.
+- [x] Task: Update event wiring
+    - [x] Update the `generate_btn.click` call in `create_ui` to include `history_state` in inputs/outputs and `history_gallery` in outputs.
+    - [x] Ensure `on_generate` correctly passes through the new state.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Logic Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Verification & Refinement
 - [ ] Task: Unit testing history aggregation
