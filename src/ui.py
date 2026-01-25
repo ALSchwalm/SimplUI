@@ -431,12 +431,13 @@ def create_ui(config, comfy_client):
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "seed":
                                                 with gr.Row():
-                                                    # Use Textbox to preserve 64-bit integer precision
-                                                    comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=1, interactive=True)
                                                     # Check randomization state from overrides
                                                     random_key = f"{key}.randomize"
                                                     random_default = inp.get("randomize", False)
                                                     random_val = overrides.get(random_key, random_default) if overrides else random_default
+
+                                                    # Use Textbox to preserve 64-bit integer precision
+                                                    comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=1, interactive=True, visible=not random_val)
 
                                                     random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
 

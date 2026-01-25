@@ -137,3 +137,27 @@ def test_apply_random_seeds():
     
     # Other values should persist
     assert updated["1.steps"] == 30
+
+def test_extract_workflow_inputs_randomize_default():
+    from ui import extract_workflow_inputs
+    workflow = {
+        "1": {
+            "_meta": {"title": "KSampler"},
+            "inputs": {"seed": 0},
+            "class_type": "KSampler"
+        }
+    }
+    extracted = extract_workflow_inputs(workflow)
+    # 0 -> randomize=True
+    assert extracted[0]["inputs"][0]["randomize"] is True
+    
+    workflow_nonzero = {
+        "1": {
+            "_meta": {"title": "KSampler"},
+            "inputs": {"seed": 123},
+            "class_type": "KSampler"
+        }
+    }
+    extracted_nz = extract_workflow_inputs(workflow_nonzero)
+    # 123 -> randomize=False
+    assert extracted_nz[0]["inputs"][0]["randomize"] is False
