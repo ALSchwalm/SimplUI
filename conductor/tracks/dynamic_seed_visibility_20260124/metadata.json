@@ -1,0 +1,8 @@
+{
+  "track_id": "dynamic_seed_visibility_20260124",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-24T12:00:00Z",
+  "updated_at": "2026-01-24T12:00:00Z",
+  "description": "We need to make some changes to how the 'randomize' box is shown. Instead of showing both the seed and the randomize check, the seed box should be hidden as long as randomize is checked. Then when you uncheck randomize the seed box should be visible and should contain the 'base' seed used for the currently generated batch. Also be sure that if a workflow is loaded with seed value set to 0 the randomize box is checked and the seed input box is hidden by default."
+}
