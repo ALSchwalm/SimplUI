@@ -545,7 +545,8 @@ def create_ui(config, comfy_client):
                                 columns=2,
                                 object_fit="contain",
                                 height="70vh",
-                                elem_id="history-gallery"
+                                elem_id="history-gallery",
+                                interactive=False
                             )
 
                 advanced_toggle.change(
