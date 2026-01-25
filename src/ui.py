@@ -393,6 +393,7 @@ def create_ui(config, comfy_client):
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
             overrides_store = gr.JSON(value={}, visible=False)
+            history_state = gr.State(value=[])
 
             def update_prompt_on_change(workflow_name):
                 if not workflow_name:
@@ -536,6 +537,16 @@ def create_ui(config, comfy_client):
                                             else:
                                                 comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+
+                        with gr.Tab("History"):
+                            history_gallery = gr.Gallery(
+                                label="Session History",
+                                show_label=False,
+                                columns=2,
+                                object_fit="contain",
+                                height="70vh",
+                                elem_id="history-gallery"
+                            )
 
                 advanced_toggle.change(
                     fn=lambda x: gr.update(visible=x),
