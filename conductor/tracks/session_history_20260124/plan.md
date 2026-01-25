@@ -16,9 +16,9 @@
     - [x] Ensure `on_generate` correctly passes through the new state.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Logic Implementation' (Protocol in workflow.md)
 
-## Phase 3: Verification & Refinement
-- [ ] Task: Unit testing history aggregation
-    - [ ] Create/update tests in `tests/test_batch_logic.py` or a new test file to verify that `process_generation` correctly accumulates only final images in the yielded history state.
-- [ ] Task: Integration Testing
-    - [ ] Write a Playwright test to verify that after multiple "Generate" runs, the History tab contains the expected number of images and no previews.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Verification & Refinement' (Protocol in workflow.md)
+## Phase 3: Verification & Refinement [checkpoint: 783d373]
+- [x] Task: Unit testing history aggregation
+    - [x] Create/update tests in `tests/test_batch_logic.py` or a new test file to verify that `process_generation` correctly accumulates only final images in the yielded history state.
+- [x] Task: Integration Testing
+    - [x] Write a Playwright test to verify that after multiple "Generate" runs, the History tab contains the expected number of images and no previews.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Verification & Refinement' (Protocol in workflow.md)
