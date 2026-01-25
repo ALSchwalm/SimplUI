@@ -196,19 +196,48 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
     except Exception:
         pass
 
-    # Load Workflow JSON to find seeds
+    # Load Workflow JSON
     workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
     with open(workflow_info["path"], "r") as f:
         workflow_json = json.load(f)
 
-    # Apply random seeds
+    # Augment overrides with default random seeds
+    # If overrides is None/Empty, initialize it
+    if overrides is None:
+        overrides = {}
+        
+    extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
+    for node in extracted:
+        for inp in node["inputs"]:
+            if inp["type"] == "seed":
+                key = f"{node['node_id']}.{inp['name']}"
+                random_key = f"{key}.randomize"
+                
+                # Determine randomization state
+                is_random = False
+                if random_key in overrides:
+                    is_random = overrides[random_key]
+                else:
+                    # If not in overrides, use default from extraction (True if value is 0)
+                    is_random = inp.get("randomize", False)
+                
+                # If random, ensure we generate a base seed if not already randomized by apply_random_seeds later
+                # Wait, apply_random_seeds only processes keys in overrides.
+                # So we must add it to overrides here if it's not present.
+                if is_random and key not in overrides:
+                     # Generate a new random base seed
+                     new_seed = random.randint(0, 18446744073709551615)
+                     overrides[key] = str(new_seed)
+                     overrides[random_key] = True # Ensure randomize is set in overrides too
+
+    # Apply random seeds (handles overrides that are already present)
     if overrides:
         overrides = apply_random_seeds(overrides)
         # Update store with new seeds
         yield None, "Randomizing seeds...", gr.update(visible=True, interactive=True), gr.update(visible=True), overrides
 
     # Calculate Batch Seeds
-    extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
+    # extracted is already calculated above
     seed_batches = {}
     for node in extracted:
         for inp in node["inputs"]:
