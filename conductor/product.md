@@ -22,6 +22,7 @@ This will be a gradio project that acts as a wrapper/proxy for comfyui workflows
 ### Advanced User Controls
 - **Advanced Mode:** The interface will feature an "Advanced" button.
 - **Sidebar Controls:** Clicking the "Advanced Controls" checkbox will reveal a sidebar on the right containing detailed controls for manipulating the specific nodes within the selected workflow.
+- **History Tab:** A dedicated "History" tab within the advanced sidebar collects and displays all final images generated during the current session, excluding intermediate previews.
 - **Resilient State:** Advanced settings are persisted client-side in the browser, ensuring they survive server restarts without interruption.
 - **Smart Widgets:** The UI automatically detects enumeration inputs (like checkpoints or samplers) and replaces textboxes with dropdown menus populated from the server.
 - **Seed Control:** The UI automatically detects "seed" inputs, defaulting them to random if 0. A "Randomize" checkbox toggles between fixed and random seeds. When randomized, the numeric input is hidden to reduce clutter; disabling randomization reveals the specific base seed used.
