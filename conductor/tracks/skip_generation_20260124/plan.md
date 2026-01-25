@@ -10,13 +10,13 @@
     - [x] Ensure "Skip" reverts to "Generate" on the last batch item or completion.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: UI Implementation' (Protocol in workflow.md)
 
-## Phase 2: Skip Logic & Interruption
-- [ ] Task: Implement Skip signaling
-    - [ ] Add a mechanism to signal a skip from the UI to the generation loop (e.g., a shared flag or cancellation event).
-- [ ] Task: Update generation loop to handle skip
-    - [ ] Modify the loop in `process_generation` to catch interruptions or check the skip signal.
-    - [ ] Ensure that if "Skip" is clicked, the current iteration's `handle_generation` is cancelled but the loop proceeds to the next iteration.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Skip Logic & Interruption' (Protocol in workflow.md)
+## Phase 2: Skip Logic & Interruption [checkpoint: 485b03b]
+- [x] Task: Implement Skip signaling
+    - [x] Add a mechanism to signal a skip from the UI to the generation loop (e.g., a shared flag or cancellation event).
+- [x] Task: Update generation loop to handle skip
+    - [x] Modify the loop in `process_generation` to catch interruptions or check the skip signal.
+    - [x] Ensure that if "Skip" is clicked, the current iteration's `handle_generation` is cancelled but the loop proceeds to the next iteration.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Skip Logic & Interruption' (Protocol in workflow.md)
 
 ## Phase 3: Gallery State & Integration
 - [ ] Task: Clean gallery on skip
