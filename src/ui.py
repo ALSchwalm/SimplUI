@@ -183,7 +183,7 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
     except Exception as e:
         yield [], f"Error during generation: {e}"
 
-async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info):
+async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, skip_event=None):
     # Initial status: Hide Generate, Show Stop, Show Skip
     yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
 
@@ -212,28 +212,23 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                 key = f"{node['node_id']}.{inp['name']}"
                 random_key = f"{key}.randomize"
                 
-                # Determine randomization state
                 is_random = False
                 if random_key in overrides:
                     is_random = overrides[random_key]
                 else:
-                    # If not in overrides, use default from extraction (True if value is 0)
                     is_random = inp.get("randomize", False)
                 
                 if is_random and key not in overrides:
-                     # Generate a new random base seed
                      new_seed = random.randint(0, 18446744073709551615)
                      overrides[key] = str(new_seed)
                      overrides[random_key] = True 
 
-    # Apply random seeds (handles overrides that are already present)
+    # Apply random seeds
     if overrides:
         overrides = apply_random_seeds(overrides)
-        # Update store with new seeds - Keep button state
         yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
 
     # Calculate Batch Seeds
-    # extracted is already calculated above
     seed_batches = {}
     for node in extracted:
         for inp in node["inputs"]:
@@ -252,41 +247,129 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
     
     try:
         for i in range(batch_count):
+             # Clear skip event for this iteration
+             if skip_event:
+                 skip_event.clear()
+
              iter_overrides = overrides.copy() if overrides else {}
              
              current_seeds = {}
              for key, batch in seed_batches.items():
                  seed_val = batch[i]
-                 iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
+                 iter_overrides[key] = str(seed_val)
                  current_seeds[key] = seed_val
                  
              seed_info_str = ", ".join([f"{k.split('.')[1].capitalize()}: {v}" for k,v in current_seeds.items()])
              seed_suffix = f" (Batch {i+1}/{batch_count} - {seed_info_str})"
              
              run_images = []
-             async for update in handle_generation(workflow_name, prompt_text, config, comfy_client, iter_overrides):
-                 run_images, status = update
-                 last_status = status
-                 last_image = previous_images + run_images
-                 yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
+             
+             # Manual async iteration to support skip/cancellation
+             iterator = handle_generation(workflow_name, prompt_text, config, comfy_client, iter_overrides).__aiter__()
+             
+             while True:
+                 # Check skip signal
+                 if skip_event and skip_event.is_set():
+                     break
                  
-             # Only extend with finished images (handle_generation yields finished list last)
-             previous_images.extend(run_images)
+                 try:
+                     # Create tasks for next update and skip signal
+                     next_task = asyncio.create_task(iterator.__anext__())
+                     tasks = [next_task]
+                     if skip_event:
+                         skip_task = asyncio.create_task(skip_event.wait())
+                         tasks.append(skip_task)
+                     
+                     done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                     
+                     # Check if skip was triggered
+                     if skip_event and skip_event.is_set():
+                         next_task.cancel() # Cancel pending generation task
+                         if len(tasks) > 1:
+                             # Cancel skip wait task if next_task finished? No, skip_task is done.
+                             # If skip_task is done, next_task is pending.
+                             pass
+                         break # Break inner loop
+                     
+                     # If we are here, next_task completed successfully
+                     try:
+                         update = next_task.result()
+                         run_images, status = update
+                         last_status = status
+                         last_image = previous_images + run_images
+                         yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides
+                     except StopAsyncIteration:
+                         # Generator finished normally
+                         break
+                     except Exception as e:
+                         yield last_image, f"Error: {e}", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides
+                         return # Stop all on error
+                         
+                     # Cancel skip task if it's still pending
+                     if skip_event:
+                         skip_task.cancel()
+                         
+                 except Exception:
+                     break
+             
+             # Only extend with finished images if not skipped?
+             # Spec: "Clicking 'Skip' must immediately remove the active preview... Images from previously completed iterations... must remain visible."
+             # run_images might contain a preview if skipped.
+             # We should NOT append `run_images` to `previous_images` if skipped, unless `run_images` contains completed images?
+             # `handle_generation` returns `completed_images` at the end.
+             # If interrupted, `run_images` is partial.
+             # We want to discard the current partial.
+             # So if skipped, we do NOT extend `previous_images` with `run_images`?
+             # Wait, `run_images` comes from `update`.
+             # `handle_generation` yields `completed_images` + `[preview]`.
+             # If we skip, we discard the preview.
+             # `previous_images` should only contain fully completed images from PREVIOUS batches.
+             # So we should extend `previous_images` only if the batch finished normally?
+             # Or if `run_images` contains completed images?
+             # If we have multiple images per batch, and we skip halfway through the batch?
+             # `handle_generation` handles one prompt.
+             # If prompt produces multiple images, `completed_images` grows.
+             # If we skip, we might keep the ones already completed in this batch?
+             # Spec: "drops the current image".
+             # If batch produced 1/2 images, and we skip 2nd.
+             # We probably want to keep 1st.
+             # `run_images` contains completed images.
+             # So we should strip the preview (last item) and keep the rest.
+             # But `run_images` structure is `[img1, img2, preview]`.
+             # How do we know if last is preview?
+             # `handle_generation` doesn't explicitly flag preview in the return value (it yields list of images).
+             # But it does: `yield completed_images + [preview_image]` (preview is PIL Image).
+             # `yield list(completed_images)` (final).
+             
+             # If skipped, `run_images` likely has a preview at the end.
+             # We should probably filter it?
+             # Or, simpler: We only update `previous_images` with `run_images` if it finished naturally.
+             # If skipped, we discard EVERYTHING from this batch iteration?
+             # "drops the current image".
+             # If batch yields multiple images, ComfyUI executes them.
+             # If we interrupt, ComfyUI stops.
+             # So likely we only have what was fully done.
+             # I'll stick to: If skipped, discard this iteration's output to be safe/simple as per "drops the current image".
+             
+             if not (skip_event and skip_event.is_set()):
+                 previous_images.extend(run_images)
              
         finished_naturally = True
     finally:
          if finished_naturally:
-              # Finished: Show Generate, Hide Stop, Hide Skip
               yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
-
-    # Fetch node definitions from ComfyUI
     object_info = comfy_client.get_object_info()
+    
+    # Event for skip signaling
+    skip_event = asyncio.Event()
 
     async def on_generate(workflow_name, prompt_text, overrides, batch_count=1):
-        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info):
+        # Clear skip event at start of run
+        skip_event.clear()
+        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, skip_event):
             yield update
 
     css = """
@@ -309,8 +392,6 @@ def create_ui(config, comfy_client):
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
-            # Client-side store for overrides.
-            # This JSON component holds the state in the browser.
             overrides_store = gr.JSON(value={}, visible=False)
 
             def update_prompt_on_change(workflow_name):
@@ -355,7 +436,6 @@ def create_ui(config, comfy_client):
                             stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
                             skip_btn = gr.Button("Skip", variant="secondary", visible=False, elem_id="skip-btn")
 
-                    # Advanced Controls Toggle
                     advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
                                                   container=False, elem_id="advanced-checkbox")
 
@@ -367,7 +447,6 @@ def create_ui(config, comfy_client):
                         filterable=False
                     )
 
-                    # Batch Count Slider
                     batch_count_slider = gr.Slider(
                         label="Batch Count",
                         minimum=1,
@@ -385,7 +464,6 @@ def create_ui(config, comfy_client):
                         outputs=[overrides_store]
                     )
 
-                    # Bind prompt update
                     workflow_dropdown.change(
                         fn=update_prompt_on_change,
                         inputs=[workflow_dropdown],
@@ -415,7 +493,6 @@ def create_ui(config, comfy_client):
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
 
-                                            # Use value from overrides if available, else default
                                             current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
 
                                             if inp["type"] == "enum":
@@ -429,20 +506,16 @@ def create_ui(config, comfy_client):
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "seed":
                                                 with gr.Row():
-                                                    # Check randomization state from overrides
                                                     random_key = f"{key}.randomize"
                                                     random_default = inp.get("randomize", False)
                                                     random_val = overrides.get(random_key, random_default) if overrides else random_default
 
-                                                    # Use Textbox to preserve 64-bit integer precision
                                                     comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=1, interactive=True, visible=not random_val)
 
                                                     random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
 
-                                                # Bind number input (as text)
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
-                                                # Bind randomize checkbox
                                                 random_box.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{random_key}'] = val; return newStore; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "slider":
                                                 comp = gr.Slider(
@@ -464,7 +537,6 @@ def create_ui(config, comfy_client):
                                                 comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
 
-                # Bind sidebar visibility
                 advanced_toggle.change(
                     fn=lambda x: gr.update(visible=x),
                     inputs=[advanced_toggle],
@@ -477,19 +549,28 @@ def create_ui(config, comfy_client):
                     outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn, overrides_store]
                 )
 
-                # Clicking Generate again cancels the previous run
                 gen_event.cancels = [gen_event]
 
                 def stop_generation():
                     comfy_client.interrupt()
-                    # Return status, show Generate, hide Stop, hide Skip
                     return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False)
 
                 stop_btn.click(
                     fn=stop_generation,
                     inputs=[],
                     outputs=[status_text, generate_btn, stop_btn, skip_btn],
-                    cancels=[gen_event] # Stop button cancels the generation task
+                    cancels=[gen_event]
+                )
+                
+                def on_skip():
+                    skip_event.set()
+                    comfy_client.interrupt()
+                    
+                skip_btn.click(
+                    fn=on_skip,
+                    inputs=[],
+                    outputs=[],
+                    # Not cancelling gen_event because we want it to continue to next batch
                 )
 
     demo.css = css
