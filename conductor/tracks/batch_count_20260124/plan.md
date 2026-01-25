@@ -9,7 +9,7 @@
     - [x] Ensure the batch count value is included in the client-side state persistence logic in `src/ui.py`.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: UI Implementation' (Protocol in workflow.md)
 
-## Phase 2: Core Logic & Seed Derivation
+## Phase 2: Core Logic & Seed Derivation [checkpoint: 6b5b227]
 - [x] Task: Implement Deterministic Seed Generator 59a312d
     - [x] Create a utility function/method to generate a sequence of $N$ seeds from a `base_seed` using a deterministic PRNG (e.g., `random.Random(base_seed)`).
     - [x] Write unit tests to verify that the same `base_seed` always produces the same sequence.
