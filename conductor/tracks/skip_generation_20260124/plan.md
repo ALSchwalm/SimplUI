@@ -18,9 +18,9 @@
     - [x] Ensure that if "Skip" is clicked, the current iteration's `handle_generation` is cancelled but the loop proceeds to the next iteration.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Skip Logic & Interruption' (Protocol in workflow.md)
 
-## Phase 3: Gallery State & Integration
-- [ ] Task: Clean gallery on skip
-    - [ ] Update the `process_generation` yield logic to explicitly remove the active preview from the gallery when a skip is triggered.
-- [ ] Task: Integration Testing
-    - [ ] Write a Playwright test to verify button swapping and skip-to-next behavior.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Gallery State & Integration' (Protocol in workflow.md)
+## Phase 3: Gallery State & Integration [checkpoint: 4d79a11]
+- [x] Task: Clean gallery on skip
+    - [x] Update the `process_generation` yield logic to explicitly remove the active preview from the gallery when a skip is triggered.
+- [x] Task: Integration Testing
+    - [x] Write a Playwright test to verify button swapping and skip-to-next behavior.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Gallery State & Integration' (Protocol in workflow.md)
