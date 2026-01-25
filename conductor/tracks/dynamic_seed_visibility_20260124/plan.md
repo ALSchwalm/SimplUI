@@ -1,11 +1,11 @@
 # Plan - Dynamic Seed Visibility
 
-## Phase 1: Logic & State Preparation
+## Phase 1: Logic & State Preparation [checkpoint: b5b657e]
 - [x] Task: Update extraction logic for initial randomization state
     - [x] Modify `extract_workflow_inputs` in `src/ui.py` to ensure that if a seed value is `0`, the `randomize` property in the metadata is explicitly set to `True`.
-- [~] Task: Ensure base seed update timing
-    - [ ] Verify `process_generation` in `src/ui.py` correctly yields the updated `overrides` (containing new base seeds) *before* entering the batch loop.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Logic & State Preparation' (Protocol in workflow.md)
+- [x] Task: Ensure base seed update timing
+    - [x] Verify `process_generation` in `src/ui.py` correctly yields the updated `overrides` (containing new base seeds) *before* entering the batch loop.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Logic & State Preparation' (Protocol in workflow.md)
 
 ## Phase 2: UI Dynamic Visibility
 - [ ] Task: Implement conditional visibility in renderer
