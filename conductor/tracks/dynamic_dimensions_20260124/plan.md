@@ -13,20 +13,20 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Dimension Calculation Logic' (Protocol in workflow.md)
 
 ## Phase 2: UI Input Extraction & Grouping
-- [ ] Task: Update extraction logic to group dimensions
-    - [ ] Modify `extract_workflow_inputs` in `src/ui.py`.
-    - [ ] Detect nodes that have both `width` and `height` inputs.
-    - [ ] Group these into a single input item of type `dimensions`.
-- [ ] Task: Update dynamic renderer
-    - [ ] Modify `render_dynamic_interface` in `src/ui.py`.
-    - [ ] Add rendering logic for the `dimensions` type using two `gr.Dropdown` components (Aspect Ratio and Pixel Count).
-    - [ ] Set default selection to 1:1 and 1M if not already in overrides.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Input Extraction & Grouping' (Protocol in workflow.md)
+- [x] Task: Update extraction logic to group dimensions
+    - [x] Modify `extract_workflow_inputs` in `src/ui.py`.
+    - [x] Detect nodes that have both `width` and `height` inputs.
+    - [x] Group these into a single input item of type `dimensions`.
+- [x] Task: Update dynamic renderer
+    - [x] Modify `render_dynamic_interface` in `src/ui.py`.
+    - [x] Add rendering logic for the `dimensions` type using two `gr.Dropdown` components (Aspect Ratio and Pixel Count).
+    - [x] Set default selection to 1:1 and 1M if not already in overrides.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: UI Input Extraction & Grouping' (Protocol in workflow.md)
 
-## Phase 3: State Management & Integration
-- [ ] Task: Implement JS-side dimension calculation
-    - [ ] Update the `change` handlers for the new dropdowns in `src/ui.py`.
-    - [ ] Use Javascript to calculate the width and height and update the `overrides_store` for both the selection state (to persist dropdown choices) and the raw `width`/`height` keys (to inject into the workflow).
-- [ ] Task: Integration Testing
-    - [ ] Write a Playwright test to verify that selecting "16:9" and "1M" updates the internal state to the correct calculated dimensions (e.g., $1344 \times 768$).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: State Management & Integration' (Protocol in workflow.md)
+## Phase 3: State Management & Integration [checkpoint: 5071b6d]
+- [x] Task: Implement JS-side dimension calculation
+    - [x] Update the `change` handlers for the new dropdowns in `src/ui.py`.
+    - [x] Use Javascript to calculate the width and height and update the `overrides_store` for both the selection state (to persist dropdown choices) and the raw `width`/`height` keys (to inject into the workflow).
+- [x] Task: Integration Testing
+    - [x] Write a Playwright test to verify that selecting "16:9" and "1M" updates the internal state to the correct calculated dimensions (e.g., $1344 \times 768$).
+- [x] Task: Conductor - User Manual Verification 'Phase 3: State Management & Integration' (Protocol in workflow.md)
