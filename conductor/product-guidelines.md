@@ -8,6 +8,7 @@
 - **Integrated Sidebar:** The "Advanced" sidebar should use an integrated approach where it slides in smoothly, adjusting the main content to make room. This transition should feel cohesive with the rest of the application.
 - **Feedback Loops:** Provide clear, professional feedback during long-running tasks like image generation (e.g., progress bars, loading indicators).
 - **Viewport Optimization:** Ensure that large visual assets, such as generated images and live previews, do not overwhelm the UI. Use responsive height constraints (e.g., 50vh) and 'contain' scaling to keep images within the viewport.
+- **Simplified Dimensions:** Prioritize user-friendly dimension controls (Aspect Ratio and Pixel Count) over raw pixel inputs. Ensure all calculated dimensions are optimized for generative models (e.g., multiples of 64).
 - **Layout Constraints:** Maintain a maximum application width of 1280px on large displays to preserve readability and usability, centering the content horizontally.
 
 ## Voice and Tone
