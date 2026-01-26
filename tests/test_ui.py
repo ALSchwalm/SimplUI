@@ -161,3 +161,34 @@ def test_extract_workflow_inputs_randomize_default():
     extracted_nz = extract_workflow_inputs(workflow_nonzero)
     # 123 -> randomize=False
     assert extracted_nz[0]["inputs"][0]["randomize"] is False
+
+def test_extract_workflow_inputs_dimension_grouping():
+    from ui import extract_workflow_inputs
+    workflow = {
+        "1": {
+            "_meta": {"title": "Empty Latent Image"},
+            "inputs": {
+                "width": 512,
+                "height": 512,
+                "batch_size": 1
+            },
+            "class_type": "EmptyLatentImage"
+        }
+    }
+    extracted = extract_workflow_inputs(workflow)
+    
+    # Check that width/height are grouped into 'dimensions'
+    # and removed from raw inputs
+    node_inputs = extracted[0]["inputs"]
+    
+    dim_input = next((i for i in node_inputs if i["type"] == "dimensions"), None)
+    assert dim_input is not None
+    assert dim_input["width_value"] == 512
+    assert dim_input["height_value"] == 512
+    
+    # width and height should NOT be present as individual inputs
+    assert not any(i["name"] == "width" for i in node_inputs)
+    assert not any(i["name"] == "height" for i in node_inputs)
+    
+    # Other inputs should remain
+    assert any(i["name"] == "batch_size" for i in node_inputs)

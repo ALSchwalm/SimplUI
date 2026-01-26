@@ -17,18 +17,37 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
         class_type = node_data.get("class_type", "")
         inputs = []
         is_prompt_node = title.lower() == "prompt"
+        
+        node_inputs = node_data.get("inputs", {})
+        has_width = "width" in node_inputs
+        has_height = "height" in node_inputs
 
         # Get node definition from object_info
         node_def = None
         if object_info and class_type in object_info:
             node_def = object_info[class_type]
 
-        for name, value in node_data.get("inputs", {}).items():
+        if has_width and has_height:
+            # Special 'dimensions' type
+            inputs.append({
+                "name": "Dimensions",
+                "type": "dimensions",
+                "width_name": "width",
+                "height_name": "height",
+                "width_value": node_inputs["width"],
+                "height_value": node_inputs["height"]
+            })
+
+        for name, value in node_inputs.items():
             if isinstance(value, list):
                 continue  # Skip links
 
             # Filter out the primary prompt input from advanced controls
             if is_prompt_node and name in ["text", "string"]:
+                continue
+                
+            # Filter out width/height if we grouped them
+            if has_width and has_height and name in ["width", "height"]:
                 continue
 
             input_type = "str"
@@ -458,7 +477,39 @@ def create_ui(config, comfy_client):
 
                                             current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
 
-                                            if inp["type"] == "enum":
+                                            if inp["type"] == "dimensions":
+                                                with gr.Row():
+                                                    # Aspect Ratio Dropdown
+                                                    ar_key = f"{key}.aspect_ratio"
+                                                    ar_options = ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "7:9", "9:7", "1:2", "2:1"]
+                                                    ar_val = overrides.get(ar_key, "1:1")
+                                                    ar_comp = gr.Dropdown(
+                                                        choices=ar_options,
+                                                        label="Aspect Ratio",
+                                                        value=ar_val,
+                                                        scale=1,
+                                                        interactive=True,
+                                                        filterable=False
+                                                    )
+                                                    
+                                                    # Pixel Count Dropdown
+                                                    pc_key = f"{key}.pixel_count"
+                                                    pc_options = ["0.25M", "0.5M", "1M", "1.5M", "2M"]
+                                                    pc_val = overrides.get(pc_key, "1M")
+                                                    pc_comp = gr.Dropdown(
+                                                        choices=pc_options,
+                                                        label="Pixel Count",
+                                                        value=pc_val,
+                                                        scale=1,
+                                                        interactive=True,
+                                                        filterable=False
+                                                    )
+                                                
+                                                # Bind changes to store selections
+                                                ar_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{ar_key}'] = val; return newStore; }}", inputs=[ar_comp, overrides_store], outputs=[overrides_store])
+                                                pc_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{pc_key}'] = val; return newStore; }}", inputs=[pc_comp, overrides_store], outputs=[overrides_store])
+
+                                            elif inp["type"] == "enum":
                                                 comp = gr.Dropdown(
                                                     choices=inp["options"],
                                                     label=inp["name"],
