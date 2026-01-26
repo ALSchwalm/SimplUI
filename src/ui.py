@@ -370,10 +370,13 @@ def create_ui(config, comfy_client):
         box-shadow: none !important;
         padding: 0 !important;
     }
+    #overrides-store {
+        display: none !important;
+    }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
-            overrides_store = gr.JSON(value={}, visible=False)
+            overrides_store = gr.JSON(value={}, visible=True, elem_id="overrides-store")
             history_state = gr.State(value=[])
 
             def update_prompt_on_change(workflow_name):
@@ -475,8 +478,6 @@ def create_ui(config, comfy_client):
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
 
-                                            current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
-
                                             if inp["type"] == "dimensions":
                                                 with gr.Row():
                                                     # Aspect Ratio Dropdown
@@ -505,11 +506,48 @@ def create_ui(config, comfy_client):
                                                         filterable=False
                                                     )
                                                 
-                                                # Bind changes to store selections
-                                                ar_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{ar_key}'] = val; return newStore; }}", inputs=[ar_comp, overrides_store], outputs=[overrides_store])
-                                                pc_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{pc_key}'] = val; return newStore; }}", inputs=[pc_comp, overrides_store], outputs=[overrides_store])
+                                                # JS logic to calculate dimensions and update store
+                                                js_calc = f"""
+                                                (val, store) => {{
+                                                    const newStore = {{...store}};
+                                                    
+                                                    // Initialize keys if missing
+                                                    if (!newStore['{ar_key}']) newStore['{ar_key}'] = '1:1';
+                                                    if (!newStore['{pc_key}']) newStore['{pc_key}'] = '1M';
 
-                                            elif inp["type"] == "enum":
+                                                    // Determine which dropdown changed
+                                                    const ar = '{ar_key}'.endsWith('.aspect_ratio') && val.includes(':') ? val : newStore['{ar_key}'];
+                                                    const pc_str = '{pc_key}'.endsWith('.pixel_count') && val.includes('M') ? val : newStore['{pc_key}'];
+                                                    
+                                                    // Save selection state
+                                                    if (val.includes(':')) newStore['{ar_key}'] = val;
+                                                    else newStore['{pc_key}'] = val;
+
+                                                    // Calculate pixels
+                                                    const pc = parseFloat(pc_str) * 1024 * 1024;
+                                                    const parts = ar.split(':');
+                                                    const ratio = parseFloat(parts[0]) / parseFloat(parts[1]);
+                                                    
+                                                    const h = Math.sqrt(pc / ratio);
+                                                    const w = h * ratio;
+                                                    
+                                                    const round64 = (v) => Math.max(64, Math.round(v / 64) * 64);
+                                                    
+                                                    newStore['{node['node_id']}.width'] = round64(w);
+                                                    newStore['{node['node_id']}.height'] = round64(h);
+                                                    
+                                                    return newStore;
+                                                }}
+                                                """
+                                                
+                                                ar_comp.change(fn=None, js=js_calc, inputs=[ar_comp, overrides_store], outputs=[overrides_store])
+                                                pc_comp.change(fn=None, js=js_calc, inputs=[pc_comp, overrides_store], outputs=[overrides_store])
+                                                continue
+
+                                            # Use value from overrides if available, else default
+                                            current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
+
+                                            if inp["type"] == "enum":
                                                 comp = gr.Dropdown(
                                                     choices=inp["options"],
                                                     label=inp["name"],
