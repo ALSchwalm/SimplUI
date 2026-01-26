@@ -482,13 +482,15 @@ def create_ui(config, comfy_client):
                                                 with gr.Row():
                                                     # Aspect Ratio Dropdown
                                                     ar_key = f"{key}.aspect_ratio"
-                                                    ar_options = ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "7:9", "9:7", "1:2", "2:1"]
+                                                    # Sorted from tallest (lowest W/H) to widest (highest W/H)
+                                                    ar_options = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
                                                     ar_val = overrides.get(ar_key, "1:1")
                                                     ar_comp = gr.Dropdown(
                                                         choices=ar_options,
                                                         label="Aspect Ratio",
                                                         value=ar_val,
                                                         scale=1,
+                                                        min_width=80,
                                                         interactive=True,
                                                         filterable=False
                                                     )
@@ -502,6 +504,7 @@ def create_ui(config, comfy_client):
                                                         label="Pixel Count",
                                                         value=pc_val,
                                                         scale=1,
+                                                        min_width=80,
                                                         interactive=True,
                                                         filterable=False
                                                     )
