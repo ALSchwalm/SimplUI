@@ -8,16 +8,16 @@
     - [x] Update `tests/test_dimension_utils.py` to test exact matching and nearest neighbor logic.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Logic Implementation' (Protocol in workflow.md)
 
-## Phase 2: UI Updates & Toggle
-- [ ] Task: Update dynamic renderer for dual modes
-    - [ ] Modify `render_dynamic_interface` in `src/ui.py`.
-    - [ ] Implement the logic to decide initial mode based on `find_matching_preset`.
-    - [ ] Render both sets of controls (Dropdowns AND Number inputs) but control their `visible` property based on a local state variable (e.g., `is_simplified_view`).
-- [ ] Task: Implement toggle button logic
-    - [ ] Add the "Show Exact Dimensions" / "Show Aspect Ratio" toggle button.
-    - [ ] Wire the click event to toggle the `visible` properties.
-    - [ ] Implement the "Snap to Nearest" logic when switching to Simplified mode using JS or Python callback.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Updates & Toggle' (Protocol in workflow.md)
+## Phase 2: UI Updates & Toggle [checkpoint: 5bb00f8]
+- [x] Task: Update dynamic renderer for dual modes
+    - [x] Modify `render_dynamic_interface` in `src/ui.py`.
+    - [x] Implement the logic to decide initial mode based on `find_matching_preset`.
+    - [x] Render both sets of controls (Dropdowns AND Number inputs) but control their `visible` property based on a local state variable (e.g., `is_simplified_view`).
+- [x] Task: Implement toggle button logic
+    - [x] Add the "Show Exact Dimensions" / "Show Aspect Ratio" toggle button.
+    - [x] Wire the click event to toggle the `visible` properties.
+    - [x] Implement the "Snap to Nearest" logic when switching to Simplified mode using JS or Python callback.
+- [~] Task: Conductor - User Manual Verification 'Phase 2: UI Updates & Toggle' (Protocol in workflow.md)
 
 ## Phase 3: Integration & Refinement
 - [ ] Task: Update extraction logic
