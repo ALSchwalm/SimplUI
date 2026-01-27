@@ -373,6 +373,9 @@ def create_ui(config, comfy_client):
     #overrides-store {
         display: none !important;
     }
+    .node-title {
+        padding-left: 8px;
+    }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
@@ -474,7 +477,7 @@ def create_ui(config, comfy_client):
 
                                 for node in extracted:
                                     with gr.Group():
-                                        gr.Markdown(f"#### {node['title']}")
+                                        gr.Markdown(f"#### {node['title']}", elem_classes=["node-title"])
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
 
