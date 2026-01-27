@@ -377,11 +377,6 @@ def create_ui(config, comfy_client):
     .node-title {
         padding-left: 8px;
     }
-    /* Remove orange outline from tabs/buttons */
-    button:focus {
-        outline: none !important;
-        box-shadow: none !important;
-    }
     """
     with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
         with gr.Column(elem_id="app_container"):
