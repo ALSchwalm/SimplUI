@@ -1,0 +1,8 @@
+{
+  "track_id": "enhanced_dimensions_20260124",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-24T14:30:00Z",
+  "updated_at": "2026-01-24T14:30:00Z",
+  "description": "Add a toggle between width/height view and aspect ratio/pixel count view. Default to simplified view only if values exactly match a preset."
+}
