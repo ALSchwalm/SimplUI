@@ -1,5 +1,5 @@
 import pytest
-from dimension_utils import calculate_dimensions
+from dimension_utils import calculate_dimensions, find_matching_preset, find_nearest_preset
 
 def test_calculate_dimensions_1to1_1m():
     # 1:1 and 1M should be exactly 1024x1024
@@ -42,3 +42,24 @@ def test_calculate_dimensions_invalid_ratio():
     width, height = calculate_dimensions("invalid", 1.0)
     assert width == 1024
     assert height == 1024
+
+def test_find_matching_preset():
+    # 1:1 at 1M is 1024x1024
+    assert find_matching_preset(1024, 1024) == ("1:1", "1M")
+    
+    # 16:9 at 1M is 1344x768
+    assert find_matching_preset(1344, 768) == ("16:9", "1M")
+    
+    # Unknown dimension should return None
+    assert find_matching_preset(100, 100) is None
+
+def test_find_nearest_preset():
+    # Close to 1024x1024
+    assert find_nearest_preset(1020, 1020) == ("1:1", "1M")
+    
+    # Close to 1344x768
+    assert find_nearest_preset(1340, 770) == ("16:9", "1M")
+    
+    # Something very small -> 0.25M
+    # 1:1 at 0.25M is 512x512
+    assert find_nearest_preset(500, 500) == ("1:1", "0.25M")
