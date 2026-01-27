@@ -19,10 +19,10 @@
     - [x] Implement the "Snap to Nearest" logic when switching to Simplified mode using JS or Python callback.
 - [~] Task: Conductor - User Manual Verification 'Phase 2: UI Updates & Toggle' (Protocol in workflow.md)
 
-## Phase 3: Integration & Refinement
-- [ ] Task: Update extraction logic
+## Phase 3: Integration & Refinement [checkpoint: 08aaba9]
+- [~] Task: Update extraction logic
     - [ ] Ensure `extract_workflow_inputs` preserves the raw values correctly so the renderer can make the decision.
-- [ ] Task: Integration Testing
+- [~] Task: Integration Testing
     - [ ] Create `tests/ui/test_dimension_toggle.py` to verify:
         - [ ] Default view logic (1024x1024 -> Simplified, 1000x1000 -> Exact).
         - [ ] Toggle functionality.
