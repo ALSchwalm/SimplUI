@@ -7,8 +7,10 @@ import copy
 import random
 try:
     from .seed_utils import generate_batch_seeds
+    from .dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
 except ImportError:
     from seed_utils import generate_batch_seeds
+    from dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
 
 def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
     extracted = []
@@ -482,72 +484,104 @@ def create_ui(config, comfy_client):
                                             key = f"{node['node_id']}.{inp['name']}"
 
                                             if inp["type"] == "dimensions":
-                                                with gr.Row():
-                                                    # Aspect Ratio Dropdown
-                                                    ar_key = f"{key}.aspect_ratio"
-                                                    # Sorted from tallest (lowest W/H) to widest (highest W/H)
-                                                    ar_options = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
-                                                    ar_val = overrides.get(ar_key, "1:1")
-                                                    ar_comp = gr.Dropdown(
-                                                        choices=ar_options,
-                                                        label="Aspect Ratio",
-                                                        value=ar_val,
-                                                        scale=1,
-                                                        min_width=80,
-                                                        interactive=True,
-                                                        filterable=False
-                                                    )
-                                                    
-                                                    # Pixel Count Dropdown
-                                                    pc_key = f"{key}.pixel_count"
-                                                    pc_options = ["0.25M", "0.5M", "1M", "1.5M", "2M"]
-                                                    pc_val = overrides.get(pc_key, "1M")
-                                                    pc_comp = gr.Dropdown(
-                                                        choices=pc_options,
-                                                        label="Pixel Count",
-                                                        value=pc_val,
-                                                        scale=1,
-                                                        min_width=80,
-                                                        interactive=True,
-                                                        filterable=False
-                                                    )
+                                                # Identify keys
+                                                w_key = f"{node['node_id']}.width"
+                                                h_key = f"{node['node_id']}.height"
+                                                mode_key = f"{key}.mode"
+                                                ar_key = f"{key}.aspect_ratio"
+                                                pc_key = f"{key}.pixel_count"
+
+                                                # Get current state
+                                                cur_w = overrides.get(w_key, inp["width_value"])
+                                                cur_h = overrides.get(h_key, inp["height_value"])
+                                                cur_mode = overrides.get(mode_key)
+
+                                                # Intelligent Default
+                                                if cur_mode is None:
+                                                    match = find_matching_preset(cur_w, cur_h)
+                                                    if match:
+                                                        cur_mode = "simplified"
+                                                        if ar_key not in overrides: overrides[ar_key] = match[0]
+                                                        if pc_key not in overrides: overrides[pc_key] = match[1]
+                                                    else:
+                                                        cur_mode = "exact"
                                                 
-                                                # JS logic to calculate dimensions and update store
+                                                is_simplified = (cur_mode == "simplified")
+
+                                                with gr.Group():
+                                                    # Simplified View
+                                                    with gr.Row(visible=is_simplified) as simplified_row:
+                                                        # Sorted from tallest (lowest W/H) to widest (highest W/H)
+                                                        ar_options = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
+                                                        ar_val = overrides.get(ar_key, "1:1")
+                                                        ar_comp = gr.Dropdown(choices=ar_options, label="Aspect Ratio", value=ar_val, scale=1, min_width=80, interactive=True, filterable=False)
+                                                        
+                                                        pc_options = ["0.25M", "0.5M", "1M", "1.5M", "2M"]
+                                                        pc_val = overrides.get(pc_key, "1M")
+                                                        pc_comp = gr.Dropdown(choices=pc_options, label="Pixel Count", value=pc_val, scale=1, min_width=80, interactive=True, filterable=False)
+
+                                                    # Exact View
+                                                    with gr.Row(visible=not is_simplified) as exact_row:
+                                                        w_comp = gr.Number(label="Width", value=cur_w, interactive=True)
+                                                        h_comp = gr.Number(label="Height", value=cur_h, interactive=True)
+
+                                                    # Toggle Button
+                                                    toggle_btn = gr.Button("Show Exact Dimensions" if is_simplified else "Show Aspect Ratio", size="sm")
+
+                                                # Logic for Simplified (Dropdowns)
                                                 js_calc = f"""
                                                 (val, store) => {{
                                                     const newStore = {{...store}};
-                                                    
-                                                    // Initialize keys if missing
                                                     if (!newStore['{ar_key}']) newStore['{ar_key}'] = '1:1';
                                                     if (!newStore['{pc_key}']) newStore['{pc_key}'] = '1M';
-
-                                                    // Determine which dropdown changed
+                                                    
                                                     const ar = '{ar_key}'.endsWith('.aspect_ratio') && val.includes(':') ? val : newStore['{ar_key}'];
                                                     const pc_str = '{pc_key}'.endsWith('.pixel_count') && val.includes('M') ? val : newStore['{pc_key}'];
                                                     
-                                                    // Save selection state
                                                     if (val.includes(':')) newStore['{ar_key}'] = val;
                                                     else newStore['{pc_key}'] = val;
 
-                                                    // Calculate pixels
                                                     const pc = parseFloat(pc_str) * 1024 * 1024;
                                                     const parts = ar.split(':');
                                                     const ratio = parseFloat(parts[0]) / parseFloat(parts[1]);
                                                     
                                                     const h = Math.sqrt(pc / ratio);
                                                     const w = h * ratio;
-                                                    
                                                     const round64 = (v) => Math.max(64, Math.round(v / 64) * 64);
                                                     
-                                                    newStore['{node['node_id']}.width'] = round64(w);
-                                                    newStore['{node['node_id']}.height'] = round64(h);
-                                                    
+                                                    newStore['{w_key}'] = round64(w);
+                                                    newStore['{h_key}'] = round64(h);
                                                     return newStore;
                                                 }}
                                                 """
-                                                
                                                 ar_comp.change(fn=None, js=js_calc, inputs=[ar_comp, overrides_store], outputs=[overrides_store])
                                                 pc_comp.change(fn=None, js=js_calc, inputs=[pc_comp, overrides_store], outputs=[overrides_store])
+
+                                                # Logic for Exact (Numbers)
+                                                w_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{w_key}'] = val; return newStore; }}", inputs=[w_comp, overrides_store], outputs=[overrides_store])
+                                                h_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{h_key}'] = val; return newStore; }}", inputs=[h_comp, overrides_store], outputs=[overrides_store])
+
+                                                # Logic for Toggle
+                                                def on_toggle(store):
+                                                    new_store = copy.deepcopy(store)
+                                                    mode = new_store.get(mode_key, cur_mode)
+                                                    
+                                                    if mode == "simplified":
+                                                        new_store[mode_key] = "exact"
+                                                    else:
+                                                        new_store[mode_key] = "simplified"
+                                                        w = new_store.get(w_key, cur_w)
+                                                        h = new_store.get(h_key, cur_h)
+                                                        match = find_nearest_preset(w, h)
+                                                        ar, pc = match
+                                                        new_store[ar_key] = ar
+                                                        new_store[pc_key] = pc
+                                                        new_w, new_h = calculate_dimensions(ar, float(pc.replace("M", "")))
+                                                        new_store[w_key] = new_w
+                                                        new_store[h_key] = new_h
+                                                    return new_store
+
+                                                toggle_btn.click(on_toggle, inputs=[overrides_store], outputs=[overrides_store])
                                                 continue
 
                                             # Use value from overrides if available, else default
