@@ -282,8 +282,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                  iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
                  current_seeds[key] = seed_val
                  
-             seed_info_str = ", ".join([f"{k.split('.')[1].capitalize()}: {v}" for k,v in current_seeds.items()])
-             seed_suffix = f" (Batch {i+1}/{batch_count} - {seed_info_str})"
+             seed_suffix = f" (Batch {i+1}/{batch_count})"
              
              run_images = []
              
