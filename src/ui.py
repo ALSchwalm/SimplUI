@@ -474,7 +474,7 @@ def create_ui(config, comfy_client):
 
                                 for node in extracted:
                                     with gr.Group():
-                                        gr.Markdown(f"#### {node['title']} ({node['node_id']})")
+                                        gr.Markdown(f"#### {node['title']}")
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
 
