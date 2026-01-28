@@ -1,0 +1,8 @@
+{
+  "track_id": "slider_updates_20260126",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-26T14:30:00Z",
+  "updated_at": "2026-01-26T14:30:00Z",
+  "description": "Currently when I drag a scroll bar in the node controls panel, it stutters and jumps around. This appears to be caused by it sending a huge number of updates to the backend. It should not send continuous updates like this"
+}
