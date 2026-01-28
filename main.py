@@ -8,7 +8,9 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simpl2 ComfyUI Wrapper")
-    parser.add_argument("--comfy-addr", type=str, help="ComfyUI server address (e.g. 127.0.0.1:8188)")
+    parser.add_argument(
+        "--comfy-addr", type=str, help="ComfyUI server address (e.g. 127.0.0.1:8188)"
+    )
     parser.add_argument("--listen-addr", type=str, help="Local listen address (e.g. 0.0.0.0:7860)")
     parser.add_argument("--config", type=str, default="config.json", help="Path to config.json")
     return parser.parse_args()
@@ -17,7 +19,7 @@ def parse_args():
 def split_addr(addr_str, default_host, default_port):
     if not addr_str:
         return default_host, default_port
-    
+
     if ":" in addr_str:
         host, port = addr_str.rsplit(":", 1)
         if not host:
@@ -32,14 +34,14 @@ def split_addr(addr_str, default_host, default_port):
 
 def main():
     args = parse_args()
-    
+
     if not os.path.exists(args.config):
         print(f"Error: {args.config} not found.")
         return
 
     try:
         config = ConfigManager(args.config)
-        
+
         # Precedence: CLI > Config
         comfy_url = config.comfy_url
         if args.comfy_addr:
