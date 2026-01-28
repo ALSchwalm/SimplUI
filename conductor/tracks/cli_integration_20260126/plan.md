@@ -1,0 +1,19 @@
+# Implementation Plan: CLI Argument Integration
+
+## Phase 1: Research & Setup
+- [x] Task: Analyze `main.py` and `src/config_manager.py` to understand how configuration is currently loaded and passed to `create_ui` and `ComfyClient`. 4992938
+- [x] Task: Create a reproduction/verification script `tests/test_cli_args.py` that mocks `sys.argv` and verifies configuration precedence. 1cece9b
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Research & Setup' (Protocol in workflow.md)
+
+## Phase 2: Implementation
+- [ ] Task: Implement `argparse` logic in `main.py` to handle `--comfy-addr`, `--listen-addr`, and `--config`.
+- [ ] Task: Update the configuration loading sequence in `main.py` to implement the required precedence (CLI > Config > Defaults).
+- [ ] Task: Implement address parsing logic to split `host:port` strings for both ComfyUI and the local listener.
+- [ ] Task: Refactor `main.py` to pass the resolved host and port to the `demo.launch()` call.
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
+
+## Phase 3: Verification & Cleanup
+- [ ] Task: Run `pytest tests/test_cli_args.py` to ensure all precedence and parsing logic works as expected.
+- [ ] Task: Run the full suite of UI and integration tests to ensure no regressions in server startup.
+- [ ] Task: Format the code using `black .` to ensure compliance with project style guides.
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Verification & Cleanup' (Protocol in workflow.md)
