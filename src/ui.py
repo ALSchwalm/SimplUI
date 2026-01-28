@@ -19,7 +19,7 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
         class_type = node_data.get("class_type", "")
         inputs = []
         is_prompt_node = title.lower() == "prompt"
-        
+
         node_inputs = node_data.get("inputs", {})
         has_width = "width" in node_inputs
         has_height = "height" in node_inputs
@@ -47,7 +47,7 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
             # Filter out the primary prompt input from advanced controls
             if is_prompt_node and name in ["text", "string"]:
                 continue
-                
+
             # Filter out width/height if we grouped them
             if has_width and has_height and name in ["width", "height"]:
                 continue
@@ -225,25 +225,25 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
     # Augment overrides with default random seeds
     if overrides is None:
         overrides = {}
-        
+
     extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
     for node in extracted:
         for inp in node["inputs"]:
             if inp["type"] == "seed":
                 key = f"{node['node_id']}.{inp['name']}"
                 random_key = f"{key}.randomize"
-                
+
                 is_random = False
                 if random_key in overrides:
                     is_random = overrides[random_key]
                 else:
                     # If not in overrides, use default from extraction (True if value is 0)
                     is_random = inp.get("randomize", False)
-                
+
                 if is_random and key not in overrides:
                      new_seed = random.randint(0, 18446744073709551615)
                      overrides[key] = str(new_seed)
-                     overrides[random_key] = True 
+                     overrides[random_key] = True
 
     # Apply random seeds
     if overrides:
@@ -267,7 +267,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
     finished_naturally = False
     last_status = "Processing..."
     last_image = None
-    
+
     try:
         for i in range(batch_count):
              # Clear skip event for this iteration
@@ -275,25 +275,25 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                  skip_event.clear()
 
              iter_overrides = overrides.copy() if overrides else {}
-             
+
              current_seeds = {}
              for key, batch in seed_batches.items():
                  seed_val = batch[i]
                  iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
                  current_seeds[key] = seed_val
-                 
+
              seed_suffix = f" (Batch {i+1}/{batch_count})"
-             
+
              run_images = []
-             
+
              # Manual async iteration to support skip/cancellation
              iterator = handle_generation(workflow_name, prompt_text, config, comfy_client, iter_overrides).__aiter__()
-             
+
              while True:
                  # Check skip signal
                  if skip_event and skip_event.is_set():
                      break
-                 
+
                  try:
                      # Create tasks for next update and skip signal
                      next_task = asyncio.create_task(iterator.__anext__())
@@ -301,14 +301,14 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                      if skip_event:
                          skip_task = asyncio.create_task(skip_event.wait())
                          tasks.append(skip_task)
-                     
+
                      done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                     
+
                      # Check if skip was triggered
                      if skip_event and skip_event.is_set():
                          next_task.cancel() # Cancel pending generation task
                          break # Break inner loop
-                     
+
                      # If we are here, next_task completed successfully
                      try:
                          update = next_task.result()
@@ -319,7 +319,7 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                          seed_info = ""
                          if current_seeds:
                              seed_info = f" Seed: {list(current_seeds.values())[0]}"
-                             
+
                          yield last_image, last_status + seed_info + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
                      except StopAsyncIteration:
                          # Generator finished normally
@@ -330,17 +330,17 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                      except Exception as e:
                          yield last_image, f"Error: {e}", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
                          return # Stop all on error
-                         
+
                      # Cancel skip task if it's still pending
                      if skip_event:
                          skip_task.cancel()
-                         
+
                  except Exception:
                      break
-             
+
              if not (skip_event and skip_event.is_set()):
                  previous_images.extend(run_images)
-             
+
         finished_naturally = True
     finally:
          if finished_naturally:
@@ -348,13 +348,13 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
               seed_info = ""
               if 'current_seeds' in locals() and current_seeds:
                   seed_info = f" Seed: {list(current_seeds.values())[0]}"
-              
+
               yield last_image, last_status + seed_info + (seed_suffix if 'seed_suffix' in locals() else ""), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
     object_info = comfy_client.get_object_info()
-    
+
     # Event for skip signaling
     skip_event = asyncio.Event()
 
@@ -409,7 +409,7 @@ def create_ui(config, comfy_client):
                 with gr.Column(scale=3) as main_col:
                     output_gallery = gr.Gallery(
                         label="Generated Images",
-                        show_label=True,
+                        show_label=False,
                         elem_id="gallery",
                         object_fit="contain",
                         height="70vh"
@@ -514,7 +514,7 @@ def create_ui(config, comfy_client):
                                                         if pc_key not in overrides: overrides[pc_key] = match[1]
                                                     else:
                                                         cur_mode = "exact"
-                                                
+
                                                 is_simplified = (cur_mode == "simplified")
 
                                                 with gr.Group():
@@ -524,7 +524,7 @@ def create_ui(config, comfy_client):
                                                         ar_options = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
                                                         ar_val = overrides.get(ar_key, "1:1")
                                                         ar_comp = gr.Dropdown(choices=ar_options, label="Aspect Ratio", value=ar_val, scale=1, min_width=80, interactive=True, filterable=False)
-                                                        
+
                                                         pc_options = ["0.25M", "0.5M", "1M", "1.5M", "2M"]
                                                         pc_val = overrides.get(pc_key, "1M")
                                                         pc_comp = gr.Dropdown(choices=pc_options, label="Pixel Count", value=pc_val, scale=1, min_width=80, interactive=True, filterable=False)
@@ -543,21 +543,21 @@ def create_ui(config, comfy_client):
                                                     const newStore = {{...store}};
                                                     if (!newStore['{ar_key}']) newStore['{ar_key}'] = '1:1';
                                                     if (!newStore['{pc_key}']) newStore['{pc_key}'] = '1M';
-                                                    
+
                                                     const ar = '{ar_key}'.endsWith('.aspect_ratio') && val.includes(':') ? val : newStore['{ar_key}'];
                                                     const pc_str = '{pc_key}'.endsWith('.pixel_count') && val.includes('M') ? val : newStore['{pc_key}'];
-                                                    
+
                                                     if (val.includes(':')) newStore['{ar_key}'] = val;
                                                     else newStore['{pc_key}'] = val;
 
                                                     const pc = parseFloat(pc_str) * 1024 * 1024;
                                                     const parts = ar.split(':');
                                                     const ratio = parseFloat(parts[0]) / parseFloat(parts[1]);
-                                                    
+
                                                     const h = Math.sqrt(pc / ratio);
                                                     const w = h * ratio;
                                                     const round64 = (v) => Math.max(64, Math.round(v / 64) * 64);
-                                                    
+
                                                     newStore['{w_key}'] = round64(w);
                                                     newStore['{h_key}'] = round64(h);
                                                     return newStore;
@@ -574,7 +574,7 @@ def create_ui(config, comfy_client):
                                                 def on_toggle(store):
                                                     new_store = copy.deepcopy(store)
                                                     mode = new_store.get(mode_key, cur_mode)
-                                                    
+
                                                     if mode == "simplified":
                                                         new_store[mode_key] = "exact"
                                                     else:
@@ -673,11 +673,11 @@ def create_ui(config, comfy_client):
                     outputs=[status_text, generate_btn, stop_btn, skip_btn],
                     cancels=[gen_event]
                 )
-                
+
                 def on_skip():
                     skip_event.set()
                     comfy_client.interrupt()
-                    
+
                 skip_btn.click(
                     fn=on_skip,
                     inputs=[],
