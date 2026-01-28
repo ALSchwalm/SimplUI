@@ -1,9 +1,9 @@
 # Implementation Plan: CLI Argument Integration
 
-## Phase 1: Research & Setup
+## Phase 1: Research & Setup [checkpoint: cc46544]
 - [x] Task: Analyze `main.py` and `src/config_manager.py` to understand how configuration is currently loaded and passed to `create_ui` and `ComfyClient`. 4992938
 - [x] Task: Create a reproduction/verification script `tests/test_cli_args.py` that mocks `sys.argv` and verifies configuration precedence. 1cece9b
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Research & Setup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Research & Setup' (Protocol in workflow.md)
 
 ## Phase 2: Implementation
 - [ ] Task: Implement `argparse` logic in `main.py` to handle `--comfy-addr`, `--listen-addr`, and `--config`.
