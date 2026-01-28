@@ -12,8 +12,8 @@
 - [x] Task: Refactor `main.py` to pass the resolved host and port to the `demo.launch()` call. 129b87a
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
-## Phase 3: Verification & Cleanup
+## Phase 3: Verification & Cleanup [checkpoint: ea14882]
 - [x] Task: Run `pytest tests/test_cli_args.py` to ensure all precedence and parsing logic works as expected. 129b87a
 - [x] Task: Run the full suite of UI and integration tests to ensure no regressions in server startup. 129b87a
 - [x] Task: Format the code using `black .` to ensure compliance with project style guides. 129b87a
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Verification & Cleanup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Verification & Cleanup' (Protocol in workflow.md)
