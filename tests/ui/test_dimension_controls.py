@@ -16,8 +16,8 @@ def test_dimension_controls_appear(page: Page):
     
     # Actually, let's verify that the dropdowns are visible if the node has them.
     # We can rely on the fact that if they are rendered, they should have specific labels.
-    expect(page.get_by_text("Aspect Ratio")).to_be_visible()
-    expect(page.get_by_text("Pixel Count")).to_be_visible()
+    expect(page.get_by_text("Aspect Ratio", exact=True)).to_be_visible()
+    expect(page.get_by_text("Pixel Count", exact=True)).to_be_visible()
     
     # 3. Verify defaults
     ar_dropdown = page.get_by_label("Aspect Ratio")

@@ -315,7 +315,12 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                          run_images, status = update
                          last_status = status
                          last_image = previous_images + run_images
-                         yield last_image, last_status + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
+                         # Add seeds to status if available
+                         seed_info = ""
+                         if current_seeds:
+                             seed_info = f" Seed: {list(current_seeds.values())[0]}"
+                             
+                         yield last_image, last_status + seed_info + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
                      except StopAsyncIteration:
                          # Generator finished normally
                          # If we finished naturally, run_images contains the FINAL images for this run.
@@ -339,7 +344,12 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
         finished_naturally = True
     finally:
          if finished_naturally:
-              yield last_image, last_status + seed_suffix if 'seed_suffix' in locals() else "", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
+              # Add seeds to status if available
+              seed_info = ""
+              if 'current_seeds' in locals() and current_seeds:
+                  seed_info = f" Seed: {list(current_seeds.values())[0]}"
+              
+              yield last_image, last_status + seed_info + (seed_suffix if 'seed_suffix' in locals() else ""), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -446,7 +456,7 @@ def create_ui(config, comfy_client):
                         elem_id="batch-count-slider"
                     )
 
-                    batch_count_slider.change(
+                    batch_count_slider.release(
                         fn=None,
                         js="(val, store) => { const newStore = {...store}; newStore['_meta.batch_count'] = val; return newStore; }",
                         inputs=[batch_count_slider, overrides_store],
@@ -617,7 +627,7 @@ def create_ui(config, comfy_client):
                                                     step=inp.get("step", 1),
                                                     interactive=True
                                                 )
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.release(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
                                             elif inp["type"] == "number":
                                                 comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
                                                 comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
