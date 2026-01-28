@@ -1,5 +1,6 @@
 import os
 
+
 def test_black_in_requirements():
     """
     Verifies that 'black' is listed in requirements.txt.

@@ -7,8 +7,8 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Environment & Configuration' (Protocol in workflow.md)
 
 ## Phase 2: Codebase Formatting
-- [ ] Task: Run `black .` to format the entire codebase.
-- [ ] Task: Verify that all tests still pass after formatting.
+- [~] Task: Run `black .` to format the entire codebase.
+- [~] Task: Verify that all tests still pass after formatting.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Codebase Formatting' (Protocol in workflow.md)
 
 ## Phase 3: Workflow Integration

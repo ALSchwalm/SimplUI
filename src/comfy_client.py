@@ -3,6 +3,7 @@ import json
 import uuid
 import websockets
 
+
 class ComfyClient:
     def __init__(self, base_url):
         self.base_url = base_url.rstrip("/")
@@ -16,9 +17,7 @@ class ComfyClient:
 
     def submit_workflow(self, workflow, client_id):
         response = requests.post(
-            f"{self.base_url}/prompt", 
-            json={"prompt": workflow, "client_id": client_id},
-            timeout=10
+            f"{self.base_url}/prompt", json={"prompt": workflow, "client_id": client_id}, timeout=10
         )
         response.raise_for_status()
         return response.json().get("prompt_id")
@@ -26,8 +25,10 @@ class ComfyClient:
     async def generate_image(self, workflow):
         client_id = str(uuid.uuid4())
         ws_url = self.base_url.replace("http://", "ws://").replace("https://", "wss://")
-        async with websockets.connect(f"{ws_url}/ws?clientId={client_id}", max_size=10 * 1024 * 1024) as websocket:
-            
+        async with websockets.connect(
+            f"{ws_url}/ws?clientId={client_id}", max_size=10 * 1024 * 1024
+        ) as websocket:
+
             # Submit workflow AFTER connecting
             try:
                 prompt_id = self.submit_workflow(workflow, client_id)
@@ -41,11 +42,7 @@ class ComfyClient:
                     if message["type"] == "progress":
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
-                            yield {
-                                "type": "progress", 
-                                "value": data["value"], 
-                                "max": data["max"]
-                            }
+                            yield {"type": "progress", "value": data["value"], "max": data["max"]}
                     elif message["type"] == "executed":
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
@@ -55,18 +52,20 @@ class ComfyClient:
                                     if image.get("type") in ["output", "temp"]:
                                         filename = image["filename"]
                                         subfolder = image["subfolder"]
-                                        image_data = self._get_image(filename, subfolder, image["type"])
+                                        image_data = self._get_image(
+                                            filename, subfolder, image["type"]
+                                        )
                                         yield {"type": "image", "data": image_data}
-                            break # End loop after receiving images for this prompt
+                            break  # End loop after receiving images for this prompt
                 elif isinstance(message, bytes):
                     # Binary message is a preview
                     yield {"type": "preview", "data": message[8:]}
 
     def _get_image(self, filename, subfolder, folder_type):
         response = requests.get(
-            f"{self.base_url}/view", 
+            f"{self.base_url}/view",
             params={"filename": filename, "subfolder": subfolder, "type": folder_type},
-            timeout=30
+            timeout=30,
         )
         return response.content
 

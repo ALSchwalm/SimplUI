@@ -5,12 +5,14 @@ from PIL import Image
 import io
 import copy
 import random
+
 try:
     from .seed_utils import generate_batch_seeds
     from .dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
 except ImportError:
     from seed_utils import generate_batch_seeds
     from dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
+
 
 def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
     extracted = []
@@ -31,14 +33,16 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
 
         if has_width and has_height:
             # Special 'dimensions' type
-            inputs.append({
-                "name": "Dimensions",
-                "type": "dimensions",
-                "width_name": "width",
-                "height_name": "height",
-                "width_value": node_inputs["width"],
-                "height_value": node_inputs["height"]
-            })
+            inputs.append(
+                {
+                    "name": "Dimensions",
+                    "type": "dimensions",
+                    "width_name": "width",
+                    "height_name": "height",
+                    "width_value": node_inputs["width"],
+                    "height_value": node_inputs["height"],
+                }
+            )
 
         for name, value in node_inputs.items():
             if isinstance(value, list):
@@ -71,12 +75,14 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
                         options = input_def[0]
                     # Number definition from object_info
                     elif len(input_def) > 1 and isinstance(input_def[1], dict):
-                         # Format: ["INT", {"default": 20, "min": 1, "max": 10000}]
-                         meta_params = input_def[1]
-                         if "min" in meta_params and "max" in meta_params:
-                             slider_params["min"] = meta_params["min"]
-                             slider_params["max"] = meta_params["max"]
-                             slider_params.setdefault("step", meta_params.get("step")) # step might be missing
+                        # Format: ["INT", {"default": 20, "min": 1, "max": 10000}]
+                        meta_params = input_def[1]
+                        if "min" in meta_params and "max" in meta_params:
+                            slider_params["min"] = meta_params["min"]
+                            slider_params["max"] = meta_params["max"]
+                            slider_params.setdefault(
+                                "step", meta_params.get("step")
+                            )  # step might be missing
 
             if input_type != "enum":
                 if isinstance(value, bool):
@@ -92,15 +98,11 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
                             input_type = "slider"
                             slider_params.update(slider_config[name])
                         elif "min" in slider_params and "max" in slider_params:
-                             input_type = "slider"
+                            input_type = "slider"
 
-            input_data = {
-                "name": name,
-                "type": input_type,
-                "value": value
-            }
+            input_data = {"name": name, "type": input_type, "value": value}
             if input_type == "seed":
-                input_data["randomize"] = (value == 0 or value == "0")
+                input_data["randomize"] = value == 0 or value == "0"
 
             if options:
                 input_data["options"] = options
@@ -111,12 +113,9 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
             inputs.append(input_data)
 
         if inputs:
-            extracted.append({
-                "node_id": node_id,
-                "title": title,
-                "inputs": inputs
-            })
+            extracted.append({"node_id": node_id, "title": title, "inputs": inputs})
     return extracted
+
 
 def merge_workflow_overrides(workflow, overrides):
     merged = copy.deepcopy(workflow)
@@ -131,14 +130,16 @@ def merge_workflow_overrides(workflow, overrides):
                 merged[node_id]["inputs"][input_name] = value
     return merged
 
+
 def apply_random_seeds(overrides):
     updated = copy.deepcopy(overrides)
     for key, value in overrides.items():
         if key.endswith(".randomize") and value is True:
-            base_key = key[:-10] # remove .randomize
+            base_key = key[:-10]  # remove .randomize
             new_seed = random.randint(0, 18446744073709551615)
             updated[base_key] = str(new_seed)
     return updated
+
 
 def get_prompt_default_value(workflow):
     for node_data in workflow.values():
@@ -150,6 +151,7 @@ def get_prompt_default_value(workflow):
             if "string" in inputs:
                 return str(inputs["string"])
     return ""
+
 
 async def handle_generation(workflow_name, prompt_text, config, comfy_client, overrides=None):
     # 1. Find workflow path
@@ -197,16 +199,29 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                 try:
                     final_image = Image.open(io.BytesIO(image_bytes))
                     completed_images.append(final_image)
-                    latest_preview = None # Clear preview as it is replaced by final image
+                    latest_preview = None  # Clear preview as it is replaced by final image
                     yield list(completed_images), "Generation complete"
                 except Exception as e:
                     yield list(completed_images), f"Error processing image: {e}"
     except Exception as e:
         yield [], f"Error during generation: {e}"
 
-async def process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, history_state, skip_event=None):
+
+async def process_generation(
+    workflow_name,
+    prompt_text,
+    overrides,
+    batch_count,
+    config,
+    comfy_client,
+    object_info,
+    history_state,
+    skip_event=None,
+):
     # Initial status: Hide Generate, Show Stop, Show Skip
-    yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
+    yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(
+        visible=True
+    ), overrides, history_state
 
     # Auto-stop previous runs
     try:
@@ -241,15 +256,17 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
                     is_random = inp.get("randomize", False)
 
                 if is_random and key not in overrides:
-                     new_seed = random.randint(0, 18446744073709551615)
-                     overrides[key] = str(new_seed)
-                     overrides[random_key] = True
+                    new_seed = random.randint(0, 18446744073709551615)
+                    overrides[key] = str(new_seed)
+                    overrides[random_key] = True
 
     # Apply random seeds
     if overrides:
         overrides = apply_random_seeds(overrides)
         # Update store with new seeds - Keep button state
-        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
+        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(
+            visible=True
+        ), gr.update(visible=True), overrides, history_state
 
     # Calculate Batch Seeds
     seed_batches = {}
@@ -270,86 +287,101 @@ async def process_generation(workflow_name, prompt_text, overrides, batch_count,
 
     try:
         for i in range(batch_count):
-             # Clear skip event for this iteration
-             if skip_event:
-                 skip_event.clear()
+            # Clear skip event for this iteration
+            if skip_event:
+                skip_event.clear()
 
-             iter_overrides = overrides.copy() if overrides else {}
+            iter_overrides = overrides.copy() if overrides else {}
 
-             current_seeds = {}
-             for key, batch in seed_batches.items():
-                 seed_val = batch[i]
-                 iter_overrides[key] = str(seed_val) # Store as string for overrides compatibility
-                 current_seeds[key] = seed_val
+            current_seeds = {}
+            for key, batch in seed_batches.items():
+                seed_val = batch[i]
+                iter_overrides[key] = str(seed_val)  # Store as string for overrides compatibility
+                current_seeds[key] = seed_val
 
-             seed_suffix = f" (Batch {i+1}/{batch_count})"
+            seed_suffix = f" (Batch {i+1}/{batch_count})"
 
-             run_images = []
+            run_images = []
 
-             # Manual async iteration to support skip/cancellation
-             iterator = handle_generation(workflow_name, prompt_text, config, comfy_client, iter_overrides).__aiter__()
+            # Manual async iteration to support skip/cancellation
+            iterator = handle_generation(
+                workflow_name, prompt_text, config, comfy_client, iter_overrides
+            ).__aiter__()
 
-             while True:
-                 # Check skip signal
-                 if skip_event and skip_event.is_set():
-                     break
+            while True:
+                # Check skip signal
+                if skip_event and skip_event.is_set():
+                    break
 
-                 try:
-                     # Create tasks for next update and skip signal
-                     next_task = asyncio.create_task(iterator.__anext__())
-                     tasks = [next_task]
-                     if skip_event:
-                         skip_task = asyncio.create_task(skip_event.wait())
-                         tasks.append(skip_task)
+                try:
+                    # Create tasks for next update and skip signal
+                    next_task = asyncio.create_task(iterator.__anext__())
+                    tasks = [next_task]
+                    if skip_event:
+                        skip_task = asyncio.create_task(skip_event.wait())
+                        tasks.append(skip_task)
 
-                     done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-                     # Check if skip was triggered
-                     if skip_event and skip_event.is_set():
-                         next_task.cancel() # Cancel pending generation task
-                         break # Break inner loop
+                    # Check if skip was triggered
+                    if skip_event and skip_event.is_set():
+                        next_task.cancel()  # Cancel pending generation task
+                        break  # Break inner loop
 
-                     # If we are here, next_task completed successfully
-                     try:
-                         update = next_task.result()
-                         run_images, status = update
-                         last_status = status
-                         last_image = previous_images + run_images
-                         # Add seeds to status if available
-                         seed_info = ""
-                         if current_seeds:
-                             seed_info = f" Seed: {list(current_seeds.values())[0]}"
+                    # If we are here, next_task completed successfully
+                    try:
+                        update = next_task.result()
+                        run_images, status = update
+                        last_status = status
+                        last_image = previous_images + run_images
+                        # Add seeds to status if available
+                        seed_info = ""
+                        if current_seeds:
+                            seed_info = f" Seed: {list(current_seeds.values())[0]}"
 
-                         yield last_image, last_status + seed_info + seed_suffix, gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), overrides, history_state
-                     except StopAsyncIteration:
-                         # Generator finished normally
-                         # If we finished naturally, run_images contains the FINAL images for this run.
-                         # Update history state
-                         history_state.extend(run_images)
-                         break
-                     except Exception as e:
-                         yield last_image, f"Error: {e}", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
-                         return # Stop all on error
+                        yield last_image, last_status + seed_info + seed_suffix, gr.update(
+                            visible=False
+                        ), gr.update(visible=True), gr.update(
+                            visible=True
+                        ), overrides, history_state
+                    except StopAsyncIteration:
+                        # Generator finished normally
+                        # If we finished naturally, run_images contains the FINAL images for this run.
+                        # Update history state
+                        history_state.extend(run_images)
+                        break
+                    except Exception as e:
+                        yield last_image, f"Error: {e}", gr.update(
+                            visible=True, interactive=True
+                        ), gr.update(visible=False), gr.update(
+                            visible=False
+                        ), overrides, history_state
+                        return  # Stop all on error
 
-                     # Cancel skip task if it's still pending
-                     if skip_event:
-                         skip_task.cancel()
+                    # Cancel skip task if it's still pending
+                    if skip_event:
+                        skip_task.cancel()
 
-                 except Exception:
-                     break
+                except Exception:
+                    break
 
-             if not (skip_event and skip_event.is_set()):
-                 previous_images.extend(run_images)
+            if not (skip_event and skip_event.is_set()):
+                previous_images.extend(run_images)
 
         finished_naturally = True
     finally:
-         if finished_naturally:
-              # Add seeds to status if available
-              seed_info = ""
-              if 'current_seeds' in locals() and current_seeds:
-                  seed_info = f" Seed: {list(current_seeds.values())[0]}"
+        if finished_naturally:
+            # Add seeds to status if available
+            seed_info = ""
+            if "current_seeds" in locals() and current_seeds:
+                seed_info = f" Seed: {list(current_seeds.values())[0]}"
 
-              yield last_image, last_status + seed_info + (seed_suffix if 'seed_suffix' in locals() else ""), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), overrides, history_state
+            yield last_image, last_status + seed_info + (
+                seed_suffix if "seed_suffix" in locals() else ""
+            ), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(
+                visible=False
+            ), overrides, history_state
+
 
 def create_ui(config, comfy_client):
     workflow_names = [w["name"] for w in config.workflows]
@@ -361,7 +393,17 @@ def create_ui(config, comfy_client):
     async def on_generate(workflow_name, prompt_text, overrides, batch_count, history):
         # Clear skip event at start of run
         skip_event.clear()
-        async for update in process_generation(workflow_name, prompt_text, overrides, batch_count, config, comfy_client, object_info, history, skip_event):
+        async for update in process_generation(
+            workflow_name,
+            prompt_text,
+            overrides,
+            batch_count,
+            config,
+            comfy_client,
+            object_info,
+            history,
+            skip_event,
+        ):
             yield update
 
     css = """
@@ -412,7 +454,7 @@ def create_ui(config, comfy_client):
                         show_label=False,
                         elem_id="gallery",
                         object_fit="contain",
-                        height="70vh"
+                        height="70vh",
                     )
                     status_text = gr.Markdown("Ready")
 
@@ -427,23 +469,33 @@ def create_ui(config, comfy_client):
                                 lines=2,
                                 value=initial_prompt,
                                 placeholder="Enter your description here...",
-                                elem_id="prompt-box"
+                                elem_id="prompt-box",
                             )
 
                         with gr.Column(scale=1, min_width=100, elem_classes=["vertical-buttons"]):
-                            generate_btn = gr.Button("Generate", variant="primary", elem_id="gen-btn")
-                            stop_btn = gr.Button("Stop", variant="stop", visible=False, elem_id="stop-btn")
-                            skip_btn = gr.Button("Skip", variant="secondary", visible=False, elem_id="skip-btn")
+                            generate_btn = gr.Button(
+                                "Generate", variant="primary", elem_id="gen-btn"
+                            )
+                            stop_btn = gr.Button(
+                                "Stop", variant="stop", visible=False, elem_id="stop-btn"
+                            )
+                            skip_btn = gr.Button(
+                                "Skip", variant="secondary", visible=False, elem_id="skip-btn"
+                            )
 
-                    advanced_toggle = gr.Checkbox(label="Advanced Controls", value=False,
-                                                  container=False, elem_id="advanced-checkbox")
+                    advanced_toggle = gr.Checkbox(
+                        label="Advanced Controls",
+                        value=False,
+                        container=False,
+                        elem_id="advanced-checkbox",
+                    )
 
                 with gr.Column(scale=1, visible=False, min_width=0) as sidebar_col:
                     workflow_dropdown = gr.Dropdown(
                         choices=workflow_names,
                         label="Select Workflow",
                         value=workflow_names[0] if workflow_names else None,
-                        filterable=False
+                        filterable=False,
                     )
 
                     batch_count_slider = gr.Slider(
@@ -453,30 +505,33 @@ def create_ui(config, comfy_client):
                         step=1,
                         value=2,
                         interactive=True,
-                        elem_id="batch-count-slider"
+                        elem_id="batch-count-slider",
                     )
 
                     batch_count_slider.release(
                         fn=None,
                         js="(val, store) => { const newStore = {...store}; newStore['_meta.batch_count'] = val; return newStore; }",
                         inputs=[batch_count_slider, overrides_store],
-                        outputs=[overrides_store]
+                        outputs=[overrides_store],
                     )
 
                     workflow_dropdown.change(
                         fn=update_prompt_on_change,
                         inputs=[workflow_dropdown],
-                        outputs=[prompt_input]
+                        outputs=[prompt_input],
                     )
 
                     with gr.Tabs():
                         with gr.Tab("Node Controls"):
+
                             @gr.render(inputs=[workflow_dropdown, overrides_store, advanced_toggle])
                             def render_dynamic_interface(workflow_name, overrides, show_advanced):
                                 if not show_advanced or not workflow_name:
                                     return
 
-                                workflow_info = next(w for w in config.workflows if w["name"] == workflow_name)
+                                workflow_info = next(
+                                    w for w in config.workflows if w["name"] == workflow_name
+                                )
                                 try:
                                     with open(workflow_info["path"], "r") as f:
                                         workflow_json = json.load(f)
@@ -484,11 +539,15 @@ def create_ui(config, comfy_client):
                                     gr.Markdown(f"Error loading workflow: {e}")
                                     return
 
-                                extracted = extract_workflow_inputs(workflow_json, object_info, config.sliders)
+                                extracted = extract_workflow_inputs(
+                                    workflow_json, object_info, config.sliders
+                                )
 
                                 for node in extracted:
                                     with gr.Group():
-                                        gr.Markdown(f"#### {node['title']}", elem_classes=["node-title"])
+                                        gr.Markdown(
+                                            f"#### {node['title']}", elem_classes=["node-title"]
+                                        )
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
 
@@ -510,32 +569,87 @@ def create_ui(config, comfy_client):
                                                     match = find_matching_preset(cur_w, cur_h)
                                                     if match:
                                                         cur_mode = "simplified"
-                                                        if ar_key not in overrides: overrides[ar_key] = match[0]
-                                                        if pc_key not in overrides: overrides[pc_key] = match[1]
+                                                        if ar_key not in overrides:
+                                                            overrides[ar_key] = match[0]
+                                                        if pc_key not in overrides:
+                                                            overrides[pc_key] = match[1]
                                                     else:
                                                         cur_mode = "exact"
 
-                                                is_simplified = (cur_mode == "simplified")
+                                                is_simplified = cur_mode == "simplified"
 
                                                 with gr.Group():
                                                     # Simplified View
-                                                    with gr.Row(visible=is_simplified) as simplified_row:
+                                                    with gr.Row(
+                                                        visible=is_simplified
+                                                    ) as simplified_row:
                                                         # Sorted from tallest (lowest W/H) to widest (highest W/H)
-                                                        ar_options = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
+                                                        ar_options = [
+                                                            "1:2",
+                                                            "9:16",
+                                                            "2:3",
+                                                            "3:4",
+                                                            "7:9",
+                                                            "1:1",
+                                                            "9:7",
+                                                            "4:3",
+                                                            "3:2",
+                                                            "16:9",
+                                                            "2:1",
+                                                        ]
                                                         ar_val = overrides.get(ar_key, "1:1")
-                                                        ar_comp = gr.Dropdown(choices=ar_options, label="Aspect Ratio", value=ar_val, scale=1, min_width=80, interactive=True, filterable=False)
+                                                        ar_comp = gr.Dropdown(
+                                                            choices=ar_options,
+                                                            label="Aspect Ratio",
+                                                            value=ar_val,
+                                                            scale=1,
+                                                            min_width=80,
+                                                            interactive=True,
+                                                            filterable=False,
+                                                        )
 
-                                                        pc_options = ["0.25M", "0.5M", "1M", "1.5M", "2M"]
+                                                        pc_options = [
+                                                            "0.25M",
+                                                            "0.5M",
+                                                            "1M",
+                                                            "1.5M",
+                                                            "2M",
+                                                        ]
                                                         pc_val = overrides.get(pc_key, "1M")
-                                                        pc_comp = gr.Dropdown(choices=pc_options, label="Pixel Count", value=pc_val, scale=1, min_width=80, interactive=True, filterable=False)
+                                                        pc_comp = gr.Dropdown(
+                                                            choices=pc_options,
+                                                            label="Pixel Count",
+                                                            value=pc_val,
+                                                            scale=1,
+                                                            min_width=80,
+                                                            interactive=True,
+                                                            filterable=False,
+                                                        )
 
                                                     # Exact View
-                                                    with gr.Row(visible=not is_simplified) as exact_row:
-                                                        w_comp = gr.Number(label="Width", value=cur_w, interactive=True)
-                                                        h_comp = gr.Number(label="Height", value=cur_h, interactive=True)
+                                                    with gr.Row(
+                                                        visible=not is_simplified
+                                                    ) as exact_row:
+                                                        w_comp = gr.Number(
+                                                            label="Width",
+                                                            value=cur_w,
+                                                            interactive=True,
+                                                        )
+                                                        h_comp = gr.Number(
+                                                            label="Height",
+                                                            value=cur_h,
+                                                            interactive=True,
+                                                        )
 
                                                     # Toggle Button
-                                                    toggle_btn = gr.Button("Show Exact Dimensions" if is_simplified else "Show Aspect Ratio", size="sm")
+                                                    toggle_btn = gr.Button(
+                                                        (
+                                                            "Show Exact Dimensions"
+                                                            if is_simplified
+                                                            else "Show Aspect Ratio"
+                                                        ),
+                                                        size="sm",
+                                                    )
 
                                                 # Logic for Simplified (Dropdowns)
                                                 js_calc = f"""
@@ -563,12 +677,32 @@ def create_ui(config, comfy_client):
                                                     return newStore;
                                                 }}
                                                 """
-                                                ar_comp.change(fn=None, js=js_calc, inputs=[ar_comp, overrides_store], outputs=[overrides_store])
-                                                pc_comp.change(fn=None, js=js_calc, inputs=[pc_comp, overrides_store], outputs=[overrides_store])
+                                                ar_comp.change(
+                                                    fn=None,
+                                                    js=js_calc,
+                                                    inputs=[ar_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                pc_comp.change(
+                                                    fn=None,
+                                                    js=js_calc,
+                                                    inputs=[pc_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
 
                                                 # Logic for Exact (Numbers)
-                                                w_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{w_key}'] = val; return newStore; }}", inputs=[w_comp, overrides_store], outputs=[overrides_store])
-                                                h_comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{h_key}'] = val; return newStore; }}", inputs=[h_comp, overrides_store], outputs=[overrides_store])
+                                                w_comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{w_key}'] = val; return newStore; }}",
+                                                    inputs=[w_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                h_comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{h_key}'] = val; return newStore; }}",
+                                                    inputs=[h_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
 
                                                 # Logic for Toggle
                                                 def on_toggle(store):
@@ -585,16 +719,26 @@ def create_ui(config, comfy_client):
                                                         ar, pc = match
                                                         new_store[ar_key] = ar
                                                         new_store[pc_key] = pc
-                                                        new_w, new_h = calculate_dimensions(ar, float(pc.replace("M", "")))
+                                                        new_w, new_h = calculate_dimensions(
+                                                            ar, float(pc.replace("M", ""))
+                                                        )
                                                         new_store[w_key] = new_w
                                                         new_store[h_key] = new_h
                                                     return new_store
 
-                                                toggle_btn.click(on_toggle, inputs=[overrides_store], outputs=[overrides_store])
+                                                toggle_btn.click(
+                                                    on_toggle,
+                                                    inputs=[overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                                 continue
 
                                             # Use value from overrides if available, else default
-                                            current_val = overrides.get(key, inp["value"]) if overrides else inp["value"]
+                                            current_val = (
+                                                overrides.get(key, inp["value"])
+                                                if overrides
+                                                else inp["value"]
+                                            )
 
                                             if inp["type"] == "enum":
                                                 comp = gr.Dropdown(
@@ -602,22 +746,52 @@ def create_ui(config, comfy_client):
                                                     label=inp["name"],
                                                     value=current_val,
                                                     interactive=True,
-                                                    filterable=False
+                                                    filterable=False,
                                                 )
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                             elif inp["type"] == "seed":
                                                 with gr.Row():
                                                     random_key = f"{key}.randomize"
                                                     random_default = inp.get("randomize", False)
-                                                    random_val = overrides.get(random_key, random_default) if overrides else random_default
+                                                    random_val = (
+                                                        overrides.get(random_key, random_default)
+                                                        if overrides
+                                                        else random_default
+                                                    )
 
-                                                    comp = gr.Textbox(label=inp["name"], value=str(current_val), scale=1, interactive=True, visible=not random_val)
+                                                    comp = gr.Textbox(
+                                                        label=inp["name"],
+                                                        value=str(current_val),
+                                                        scale=1,
+                                                        interactive=True,
+                                                        visible=not random_val,
+                                                    )
 
-                                                    random_box = gr.Checkbox(label="Randomize", value=random_val, scale=1, interactive=True)
+                                                    random_box = gr.Checkbox(
+                                                        label="Randomize",
+                                                        value=random_val,
+                                                        scale=1,
+                                                        interactive=True,
+                                                    )
 
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
 
-                                                random_box.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{random_key}'] = val; return newStore; }}", inputs=[random_box, overrides_store], outputs=[overrides_store])
+                                                random_box.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{random_key}'] = val; return newStore; }}",
+                                                    inputs=[random_box, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                             elif inp["type"] == "slider":
                                                 comp = gr.Slider(
                                                     label=inp["name"],
@@ -625,18 +799,51 @@ def create_ui(config, comfy_client):
                                                     minimum=inp["min"],
                                                     maximum=inp["max"],
                                                     step=inp.get("step", 1),
-                                                    interactive=True
+                                                    interactive=True,
                                                 )
-                                                comp.release(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp.release(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                             elif inp["type"] == "number":
-                                                comp = gr.Number(label=inp["name"], value=current_val, scale=1, interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp = gr.Number(
+                                                    label=inp["name"],
+                                                    value=current_val,
+                                                    scale=1,
+                                                    interactive=True,
+                                                )
+                                                comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                             elif inp["type"] == "bool":
-                                                comp = gr.Checkbox(label=inp["name"], value=current_val, interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp = gr.Checkbox(
+                                                    label=inp["name"],
+                                                    value=current_val,
+                                                    interactive=True,
+                                                )
+                                                comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
                                             else:
-                                                comp = gr.Textbox(label=inp["name"], value=str(current_val), interactive=True)
-                                                comp.change(fn=None, js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}", inputs=[comp, overrides_store], outputs=[overrides_store])
+                                                comp = gr.Textbox(
+                                                    label=inp["name"],
+                                                    value=str(current_val),
+                                                    interactive=True,
+                                                )
+                                                comp.change(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
 
                         with gr.Tab("History"):
                             history_gallery = gr.Gallery(
@@ -646,32 +853,51 @@ def create_ui(config, comfy_client):
                                 object_fit="contain",
                                 height="70vh",
                                 elem_id="history-gallery",
-                                interactive=False
+                                interactive=False,
                             )
 
                 advanced_toggle.change(
                     fn=lambda x: gr.update(visible=x),
                     inputs=[advanced_toggle],
-                    outputs=[sidebar_col]
+                    outputs=[sidebar_col],
                 )
 
                 gen_event = generate_btn.click(
                     fn=on_generate,
-                    inputs=[workflow_dropdown, prompt_input, overrides_store, batch_count_slider, history_state],
-                    outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn, overrides_store, history_gallery]
+                    inputs=[
+                        workflow_dropdown,
+                        prompt_input,
+                        overrides_store,
+                        batch_count_slider,
+                        history_state,
+                    ],
+                    outputs=[
+                        output_gallery,
+                        status_text,
+                        generate_btn,
+                        stop_btn,
+                        skip_btn,
+                        overrides_store,
+                        history_gallery,
+                    ],
                 )
 
                 gen_event.cancels = [gen_event]
 
                 def stop_generation():
                     comfy_client.interrupt()
-                    return gr.update(value="Interrupted"), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False)
+                    return (
+                        gr.update(value="Interrupted"),
+                        gr.update(visible=True, interactive=True),
+                        gr.update(visible=False),
+                        gr.update(visible=False),
+                    )
 
                 stop_btn.click(
                     fn=stop_generation,
                     inputs=[],
                     outputs=[status_text, generate_btn, stop_btn, skip_btn],
-                    cancels=[gen_event]
+                    cancels=[gen_event],
                 )
 
                 def on_skip():

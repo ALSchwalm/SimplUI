@@ -7,6 +7,7 @@ DEFAULT_SLIDERS = {
     "denoise": {"min": 0.0, "max": 1.0, "step": 0.01},
 }
 
+
 class ConfigManager:
     def __init__(self, config_path):
         self.config_path = config_path
@@ -20,7 +21,7 @@ class ConfigManager:
             data = json.load(f)
             self.comfy_url = data.get("comfy_url", "")
             self.workflows = data.get("workflows", [])
-            
+
             overrides = data.get("slider_overrides", {})
             for key, val in overrides.items():
                 if key in self.sliders:
