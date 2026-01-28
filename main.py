@@ -7,7 +7,7 @@ import argparse
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Simpl2 ComfyUI Wrapper")
+    parser = argparse.ArgumentParser(description="SimplUI")
     parser.add_argument(
         "--comfy-addr", type=str, help="ComfyUI server address (e.g. 127.0.0.1:8188)"
     )

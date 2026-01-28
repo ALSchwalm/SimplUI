@@ -11,7 +11,7 @@ def test_header_removal(page: Page):
 
     # We look for the text in a heading or markdown-like element.
     # Gradio Markdown usually renders as <h1> or similar.
-    header = page.get_by_role("heading", name="Simpl2 ComfyUI Wrapper")
+    header = page.get_by_role("heading", name="SimplUI")
 
     # This should FAIL initially as the header currently exists.
     expect(header).not_to_be_visible()

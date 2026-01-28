@@ -1,4 +1,4 @@
-# Initial Concept
+# SimplUI Product Definition
 
 This will be a gradio project that acts as a wrapper/proxy for comfyui workflows. It will allow a user that knows nothing about comfy to immediately generate an image using a default workflow. It will also allow more advanced users to switch workflows and access granular controls within the "Advanced Controls" sidebar.
 

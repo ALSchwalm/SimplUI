@@ -438,7 +438,7 @@ def create_ui(config, comfy_client):
         padding-left: 8px;
     }
     """
-    with gr.Blocks(title="Simpl2 ComfyUI Wrapper", css=css) as demo:
+    with gr.Blocks(title="SimplUI", css=css) as demo:
         with gr.Column(elem_id="app_container"):
             overrides_store = gr.JSON(value={}, visible=True, elem_id="overrides-store")
             history_state = gr.State(value=[])
