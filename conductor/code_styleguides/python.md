@@ -13,7 +13,8 @@ This document summarizes key rules and best practices from the Google Python Sty
 - **Type Annotations:** Strongly encouraged for all public APIs.
 
 ## 2. Python Style Rules
-- **Line Length:** Maximum 80 characters.
+- **Formatting:** Code is automatically formatted using `black`.
+- **Line Length:** Maximum 100 characters (configured in `pyproject.toml`).
 - **Indentation:** 4 spaces per indentation level. Never use tabs.
 - **Blank Lines:** Two blank lines between top-level definitions (classes, functions). One blank line between method definitions.
 - **Whitespace:** Avoid extraneous whitespace. Surround binary operators with single spaces.
