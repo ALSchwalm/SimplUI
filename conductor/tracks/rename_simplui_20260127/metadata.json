@@ -1,8 +1,0 @@
-{
-  "track_id": "rename_simplui_20260127",
-  "type": "chore",
-  "status": "new",
-  "created_at": "2026-01-27T10:00:00Z",
-  "updated_at": "2026-01-27T10:00:00Z",
-  "description": "Rename the project to just SimplUI. Update all tests, code, UI, etc. Do not change the actual name of the directory itself"
-}
