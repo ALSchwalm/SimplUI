@@ -12,6 +12,6 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Codebase Formatting' (Protocol in workflow.md)
 
 ## Phase 3: Workflow Integration
-- [ ] Task: Update `conductor/workflow.md` to include `black` commands in the "Daily Development" and "Before Committing" sections.
+- [x] Task: Update `conductor/workflow.md` to include `black` commands in the "Daily Development" and "Before Committing" sections. 69fea14
 - [ ] Task: Update `conductor/code_styleguides/python.md` to reflect that `black` is the enforced formatter.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Workflow Integration' (Protocol in workflow.md)
