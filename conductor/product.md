@@ -32,6 +32,7 @@ This will be a gradio project that acts as a wrapper/proxy for comfyui workflows
 ### Connectivity
 - **Remote Connection:** The application will connect to a remote ComfyUI server.
 - **Configuration:** The URL for the target ComfyUI instance will be configurable.
+- **CLI Support:** Users can specify the ComfyUI address and local listening parameters (host and port) via command-line arguments, which override file-based configuration.
 
 ## Product Goals
 - **Ease of Use:** The primary interface will be streamlined and intuitive, ensuring that non-technical users can generate images without understanding the underlying complexity of ComfyUI.
