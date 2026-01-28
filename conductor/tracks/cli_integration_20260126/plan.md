@@ -5,12 +5,12 @@
 - [x] Task: Create a reproduction/verification script `tests/test_cli_args.py` that mocks `sys.argv` and verifies configuration precedence. 1cece9b
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Research & Setup' (Protocol in workflow.md)
 
-## Phase 2: Implementation
+## Phase 2: Implementation [checkpoint: f8da307]
 - [x] Task: Implement `argparse` logic in `main.py` to handle `--comfy-addr`, `--listen-addr`, and `--config`. 129b87a
 - [x] Task: Update the configuration loading sequence in `main.py` to implement the required precedence (CLI > Config > Defaults). 129b87a
 - [x] Task: Implement address parsing logic to split `host:port` strings for both ComfyUI and the local listener. 129b87a
 - [x] Task: Refactor `main.py` to pass the resolved host and port to the `demo.launch()` call. 129b87a
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Verification & Cleanup
 - [ ] Task: Run `pytest tests/test_cli_args.py` to ensure all precedence and parsing logic works as expected.
