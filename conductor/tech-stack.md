@@ -14,6 +14,9 @@
 - **Target System:** Remote ComfyUI instance (configurable URL).
 - **Communication Protocol:** HTTP/JSON for REST API and WebSocket for real-time updates.
 
+## Tooling
+- **Formatting:** `black` (configured for 100-character line length)
+
 ## Testing
 - **Unit & Integration:** `pytest`, `pytest-cov`, `pytest-asyncio`
 - **UI Automation:** `playwright`, `pytest-playwright` (Headless Chromium)
