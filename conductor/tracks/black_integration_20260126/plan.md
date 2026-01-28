@@ -2,8 +2,8 @@
 
 ## Phase 1: Environment & Configuration
 - [x] Task: Add `black` to `requirements.txt`. 6e11bff
-- [ ] Task: Install `black` in the local virtual environment.
-- [ ] Task: Create `pyproject.toml` in the project root with `black` configuration (line-length = 100).
+- [~] Task: Install `black` in the local virtual environment.
+- [x] Task: Create `pyproject.toml` in the project root with `black` configuration (line-length = 100). 8dc907f
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Environment & Configuration' (Protocol in workflow.md)
 
 ## Phase 2: Codebase Formatting
