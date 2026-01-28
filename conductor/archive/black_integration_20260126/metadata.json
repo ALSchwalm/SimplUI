@@ -1,0 +1,8 @@
+{
+  "track_id": "black_integration_20260126",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-01-26T15:30:00Z",
+  "updated_at": "2026-01-26T15:30:00Z",
+  "description": "Integrate the \"black\" formatter"
+}
