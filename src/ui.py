@@ -8,10 +8,18 @@ import random
 
 try:
     from .seed_utils import generate_batch_seeds
-    from .dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
+    from .dimension_utils import (
+        find_matching_preset,
+        find_nearest_preset,
+        calculate_dimensions,
+    )
 except ImportError:
     from seed_utils import generate_batch_seeds
-    from dimension_utils import find_matching_preset, find_nearest_preset, calculate_dimensions
+    from dimension_utils import (
+        find_matching_preset,
+        find_nearest_preset,
+        calculate_dimensions,
+    )
 
 
 def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
@@ -477,10 +485,16 @@ def create_ui(config, comfy_client):
                                 "Generate", variant="primary", elem_id="gen-btn"
                             )
                             stop_btn = gr.Button(
-                                "Stop", variant="stop", visible=False, elem_id="stop-btn"
+                                "Stop",
+                                variant="stop",
+                                visible=False,
+                                elem_id="stop-btn",
                             )
                             skip_btn = gr.Button(
-                                "Skip", variant="secondary", visible=False, elem_id="skip-btn"
+                                "Skip",
+                                variant="secondary",
+                                visible=False,
+                                elem_id="skip-btn",
                             )
 
                     advanced_toggle = gr.Checkbox(
@@ -524,7 +538,13 @@ def create_ui(config, comfy_client):
                     with gr.Tabs():
                         with gr.Tab("Node Controls"):
 
-                            @gr.render(inputs=[workflow_dropdown, overrides_store, advanced_toggle])
+                            @gr.render(
+                                inputs=[
+                                    workflow_dropdown,
+                                    overrides_store,
+                                    advanced_toggle,
+                                ]
+                            )
                             def render_dynamic_interface(workflow_name, overrides, show_advanced):
                                 if not show_advanced or not workflow_name:
                                     return
@@ -546,7 +566,8 @@ def create_ui(config, comfy_client):
                                 for node in extracted:
                                     with gr.Group():
                                         gr.Markdown(
-                                            f"#### {node['title']}", elem_classes=["node-title"]
+                                            f"#### {node['title']}",
+                                            elem_classes=["node-title"],
                                         )
                                         for inp in node["inputs"]:
                                             key = f"{node['node_id']}.{inp['name']}"
@@ -720,7 +741,8 @@ def create_ui(config, comfy_client):
                                                         new_store[ar_key] = ar
                                                         new_store[pc_key] = pc
                                                         new_w, new_h = calculate_dimensions(
-                                                            ar, float(pc.replace("M", ""))
+                                                            ar,
+                                                            float(pc.replace("M", "")),
                                                         )
                                                         new_store[w_key] = new_w
                                                         new_store[h_key] = new_h
@@ -789,7 +811,10 @@ def create_ui(config, comfy_client):
                                                 random_box.change(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{random_key}'] = val; return newStore; }}",
-                                                    inputs=[random_box, overrides_store],
+                                                    inputs=[
+                                                        random_box,
+                                                        overrides_store,
+                                                    ],
                                                     outputs=[overrides_store],
                                                 )
                                             elif inp["type"] == "slider":

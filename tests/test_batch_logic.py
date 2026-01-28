@@ -32,7 +32,11 @@ async def test_batch_generation_calls():
     object_info = {"KSampler": {"input": {"required": {"seed": ["INT", {"default": 0}]}}}}
 
     workflow_data = {
-        "1": {"inputs": {"seed": 0}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}
+        "1": {
+            "inputs": {"seed": 0},
+            "class_type": "KSampler",
+            "_meta": {"title": "KSampler"},
+        }
     }
 
     with patch("builtins.open", new_callable=MagicMock) as mock_file_open:

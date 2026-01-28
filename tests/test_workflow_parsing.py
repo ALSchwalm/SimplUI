@@ -114,7 +114,10 @@ def test_extract_workflow_inputs_with_metadata():
 def test_merge_workflow_overrides():
     from ui import merge_workflow_overrides
 
-    workflow = {"1": {"inputs": {"steps": 20, "cfg": 8.0}}, "2": {"inputs": {"text": "default"}}}
+    workflow = {
+        "1": {"inputs": {"steps": 20, "cfg": 8.0}},
+        "2": {"inputs": {"text": "default"}},
+    }
 
     overrides = {"1.steps": 30, "1.cfg": 7.5, "2.text": "new prompt"}
 

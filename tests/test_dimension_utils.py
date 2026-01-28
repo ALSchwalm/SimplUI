@@ -1,5 +1,9 @@
 import pytest
-from dimension_utils import calculate_dimensions, find_matching_preset, find_nearest_preset
+from dimension_utils import (
+    calculate_dimensions,
+    find_matching_preset,
+    find_nearest_preset,
+)
 
 
 def test_calculate_dimensions_1to1_1m():

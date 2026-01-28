@@ -17,7 +17,9 @@ class ComfyClient:
 
     def submit_workflow(self, workflow, client_id):
         response = requests.post(
-            f"{self.base_url}/prompt", json={"prompt": workflow, "client_id": client_id}, timeout=10
+            f"{self.base_url}/prompt",
+            json={"prompt": workflow, "client_id": client_id},
+            timeout=10,
         )
         response.raise_for_status()
         return response.json().get("prompt_id")
@@ -42,7 +44,11 @@ class ComfyClient:
                     if message["type"] == "progress":
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
-                            yield {"type": "progress", "value": data["value"], "max": data["max"]}
+                            yield {
+                                "type": "progress",
+                                "value": data["value"],
+                                "max": data["max"],
+                            }
                     elif message["type"] == "executed":
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:

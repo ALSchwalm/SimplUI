@@ -57,7 +57,10 @@ def mock_comfy_client():
     # Mock generator
     async def mock_generate(*args, **kwargs):
         print("MOCK: WS Starting...")
-        yield {"type": "status", "data": {"status": {"exec_info": {"queue_remaining": 0}}}}
+        yield {
+            "type": "status",
+            "data": {"status": {"exec_info": {"queue_remaining": 0}}},
+        }
         import asyncio
 
         await asyncio.sleep(1)

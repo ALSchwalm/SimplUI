@@ -23,7 +23,12 @@ async def test_generate_image_success():
 
     messages = [
         json.dumps({"type": "status", "data": {"status": {}}}),
-        json.dumps({"type": "progress", "data": {"prompt_id": prompt_id, "value": 1, "max": 10}}),
+        json.dumps(
+            {
+                "type": "progress",
+                "data": {"prompt_id": prompt_id, "value": 1, "max": 10},
+            }
+        ),
         json.dumps(
             {
                 "type": "executed",
@@ -31,7 +36,11 @@ async def test_generate_image_success():
                     "prompt_id": prompt_id,
                     "output": {
                         "images": [
-                            {"filename": "test_image.png", "subfolder": "", "type": "output"}
+                            {
+                                "filename": "test_image.png",
+                                "subfolder": "",
+                                "type": "output",
+                            }
                         ]
                     },
                 },
@@ -74,7 +83,8 @@ async def test_generate_image_success():
                     # Verify WS connection URL with dynamic ID
 
                     mock_connect.assert_called_once_with(
-                        "ws://localhost:8188/ws?clientId=dynamic-client-id", max_size=10485760
+                        "ws://localhost:8188/ws?clientId=dynamic-client-id",
+                        max_size=10485760,
                     )
 
                     # Verify workflow submission uses dynamic ID
@@ -109,7 +119,10 @@ async def test_generate_image_with_previews():
         json.dumps({"type": "status", "data": {"status": {}}}),
         preview_bytes,  # Binary message
         json.dumps(
-            {"type": "executed", "data": {"prompt_id": prompt_id, "output": {"images": []}}}
+            {
+                "type": "executed",
+                "data": {"prompt_id": prompt_id, "output": {"images": []}},
+            }
         ),
     ]
 
