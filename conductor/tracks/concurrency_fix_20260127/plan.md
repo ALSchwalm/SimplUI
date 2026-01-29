@@ -2,11 +2,11 @@
 
 Interacting with node-specific controls during an active generation causes `KeyError` exceptions and UI state reversions. We need to stabilize the Gradio event handling and ensure that state updates during generation are preserved for the next run without interfering with the current one.
 
-## Phase 1: Diagnostics and Reproduction
+## Phase 1: Diagnostics and Reproduction [checkpoint: 845bbc9]
 - [x] Task: Create a reproduction script/test that simulates changing a control (e.g., a slider or toggle) while a long-running generation is active.
 - [x] Task: Verify the `KeyError` occurs during dynamic visibility toggles (like "Show Exact Dimensions") while generation events are being sent.
 - [x] Task: Confirm the "reversion" behavior where a slider moves back to its previous position after a preview update.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics and Reproduction' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics and Reproduction' (Protocol in workflow.md)
 
 ## Phase 2: Stabilize UI State & Prevent Reversions
 - [ ] Task: Investigate the `ui.py` event triggers. Ensure that preview updates only update the `Image` component and do not trigger a full UI refresh or dependency re-evaluation that might overwrite other component states.
