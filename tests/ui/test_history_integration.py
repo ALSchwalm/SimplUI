@@ -29,15 +29,12 @@ def test_history_integration(page: Page):
 
     # 4. Verify History has 2 images
     expect(history_gallery.locator("img")).to_have_count(2)
-    print(f"DEBUG: History count after run 1: {history_gallery.locator('img').count()}")
 
     # 5. Generate second batch (Batch Count = 2)
-    print("DEBUG: Clicking Generate for run 2")
     generate_btn.click()
 
     # Wait for status to change to Initializing/Processing first
     # This ensures we don't accidentally match the previous "Generation complete" message
-    print("DEBUG: Waiting for generation to start (Initializing/Processing)")
     expect(
         page.get_by_text("Initializing", exact=False).or_(
             page.get_by_text("Processing", exact=False)
@@ -45,15 +42,11 @@ def test_history_integration(page: Page):
     ).to_be_visible(timeout=10000)
 
     # Wait for completion of Batch 2/2
-    print("DEBUG: Waiting for generation to complete")
     expect(
         page.get_by_text("Generation complete", exact=False).filter(has_text="Batch 2/2")
     ).to_be_visible(timeout=30000)
-    print("DEBUG: Generation complete visible for run 2")
 
     # 6. Verify History now has 4 images
-    current_count = history_gallery.locator("img").count()
-    print(f"DEBUG: History count after run 2: {current_count}")
     expect(history_gallery.locator("img")).to_have_count(4)
 
     # 7. Verify no previews in history (by proxy - mock yields 1 preview per batch item)

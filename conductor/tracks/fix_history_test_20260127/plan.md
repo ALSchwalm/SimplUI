@@ -8,6 +8,6 @@ The `test_history_integration` fails because it likely proceeds to check the gal
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Reproduction & Robust Waiting' (Protocol in workflow.md)
 
 ## Phase 2: Final Verification
-- [ ] Task: Verify that the test passes consistently across multiple local runs.
-- [ ] Task: Run the full test suite to ensure no regressions in other UI tests.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Final Verification' (Protocol in workflow.md)
+- [x] Task: Verify that the test passes consistently across multiple local runs.
+- [x] Task: Run the full test suite to ensure no regressions in other UI tests.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Final Verification' (Protocol in workflow.md)
