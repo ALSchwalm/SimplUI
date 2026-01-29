@@ -9,13 +9,13 @@ Interacting with node-specific controls during an active generation causes `KeyE
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics and Reproduction' (Protocol in workflow.md)
 
 ## Phase 2: Stabilize UI State & Prevent Reversions
-- [ ] Task: Investigate the `ui.py` event triggers. Ensure that preview updates only update the `Image` component and do not trigger a full UI refresh or dependency re-evaluation that might overwrite other component states.
-- [ ] Task: Update the generation loop to minimize the scope of returned updates. Instead of returning a list of all components, ensure only the gallery/preview and status markers are updated.
-- [ ] Task: Implement a strategy (e.g., checking generation status in callbacks) to ensure that event listeners for advanced controls do not conflict with the generation queue.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Stabilize UI State & Prevent Reversions' (Protocol in workflow.md)
+- [x] Task: Investigate the `ui.py` event triggers. Ensure that preview updates only update the `Image` component and do not trigger a full UI refresh or dependency re-evaluation that might overwrite other component states.
+- [x] Task: Update the generation loop to minimize the scope of returned updates. Instead of returning a list of all components, ensure only the gallery/preview and status markers are updated.
+- [x] Task: Implement a strategy (e.g., checking generation status in callbacks) to ensure that event listeners for advanced controls do not conflict with the generation queue.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Stabilize UI State & Prevent Reversions' (Protocol in workflow.md)
 
 ## Phase 3: Robust Error Handling & Final Verification
-- [ ] Task: Add defensive error handling in the dynamic control generation logic to catch and log (but not crash on) Gradio internal `KeyErrors` during concurrent access.
-- [ ] Task: Verify that all changes made during generation persist and are correctly used in the *next* generation call.
-- [ ] Task: Run full suite of UI tests to ensure no regressions in basic generation or advanced control functionality.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Robust Error Handling & Final Verification' (Protocol in workflow.md)
+- [x] Task: Add defensive error handling in the dynamic control generation logic to catch and log (but not crash on) Gradio internal `KeyErrors` during concurrent access.
+- [x] Task: Verify that all changes made during generation persist and are correctly used in the *next* generation call.
+- [x] Task: Run full suite of UI tests to ensure no regressions in basic generation or advanced control functionality.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Robust Error Handling & Final Verification' (Protocol in workflow.md)

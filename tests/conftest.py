@@ -63,10 +63,10 @@ def mock_comfy_client():
         }
         import asyncio
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         print("MOCK: WS Yielding progress...")
         yield {"type": "progress", "value": 5, "max": 10}
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         print("MOCK: WS Yielding final image...")
         valid_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xdcD\xfe\xe7\x00\x00\x00\x00IEND\xaeB`\x82"
         yield {"type": "image", "data": valid_png}

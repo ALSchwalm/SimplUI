@@ -229,7 +229,7 @@ async def process_generation(
     # Initial status: Hide Generate, Show Stop, Show Skip
     yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(
         visible=True
-    ), overrides, history_state
+    ), gr.update(), history_state[:]
 
     # Auto-stop previous runs
     try:
@@ -270,11 +270,18 @@ async def process_generation(
 
     # Apply random seeds
     if overrides:
-        overrides = apply_random_seeds(overrides)
-        # Update store with new seeds - Keep button state
-        yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(
-            visible=True
-        ), gr.update(visible=True), overrides, history_state
+        new_overrides = apply_random_seeds(overrides)
+        if new_overrides != overrides:
+            overrides = new_overrides
+            # Update store with new seeds - Keep button state
+            yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(
+                visible=True
+            ), gr.update(visible=True), overrides, history_state[:]
+        else:
+            # Still need to hide generate/show stop
+            yield None, "Starting generation...", gr.update(visible=False), gr.update(
+                visible=True
+            ), gr.update(visible=True), gr.update(), history_state[:]
 
     # Calculate Batch Seeds
     seed_batches = {}
@@ -351,7 +358,7 @@ async def process_generation(
                             visible=False
                         ), gr.update(visible=True), gr.update(
                             visible=True
-                        ), overrides, history_state
+                        ), gr.update(), history_state[:]
                     except StopAsyncIteration:
                         # Generator finished normally
                         # If we finished naturally, run_images contains the FINAL images for this run.
@@ -363,7 +370,7 @@ async def process_generation(
                             visible=True, interactive=True
                         ), gr.update(visible=False), gr.update(
                             visible=False
-                        ), overrides, history_state
+                        ), gr.update(), history_state[:]
                         return  # Stop all on error
 
                     # Cancel skip task if it's still pending
@@ -388,7 +395,7 @@ async def process_generation(
                 seed_suffix if "seed_suffix" in locals() else ""
             ), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(
                 visible=False
-            ), overrides, history_state
+            ), gr.update(), history_state[:]
 
 
 def create_ui(config, comfy_client):
@@ -549,9 +556,16 @@ def create_ui(config, comfy_client):
                                 if not show_advanced or not workflow_name:
                                     return
 
+                                if overrides is None:
+                                    overrides = {}
+
                                 workflow_info = next(
-                                    w for w in config.workflows if w["name"] == workflow_name
+                                    (w for w in config.workflows if w["name"] == workflow_name),
+                                    None,
                                 )
+                                if not workflow_info:
+                                    return
+
                                 try:
                                     with open(workflow_info["path"], "r") as f:
                                         workflow_json = json.load(f)
@@ -727,6 +741,8 @@ def create_ui(config, comfy_client):
 
                                                 # Logic for Toggle
                                                 def on_toggle(store):
+                                                    if store is None:
+                                                        return {}
                                                     new_store = copy.deepcopy(store)
                                                     mode = new_store.get(mode_key, cur_mode)
 
