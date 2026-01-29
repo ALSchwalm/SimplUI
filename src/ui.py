@@ -358,7 +358,9 @@ async def process_generation(
                             visible=False
                         ), gr.update(visible=True), gr.update(
                             visible=True
-                        ), gr.update(), history_state[:]
+                        ), gr.update(), history_state[
+                            :
+                        ]
                     except StopAsyncIteration:
                         # Generator finished normally
                         # If we finished naturally, run_images contains the FINAL images for this run.
@@ -370,7 +372,9 @@ async def process_generation(
                             visible=True, interactive=True
                         ), gr.update(visible=False), gr.update(
                             visible=False
-                        ), gr.update(), history_state[:]
+                        ), gr.update(), history_state[
+                            :
+                        ]
                         return  # Stop all on error
 
                     # Cancel skip task if it's still pending
@@ -395,7 +399,9 @@ async def process_generation(
                 seed_suffix if "seed_suffix" in locals() else ""
             ), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(
                 visible=False
-            ), gr.update(), history_state[:]
+            ), gr.update(), history_state[
+                :
+            ]
 
 
 def create_ui(config, comfy_client):
