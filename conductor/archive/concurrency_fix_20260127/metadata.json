@@ -1,0 +1,8 @@
+{
+  "track_id": "concurrency_fix_20260127",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-27T10:00:00Z",
+  "updated_at": "2026-01-27T10:00:00Z",
+  "description": "KeyError when changing node controls during generation and UI state reversion on preview updates"
+}
