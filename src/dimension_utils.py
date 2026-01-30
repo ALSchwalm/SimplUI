@@ -30,7 +30,7 @@ def calculate_dimensions(aspect_ratio_str, pixel_count_m):
     try:
         w_part, h_part = map(float, aspect_ratio_str.split(":"))
         ratio = w_part / h_part
-    except (ValueError, ZeroDivisionError):
+    except ValueError, ZeroDivisionError:
         ratio = 1.0
 
     # Height = sqrt(P / R)
