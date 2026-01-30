@@ -5,7 +5,7 @@ requires-python = ">=3.11"
 
 [tool.black]
 line-length = 100
-target-version = ['py314']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
