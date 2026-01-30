@@ -339,7 +339,9 @@ async def process_generation(
                         next_task.cancel()  # Cancel pending generation task
                         # Yield safe state (remove preview)
                         safe_images = previous_images + current_completed
-                        yield safe_images, "Skipping...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(), history_state[:], safe_images
+                        yield safe_images, "Skipping...", gr.update(visible=False), gr.update(
+                            visible=True
+                        ), gr.update(visible=True), gr.update(), history_state[:], safe_images
                         break  # Break inner loop
 
                     # If we are here, next_task completed successfully
@@ -348,11 +350,11 @@ async def process_generation(
                         run_completed, run_preview, status = update
                         last_status = status
                         current_completed = run_completed
-                        
+
                         # Construct display list: previous + current_completed + [preview]
                         safe_images = previous_images + current_completed
                         last_safe_images = safe_images
-                        
+
                         display_images = list(safe_images)
                         if run_preview:
                             display_images.append(run_preview)
@@ -366,8 +368,10 @@ async def process_generation(
                             visible=False
                         ), gr.update(visible=True), gr.update(
                             visible=True
-                        ), gr.update(), history_state[:], safe_images
-                        
+                        ), gr.update(), history_state[
+                            :
+                        ], safe_images
+
                     except StopAsyncIteration:
                         # Generator finished normally
                         # If we finished naturally, current_completed contains the FINAL images for this run.
@@ -379,7 +383,9 @@ async def process_generation(
                             visible=True, interactive=True
                         ), gr.update(visible=False), gr.update(
                             visible=False
-                        ), gr.update(), history_state[:], last_safe_images
+                        ), gr.update(), history_state[
+                            :
+                        ], last_safe_images
                         return  # Stop all on error
 
                     # Cancel skip task if it's still pending
@@ -392,15 +398,17 @@ async def process_generation(
             if not (skip_event and skip_event.is_set()):
                 previous_images.extend(current_completed)
             else:
-                 # If skipped, ensure we keep whatever was completed
-                 previous_images.extend(current_completed)
-                 # Update safe images state one last time for this batch to ensure sync
-                 last_safe_images = previous_images
+                # If skipped, ensure we keep whatever was completed
+                previous_images.extend(current_completed)
+                # Update safe images state one last time for this batch to ensure sync
+                last_safe_images = previous_images
 
         finished_naturally = True
     except asyncio.CancelledError:
         # Yield safe state on cancel to ensure preview is removed
-        yield last_safe_images, "Interrupted", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), gr.update(), history_state[:], last_safe_images
+        yield last_safe_images, "Interrupted", gr.update(visible=True, interactive=True), gr.update(
+            visible=False
+        ), gr.update(visible=False), gr.update(), history_state[:], last_safe_images
         raise
     finally:
         if finished_naturally:
@@ -408,12 +416,14 @@ async def process_generation(
             seed_info = ""
             if "current_seeds" in locals() and current_seeds:
                 seed_info = f" Seed: {list(current_seeds.values())[0]}"
-            
+
             yield previous_images, last_status + seed_info + (
                 seed_suffix if "seed_suffix" in locals() else ""
             ), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(
                 visible=False
-            ), gr.update(), history_state[:], previous_images
+            ), gr.update(), history_state[
+                :
+            ], previous_images
 
 
 def create_ui(config, comfy_client):
