@@ -170,7 +170,7 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
         with open(workflow_info["path"], "r") as f:
             workflow_json = json.load(f)
     except Exception as e:
-        yield None, f"Error loading workflow: {e}"
+        yield [], None, f"Error loading workflow: {e}"
         return
 
     # 2.5 Apply Overrides
@@ -189,17 +189,13 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
         async for event in comfy_client.generate_image(workflow_json):
             if event["type"] == "progress":
                 last_status = f"Progress: {event['value']}/{event['max']}"
-                # Yield completed images + latest preview if available
-                current_images = list(completed_images)
-                if latest_preview:
-                    current_images.append(latest_preview)
-                yield current_images, last_status
+                # Yield completed images, latest preview, and status
+                yield completed_images, latest_preview, last_status
             elif event["type"] == "preview":
                 try:
                     preview_image = Image.open(io.BytesIO(event["data"]))
                     latest_preview = preview_image
-                    # Show preview as the next potential image
-                    yield completed_images + [preview_image], last_status
+                    yield completed_images, latest_preview, last_status
                 except Exception as e:
                     pass
             elif event["type"] == "image":
@@ -208,11 +204,11 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                     final_image = Image.open(io.BytesIO(image_bytes))
                     completed_images.append(final_image)
                     latest_preview = None  # Clear preview as it is replaced by final image
-                    yield list(completed_images), "Generation complete"
+                    yield completed_images, latest_preview, "Generation complete"
                 except Exception as e:
-                    yield list(completed_images), f"Error processing image: {e}"
+                    yield completed_images, latest_preview, f"Error processing image: {e}"
     except Exception as e:
-        yield [], f"Error during generation: {e}"
+        yield [], None, f"Error during generation: {e}"
 
 
 async def process_generation(
@@ -229,7 +225,7 @@ async def process_generation(
     # Initial status: Hide Generate, Show Stop, Show Skip
     yield None, "Initializing...", gr.update(visible=False), gr.update(visible=True), gr.update(
         visible=True
-    ), gr.update(), history_state[:]
+    ), gr.update(), history_state[:], []
 
     # Auto-stop previous runs
     try:
@@ -276,12 +272,12 @@ async def process_generation(
             # Update store with new seeds - Keep button state
             yield None, "Randomizing seeds...", gr.update(visible=False), gr.update(
                 visible=True
-            ), gr.update(visible=True), overrides, history_state[:]
+            ), gr.update(visible=True), overrides, history_state[:], []
         else:
             # Still need to hide generate/show stop
             yield None, "Starting generation...", gr.update(visible=False), gr.update(
                 visible=True
-            ), gr.update(visible=True), gr.update(), history_state[:]
+            ), gr.update(visible=True), gr.update(), history_state[:], []
 
     # Calculate Batch Seeds
     seed_batches = {}
@@ -298,7 +294,7 @@ async def process_generation(
     previous_images = []
     finished_naturally = False
     last_status = "Processing..."
-    last_image = None
+    last_safe_images = []
 
     try:
         for i in range(batch_count):
@@ -316,7 +312,7 @@ async def process_generation(
 
             seed_suffix = f" (Batch {i+1}/{batch_count})"
 
-            run_images = []
+            current_completed = []
 
             # Manual async iteration to support skip/cancellation
             iterator = handle_generation(
@@ -341,40 +337,49 @@ async def process_generation(
                     # Check if skip was triggered
                     if skip_event and skip_event.is_set():
                         next_task.cancel()  # Cancel pending generation task
+                        # Yield safe state (remove preview)
+                        safe_images = previous_images + current_completed
+                        yield safe_images, "Skipping...", gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(), history_state[:], safe_images
                         break  # Break inner loop
 
                     # If we are here, next_task completed successfully
                     try:
                         update = next_task.result()
-                        run_images, status = update
+                        run_completed, run_preview, status = update
                         last_status = status
-                        last_image = previous_images + run_images
+                        current_completed = run_completed
+                        
+                        # Construct display list: previous + current_completed + [preview]
+                        safe_images = previous_images + current_completed
+                        last_safe_images = safe_images
+                        
+                        display_images = list(safe_images)
+                        if run_preview:
+                            display_images.append(run_preview)
+
                         # Add seeds to status if available
                         seed_info = ""
                         if current_seeds:
                             seed_info = f" Seed: {list(current_seeds.values())[0]}"
 
-                        yield last_image, last_status + seed_info + seed_suffix, gr.update(
+                        yield display_images, last_status + seed_info + seed_suffix, gr.update(
                             visible=False
                         ), gr.update(visible=True), gr.update(
                             visible=True
-                        ), gr.update(), history_state[
-                            :
-                        ]
+                        ), gr.update(), history_state[:], safe_images
+                        
                     except StopAsyncIteration:
                         # Generator finished normally
-                        # If we finished naturally, run_images contains the FINAL images for this run.
+                        # If we finished naturally, current_completed contains the FINAL images for this run.
                         # Update history state
-                        history_state.extend(run_images)
+                        history_state.extend(current_completed)
                         break
                     except Exception as e:
-                        yield last_image, f"Error: {e}", gr.update(
+                        yield last_safe_images, f"Error: {e}", gr.update(
                             visible=True, interactive=True
                         ), gr.update(visible=False), gr.update(
                             visible=False
-                        ), gr.update(), history_state[
-                            :
-                        ]
+                        ), gr.update(), history_state[:], last_safe_images
                         return  # Stop all on error
 
                     # Cancel skip task if it's still pending
@@ -385,23 +390,30 @@ async def process_generation(
                     break
 
             if not (skip_event and skip_event.is_set()):
-                previous_images.extend(run_images)
+                previous_images.extend(current_completed)
+            else:
+                 # If skipped, ensure we keep whatever was completed
+                 previous_images.extend(current_completed)
+                 # Update safe images state one last time for this batch to ensure sync
+                 last_safe_images = previous_images
 
         finished_naturally = True
+    except asyncio.CancelledError:
+        # Yield safe state on cancel to ensure preview is removed
+        yield last_safe_images, "Interrupted", gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), gr.update(), history_state[:], last_safe_images
+        raise
     finally:
         if finished_naturally:
             # Add seeds to status if available
             seed_info = ""
             if "current_seeds" in locals() and current_seeds:
                 seed_info = f" Seed: {list(current_seeds.values())[0]}"
-
-            yield last_image, last_status + seed_info + (
+            
+            yield previous_images, last_status + seed_info + (
                 seed_suffix if "seed_suffix" in locals() else ""
             ), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(
                 visible=False
-            ), gr.update(), history_state[
-                :
-            ]
+            ), gr.update(), history_state[:], previous_images
 
 
 def create_ui(config, comfy_client):
@@ -455,6 +467,7 @@ def create_ui(config, comfy_client):
         with gr.Column(elem_id="app_container"):
             overrides_store = gr.JSON(value={}, visible=True, elem_id="overrides-store")
             history_state = gr.State(value=[])
+            safe_gallery_state = gr.State(value=[])
 
             def update_prompt_on_change(workflow_name):
                 if not workflow_name:
@@ -926,14 +939,19 @@ def create_ui(config, comfy_client):
                         skip_btn,
                         overrides_store,
                         history_gallery,
+                        safe_gallery_state,
                     ],
                 )
 
                 gen_event.cancels = [gen_event]
 
-                def stop_generation():
-                    comfy_client.interrupt()
+                def stop_generation(safe_images):
+                    try:
+                        comfy_client.interrupt()
+                    except Exception:
+                        pass
                     return (
+                        safe_images,
                         gr.update(value="Interrupted"),
                         gr.update(visible=True, interactive=True),
                         gr.update(visible=False),
@@ -942,8 +960,8 @@ def create_ui(config, comfy_client):
 
                 stop_btn.click(
                     fn=stop_generation,
-                    inputs=[],
-                    outputs=[status_text, generate_btn, stop_btn, skip_btn],
+                    inputs=[safe_gallery_state],
+                    outputs=[output_gallery, status_text, generate_btn, stop_btn, skip_btn],
                     cancels=[gen_event],
                 )
 
