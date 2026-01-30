@@ -8,7 +8,7 @@ The goal is to fix syntax errors preventing execution on Python 3.11 and officia
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Syntax Fixes & Compatibility' (Protocol in workflow.md) 5997239
 
 ## Phase 2: Configuration & Verification
-- [ ] Task: Update `pyproject.toml` to set `requires-python` to include `>=3.11`.
-- [ ] Task: Verify dependency installation in a clean Python 3.11 environment.
-- [ ] Task: Run the full test suite using Python 3.11 to ensure functional parity.
+- [x] Task: Update `pyproject.toml` to set `requires-python` to include `>=3.11`.
+- [x] Task: Verify dependency installation in a clean Python 3.11 environment.
+- [x] Task: Run the full test suite using Python 3.11 to ensure functional parity.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Configuration & Verification' (Protocol in workflow.md)
