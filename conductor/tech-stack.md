@@ -1,7 +1,7 @@
 # Technology Stack
 
 ## Backend
-- **Language:** Python
+- **Language:** Python (3.11+)
 - **Session State:** `gr.State` used for managing temporary session data like image history.
 - **API Communication:** `requests` (Synchronous HTTP for workflow submission and `/object_info` metadata retrieval)
 - **Real-time Communication:** `websockets` (For streaming image generation progress and binary image data from ComfyUI)
