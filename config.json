@@ -8,6 +8,10 @@
 	{
             "name": "Real Workflow",
             "path": "workflows/real.json"
+        },
+	{
+            "name": "Z-Image Workflow",
+            "path": "workflows/z-image.json"
         }
     ]
 }
