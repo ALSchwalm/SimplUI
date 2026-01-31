@@ -33,15 +33,18 @@ async def test_handle_generation_success():
                 assert len(updates) == 3
                 # First update: progress, empty images?
                 assert updates[0][0] == []
-                assert updates[0][1] == "Progress: 5/10"
+                assert updates[0][1] is None
+                assert updates[0][2] == "Progress: 5/10"
 
                 # Second update: preview
-                assert updates[1][0] == ["mock_preview_image"]
-                assert updates[1][1] == "Progress: 5/10"
+                assert updates[1][0] == []
+                assert updates[1][1] == "mock_preview_image"
+                assert updates[1][2] == "Progress: 5/10"
 
                 # Third update: final image
                 assert updates[2][0] == ["mock_pil_image"]
-                assert updates[2][1] == "Generation complete"
+                assert updates[2][1] is None
+                assert updates[2][2] == "Generation complete"
 
                 # Note: test_handle_generation_success tests handle_generation directly,
                 # which still returns 2 values.
@@ -82,8 +85,8 @@ async def test_handle_generation_multiple_images():
                 assert len(updates) == 3
 
                 # Check status
-                assert updates[0][1] == "Progress: 5/10"
-                assert updates[0][0] is None or updates[0][0] == []
+                assert updates[0][2] == "Progress: 5/10"
+                assert updates[0][0] == []
 
                 # Check first image yield
                 images_1 = updates[1][0]

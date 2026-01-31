@@ -190,12 +190,12 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
             if event["type"] == "progress":
                 last_status = f"Progress: {event['value']}/{event['max']}"
                 # Yield completed images, latest preview, and status
-                yield completed_images, latest_preview, last_status
+                yield list(completed_images), latest_preview, last_status
             elif event["type"] == "preview":
                 try:
                     preview_image = Image.open(io.BytesIO(event["data"]))
                     latest_preview = preview_image
-                    yield completed_images, latest_preview, last_status
+                    yield list(completed_images), latest_preview, last_status
                 except Exception as e:
                     pass
             elif event["type"] == "image":
@@ -204,9 +204,9 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                     final_image = Image.open(io.BytesIO(image_bytes))
                     completed_images.append(final_image)
                     latest_preview = None  # Clear preview as it is replaced by final image
-                    yield completed_images, latest_preview, "Generation complete"
+                    yield list(completed_images), latest_preview, "Generation complete"
                 except Exception as e:
-                    yield completed_images, latest_preview, f"Error processing image: {e}"
+                    yield list(completed_images), latest_preview, f"Error processing image: {e}"
     except Exception as e:
         yield [], None, f"Error during generation: {e}"
 

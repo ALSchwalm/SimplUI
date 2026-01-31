@@ -47,24 +47,14 @@ async def test_handle_generation_flicker_repro():
                 updates.append(update)
 
             # Analyze updates
-            # Update 0: Progress 1. Expected: [] images (or just previous state? but initially empty)
+            # Update 0: Progress 1. Expected: [] images, None preview
             assert updates[0][0] == []
+            assert updates[0][1] is None
 
-            # Update 1: Preview 1. Expected: [Preview1]
-            assert len(updates[1][0]) == 1
+            # Update 1: Preview 1. Expected: [] images, [Preview1]
+            assert updates[1][0] == []
+            assert updates[1][1] is not None
 
             # Update 2: Progress 2.
-            # CURRENT BUG: This yields list(completed_images), which is still [].
-            # So the preview disappears.
-            print(f"Update 2 images: {updates[2][0]}")
-
-            # If the bug exists, this assertion will pass (confirming the bad behavior)
-            # OR I can write the assertion for the *correct* behavior and watch it fail.
-            # TDD says write the test that expects correct behavior and watch it fail.
-
-            # Correct behavior: The preview should persist until a new one comes or a final image is added.
-            # So Update 2 should still contain the preview image (or at least NOT be empty).
-
-            # However, since 'completed_images' only stores FINAL images, logic needs to change.
-            # The test expecting correct behavior:
-            assert len(updates[2][0]) == 1, "Preview image disappeared during progress update!"
+            # Preview should persist
+            assert updates[2][1] is not None, "Preview image disappeared during progress update!"

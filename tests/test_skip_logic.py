@@ -31,10 +31,10 @@ async def test_process_generation_skip_logic():
     # Mock handle_generation
     # We want it to be an async generator
     async def mock_gen(*args):
-        yield (["img1"], "Step 1")
+        yield (["img1"], None, "Step 1")
         try:
             await asyncio.sleep(0.5)
-            yield (["img1"], "Step 2")
+            yield (["img1"], None, "Step 2")
         except asyncio.CancelledError:
             # We expect cancellation on skip
             raise
