@@ -25,7 +25,7 @@ def mock_config():
         os.makedirs("workflows")
     with open("workflows/test.json", "w") as f:
         f.write(
-            '{"1": {"inputs": {"width": 1024, "height": 1024}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent"}}, "2": {"inputs": {"width": 1000, "height": 1000}, "class_type": "EmptyLatentImage", "_meta": {"title": "Odd Latent"}}, "3": {"inputs": {"seed": 5, "steps": 20, "sampler_name": "euler"}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}}'
+            '{"1": {"inputs": {"width": 1024, "height": 1024}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent"}}, "2": {"inputs": {"width": 1000, "height": 1000}, "class_type": "EmptyLatentImage", "_meta": {"title": "Odd Latent"}}, "3": {"inputs": {"seed": 5, "steps": 20, "sampler_name": "euler"}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}, "4": {"inputs": {"text": "default text"}, "class_type": "PrimitiveString", "_meta": {"title": "String Node"}}}'
         )
     return config
 

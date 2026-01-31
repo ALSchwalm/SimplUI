@@ -772,13 +772,25 @@ def create_ui(config, comfy_client):
                                                 )
 
                                                 # Logic for Exact (Numbers)
-                                                w_comp.change(
+                                                w_comp.blur(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{w_key}'] = val; return newStore; }}",
                                                     inputs=[w_comp, overrides_store],
                                                     outputs=[overrides_store],
                                                 )
-                                                h_comp.change(
+                                                w_comp.submit(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{w_key}'] = val; return newStore; }}",
+                                                    inputs=[w_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                h_comp.blur(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{h_key}'] = val; return newStore; }}",
+                                                    inputs=[h_comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                h_comp.submit(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{h_key}'] = val; return newStore; }}",
                                                     inputs=[h_comp, overrides_store],
@@ -863,7 +875,13 @@ def create_ui(config, comfy_client):
                                                         interactive=True,
                                                     )
 
-                                                comp.change(
+                                                comp.blur(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                comp.submit(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
                                                     inputs=[comp, overrides_store],
@@ -901,7 +919,13 @@ def create_ui(config, comfy_client):
                                                     scale=1,
                                                     interactive=True,
                                                 )
-                                                comp.change(
+                                                comp.blur(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                comp.submit(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
                                                     inputs=[comp, overrides_store],
@@ -925,7 +949,13 @@ def create_ui(config, comfy_client):
                                                     value=str(current_val),
                                                     interactive=True,
                                                 )
-                                                comp.change(
+                                                comp.blur(
+                                                    fn=None,
+                                                    js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
+                                                    inputs=[comp, overrides_store],
+                                                    outputs=[overrides_store],
+                                                )
+                                                comp.submit(
                                                     fn=None,
                                                     js=f"(val, store) => {{ const newStore = {{...store}}; newStore['{key}'] = val; return newStore; }}",
                                                     inputs=[comp, overrides_store],
