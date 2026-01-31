@@ -98,6 +98,7 @@ def gradio_server(mock_config, mock_comfy_client, app_port):
             "prevent_thread_lock": True,
             "quiet": True,
             "css": demo.css,
+            "js": demo.js,
         },
     )
     server_thread.start()

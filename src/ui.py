@@ -473,7 +473,24 @@ def create_ui(config, comfy_client):
         padding-left: 8px;
     }
     """
-    with gr.Blocks(title="SimplUI", css=css) as demo:
+    shortcut_js = """
+    document.addEventListener('keydown', (e) => {
+        const target = e.target;
+        if (target.tagName !== 'TEXTAREA' || !target.closest('#prompt-box')) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const genBtn = document.getElementById('gen-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            if (stopBtn && stopBtn.offsetParent !== null) {
+                stopBtn.click();
+            } else if (genBtn) {
+                genBtn.click();
+            }
+        }
+    });
+    """
+    with gr.Blocks(title="SimplUI", css=css, js=shortcut_js) as demo:
         with gr.Column(elem_id="app_container"):
             overrides_store = gr.JSON(value={}, visible=True, elem_id="overrides-store")
             history_state = gr.State(value=[])
@@ -986,4 +1003,5 @@ def create_ui(config, comfy_client):
                 )
 
     demo.css = css
+    demo.js = shortcut_js
     return demo
