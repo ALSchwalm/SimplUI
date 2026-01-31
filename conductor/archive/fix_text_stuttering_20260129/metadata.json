@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_text_stuttering_20260129",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-29T13:30:00Z",
+  "updated_at": "2026-01-29T13:30:00Z",
+  "description": "Fix stuttering and text loss in text boxes under Node Controls by changing update triggers."
+}
