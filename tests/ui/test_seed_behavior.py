@@ -46,11 +46,7 @@ def test_seed_value_updates_on_generation(page: Page):
     status_text = status_locator.text_content()
     assert "Generation complete" in status_text, f"Status is not complete: {status_text}"
 
-    # 6. Verify Status shows derived seed
-    match = re.search(r"[Ss]eed:\s*(\d+)", status_text)
-    assert match, f"Could not find seed in status: {status_text}"
-    status_seed = int(match.group(1))
-    print(f"Status Seed: {status_seed}")
+    # 6. (Removed) Verify Status shows derived seed - Seed is no longer displayed in status
 
     # 7. Uncheck Randomize to reveal Base Seed
     randomize_checkbox.uncheck()
@@ -62,9 +58,4 @@ def test_seed_value_updates_on_generation(page: Page):
     base_seed = int(base_seed_str)
     print(f"Base Seed from Input: {base_seed}")
 
-    # 9. Verify Consistency
-    expected_seeds = generate_batch_seeds(base_seed, 2)
-    # The status shows the seed of the last batch iteration (Batch 2)
-    assert (
-        status_seed == expected_seeds[1]
-    ), f"Status seed {status_seed} does not match expected derived seed {expected_seeds[1]} from base {base_seed}"
+    # 9. (Removed) Verify Consistency - Cannot verify derived seed from UI anymore
