@@ -94,3 +94,58 @@ def test_gallery_responsive_columns(page: Page):
     xs_narrow = set([round(i['x']) for i in items_narrow])
     assert len(xs_narrow) == 1, f"Expected 1 column (1 distinct X position), got {len(xs_narrow)}."
 
+def test_history_gallery_responsive_columns(page: Page):
+    """
+    Verifies that the history gallery adjusts its columns based on viewport width.
+    """
+    # Trigger a generation to ensure the history is populated
+    page.get_by_label("Prompt").fill("Test history responsive")
+    page.get_by_role("button", name="Generate").click()
+    expect(page.get_by_text("Generation complete").first).to_be_visible(timeout=15000)
+
+    # Open Advanced Controls and switch to History tab
+    page.get_by_label("Advanced Controls").check()
+    page.get_by_role("tab", name="History").click()
+    
+    gallery = page.locator("#history-gallery")
+    expect(gallery).to_be_visible()
+    expect(gallery.locator("img")).to_have_count(1, timeout=5000)
+    
+    # Generate another one to have 2 images
+    page.get_by_role("button", name="Generate").click()
+    expect(page.get_by_text("Generation complete").first).to_be_visible(timeout=15000)
+    expect(gallery.locator("img")).to_have_count(2, timeout=5000)
+
+    # JS Helper
+    get_item_positions = """
+        () => {
+            const gallery = document.querySelector('#history-gallery');
+            if (!gallery) return [];
+
+            const items = gallery.querySelectorAll('button.gallery-item');
+            const grid = [...gallery.querySelectorAll('*')].find(el => window.getComputedStyle(el).display === 'grid');
+            const children = grid ? [...grid.children] : [];
+
+            return children.map(el => {
+                const rect = el.getBoundingClientRect();
+                return { x: rect.x, y: rect.y };
+            });
+        }
+    """
+
+    # CASE 1: Wide Viewport
+    page.set_viewport_size({"width": 1920, "height": 1080})
+    page.wait_for_timeout(500)
+    
+    items_wide = page.evaluate(get_item_positions)
+    xs = set([round(i['x']) for i in items_wide])
+    assert len(xs) >= 2, f"History: Expected at least 2 columns, got {len(xs)}."
+
+    # CASE 2: Narrow Viewport
+    page.set_viewport_size({"width": 400, "height": 800})
+    page.wait_for_timeout(500)
+    
+    items_narrow = page.evaluate(get_item_positions)
+    xs_narrow = set([round(i['x']) for i in items_narrow])
+    assert len(xs_narrow) == 1, f"History: Expected 1 column, got {len(xs_narrow)}."
+

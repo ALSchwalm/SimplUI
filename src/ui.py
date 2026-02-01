@@ -457,7 +457,7 @@ def create_ui(config, comfy_client):
         height: 70vh !important;
     }
     @media screen and (max-width: 600px) {
-        #gallery .grid-container {
+        #gallery .grid-container, #history-gallery .grid-container {
             grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
         }
     }
