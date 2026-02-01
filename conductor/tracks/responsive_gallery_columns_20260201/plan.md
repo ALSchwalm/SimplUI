@@ -9,6 +9,7 @@
 - [x] Task: Update gallery components in `src/ui.py` to use responsive columns via CSS media queries. fe3fcf5
     - [x] Sub-task: Add `@media` screen and (max-width: 600px) to `css` string in `src/ui.py` to force 1 column on small screens.
     - [x] Sub-task: Ensure gallery items and container have appropriate styles for responsiveness.
+    - [x] Sub-task: Apply same responsive CSS to `history_gallery`. 703ce8e
 
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
