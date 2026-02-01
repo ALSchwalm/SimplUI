@@ -17,7 +17,7 @@ This will be a gradio project that acts as a wrapper/proxy for comfyui workflows
 - **Live Previews:** Users see real-time, lower-resolution preview images during the generation process, providing immediate visual feedback.
 - **Smart Prompt Handling:** The main Prompt box auto-fills with the workflow's default text, and the duplicate input is hidden from the Advanced Controls list to reduce clutter.
 - **Keyboard Shortcuts:** Users can press `Ctrl+Enter` (or `Cmd+Enter` on macOS) while the prompt box is focused to start generation. If generation is in progress, the same shortcut stops it.
-- **Batch Results (Gallery):** For batch generations, the application displays results in a responsive gallery limited to 50% of the viewport height, allowing users to view all generated images in real-time as they are completed without excessive scrolling.
+- **Batch Results (Gallery):** For batch generations, the application displays results in a responsive gallery limited to 50% of the viewport height. The gallery automatically adjusts its layout to use a single column on mobile devices and two columns on larger screens, ensuring optimal viewing.
 - **Skip Functionality:** During generation, the 'Generate' button is replaced by a 'Skip' button. Clicking 'Skip' immediately cancels the current iteration and moves to the next item in the batch, removing any partial preview from the gallery while preserving completed images.
 
 ### Advanced User Controls

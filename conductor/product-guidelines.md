@@ -9,6 +9,7 @@
 - **Feedback Loops:** Provide clear, professional feedback during long-running tasks like image generation (e.g., progress bars, loading indicators).
 - **Viewport Optimization:** Ensure that large visual assets, such as generated images and live previews, do not overwhelm the UI. Use responsive height constraints (e.g., 50vh) and 'contain' scaling to keep images within the viewport.
 - **Simplified Dimensions:** Prioritize user-friendly dimension controls (Aspect Ratio and Pixel Count) over raw pixel inputs. Ensure all calculated dimensions are optimized for generative models (e.g., multiples of 64).
+- **Responsive Gallery:** Image galleries (main results and history) should adapt their column count to the screen size, switching between 1 column for mobile view and 2 columns for desktop view.
 - **Layout Constraints:** Maintain a maximum application width of 1280px on large displays to preserve readability and usability, centering the content horizontally.
 
 ## Voice and Tone
