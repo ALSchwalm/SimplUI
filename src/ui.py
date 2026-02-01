@@ -523,7 +523,7 @@ def create_ui(config, comfy_client):
                         show_label=False,
                         elem_id="gallery",
                         object_fit="contain",
-                        height="70vh"
+                        height="70vh",
                     )
                     status_text = gr.Markdown("Ready")
 
