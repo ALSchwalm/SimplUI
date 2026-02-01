@@ -361,8 +361,9 @@ async def process_generation(
 
                         # Add seeds to status if available
                         seed_info = ""
-                        if current_seeds:
-                            seed_info = f" Seed: {list(current_seeds.values())[0]}"
+                        # Seed info removed from status display per requirements
+                        # if current_seeds:
+                        #    seed_info = f" Seed: {list(current_seeds.values())[0]}"
 
                         yield display_images, last_status + seed_info + seed_suffix, gr.update(
                             visible=False
@@ -414,8 +415,9 @@ async def process_generation(
         if finished_naturally:
             # Add seeds to status if available
             seed_info = ""
-            if "current_seeds" in locals() and current_seeds:
-                seed_info = f" Seed: {list(current_seeds.values())[0]}"
+            # Seed info removed from status display per requirements
+            # if "current_seeds" in locals() and current_seeds:
+            #    seed_info = f" Seed: {list(current_seeds.values())[0]}"
 
             yield previous_images, last_status + seed_info + (
                 seed_suffix if "seed_suffix" in locals() else ""
