@@ -1,0 +1,8 @@
+{
+  "track_id": "responsive_gallery_columns_20260201",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-01T12:00:00Z",
+  "updated_at": "2026-02-01T12:00:00Z",
+  "description": "Adjust the number of columns in the gallery view based on screen size. On larger screens there should be two columns, on smaller screens there should be 1 column"
+}
