@@ -456,6 +456,14 @@ def create_ui(config, comfy_client):
     #gallery .grid-container {
         height: 70vh !important;
     }
+    @media screen and (max-width: 600px) {
+        #gallery .grid-container {
+            grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        }
+    }
+    #gallery .gallery-item {
+        max-width: 80vw !important;
+    }
     #app_container {
         max-width: 1280px !important;
         margin: 0 auto !important;
@@ -515,7 +523,7 @@ def create_ui(config, comfy_client):
                         show_label=False,
                         elem_id="gallery",
                         object_fit="contain",
-                        height="70vh",
+                        height="70vh"
                     )
                     status_text = gr.Markdown("Ready")
 
@@ -966,7 +974,6 @@ def create_ui(config, comfy_client):
                             history_gallery = gr.Gallery(
                                 label="Session History",
                                 show_label=False,
-                                columns=2,
                                 object_fit="contain",
                                 height="70vh",
                                 elem_id="history-gallery",
