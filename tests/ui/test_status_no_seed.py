@@ -1,6 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+
 def test_status_does_not_contain_seed(page: Page):
     """
     Verifies that the status text does NOT contain the word 'Seed' during or after generation.
@@ -16,7 +17,7 @@ def test_status_does_not_contain_seed(page: Page):
 
     # 3. Get the status text
     status_text = status_locator.text_content()
-    
+
     # 4. Assert that "Seed" is NOT in the status text
     # Note: Currently this IS expected to be there, so this test should FAIL in the Red phase.
     assert "Seed" not in status_text, f"Status text contained 'Seed': {status_text}"
