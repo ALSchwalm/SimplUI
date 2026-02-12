@@ -16,11 +16,14 @@ This plan outlines the steps to fix a bug where prompt injection fails for the `
 ## Phase 2: Implementation
 
 - [x] Task: Refactor prompt injection logic to handle `z-image` node type [b41b21f]
+- [x] Task: Hide `z-image` prompt node from Advanced Controls [46269fb]
+    - [ ] Update `extract_workflow_inputs` in `src/ui.py` to filter out 'value' key for Prompt nodes.
+    - [ ] Update `get_prompt_default_value` in `src/ui.py` to support 'value' key.
     - [ ] Modify the injection logic (likely in `src/comfy_client.py` or a dedicated utility) to correctly identify and update the "Prompt" node in `z-image.json`.
     - [ ] Ensure the fix is generic enough to handle similar node structures in other workflows.
-- [x] Task: Verify fix with reproduction test [b41b21f]
+- [x] Task: Verify fix with reproduction test [46269fb]
     - [x] Run `tests/test_z_image_injection.py` and ensure it passes.
-- [x] Task: Run regression tests [b41b21f]
+- [x] Task: Run regression tests [46269fb]
     - [x] Run existing tests (e.g., `tests/test_workflow_parsing.py`, `tests/test_comfy_client.py`) to ensure no regressions in other workflows.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
