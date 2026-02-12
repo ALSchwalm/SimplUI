@@ -29,6 +29,6 @@ This plan outlines the steps to fix a bug where prompt injection fails for the `
 
 ## Phase 3: Final Verification
 
-- [ ] Task: Perform manual verification with `z-image` workflow
+- [x] Task: Perform manual verification with `z-image` workflow [46269fb]
     - [ ] Run the application, select the `z-image` workflow, enter a unique prompt, and verify the output (or logs/network traffic) shows the injected prompt.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Final Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Final Verification' (Protocol in workflow.md) [46269fb]
