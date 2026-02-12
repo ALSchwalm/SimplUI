@@ -2,7 +2,7 @@
 
 This plan outlines the steps to fix a bug where prompt injection fails for the `z-image.json` workflow. We will investigate why the "Prompt" node isn't being detected or updated and ensure the logic is robust enough to handle the node type used in that specific workflow.
 
-## Phase 1: Diagnosis and Reproduction
+## Phase 1: Diagnosis and Reproduction [checkpoint: 97e1a43]
 
 - [x] Task: Create a reproduction test case for `z-image` prompt injection [93760ce]
     - [ ] Create a new test `tests/test_z_image_injection.py`.
