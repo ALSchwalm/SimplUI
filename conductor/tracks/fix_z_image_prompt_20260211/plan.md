@@ -8,7 +8,7 @@ This plan outlines the steps to fix a bug where prompt injection fails for the `
     - [ ] Create a new test `tests/test_z_image_injection.py`.
     - [ ] Load `workflows/z-image.json` and attempt to inject a prompt using `comfy_client.py` or the relevant utility.
     - [ ] Assert that the resulting prompt dictionary contains the injected text in the correct node.
-- [ ] Task: Analyze `workflows/z-image.json` structure
+- [x] Task: Analyze `workflows/z-image.json` structure [9a7d24c]
     - [ ] Inspect the JSON structure of the "Prompt" node in `z-image.json`.
     - [ ] Compare it with the structure expected by the injection logic in `src/comfy_client.py`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Diagnosis and Reproduction' (Protocol in workflow.md)
