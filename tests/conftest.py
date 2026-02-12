@@ -1,7 +1,6 @@
 import pytest
 import threading
 import time
-import uvicorn
 from unittest.mock import MagicMock, patch
 from ui import create_ui
 from config_manager import ConfigManager
