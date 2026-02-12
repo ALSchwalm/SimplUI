@@ -13,7 +13,7 @@ This plan outlines the steps to fix a bug where prompt injection fails for the `
     - [ ] Compare it with the structure expected by the injection logic in `src/comfy_client.py`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Diagnosis and Reproduction' (Protocol in workflow.md)
 
-## Phase 2: Implementation
+## Phase 2: Implementation [checkpoint: 4835f6c]
 
 - [x] Task: Refactor prompt injection logic to handle `z-image` node type [b41b21f]
 - [x] Task: Hide `z-image` prompt node from Advanced Controls [46269fb]
