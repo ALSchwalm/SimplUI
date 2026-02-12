@@ -41,3 +41,33 @@ def test_standard_prompt_injection():
     
     assert success is True
     assert workflow["3"]["inputs"]["text"] == prompt_text
+
+def test_z_image_prompt_hiding():
+    from ui import extract_workflow_inputs
+    workflow = {
+        "58": {
+            "inputs": {
+                "value": "default"
+            },
+            "_meta": {
+                "title": "Prompt"
+            }
+        }
+    }
+    extracted = extract_workflow_inputs(workflow)
+    # The Prompt node should be filtered out because it only has the 'value' input which is now hidden
+    assert len(extracted) == 0
+
+def test_z_image_prompt_default_value():
+    from ui import get_prompt_default_value
+    workflow = {
+        "58": {
+            "inputs": {
+                "value": "initial prompt"
+            },
+            "_meta": {
+                "title": "Prompt"
+            }
+        }
+    }
+    assert get_prompt_default_value(workflow) == "initial prompt"

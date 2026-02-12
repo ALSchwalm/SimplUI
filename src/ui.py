@@ -57,7 +57,7 @@ def extract_workflow_inputs(workflow, object_info=None, slider_config=None):
                 continue  # Skip links
 
             # Filter out the primary prompt input from advanced controls
-            if is_prompt_node and name in ["text", "string"]:
+            if is_prompt_node and name in ["text", "string", "value"]:
                 continue
 
             # Filter out width/height if we grouped them
@@ -158,6 +158,8 @@ def get_prompt_default_value(workflow):
                 return str(inputs["text"])
             if "string" in inputs:
                 return str(inputs["string"])
+            if "value" in inputs:
+                return str(inputs["value"])
     return ""
 
 
