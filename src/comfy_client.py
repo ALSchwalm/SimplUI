@@ -94,6 +94,9 @@ class ComfyClient:
             elif "string" in inputs:
                 inputs["string"] = prompt_text
                 return True
+            elif "value" in inputs:
+                inputs["value"] = prompt_text
+                return True
             inputs["text"] = prompt_text
             return True
         return False
