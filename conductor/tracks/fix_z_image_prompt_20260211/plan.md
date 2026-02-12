@@ -27,7 +27,7 @@ This plan outlines the steps to fix a bug where prompt injection fails for the `
     - [x] Run existing tests (e.g., `tests/test_workflow_parsing.py`, `tests/test_comfy_client.py`) to ensure no regressions in other workflows.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation' (Protocol in workflow.md)
 
-## Phase 3: Final Verification
+## Phase 3: Final Verification [checkpoint: 8a12d76]
 
 - [x] Task: Perform manual verification with `z-image` workflow [46269fb]
     - [ ] Run the application, select the `z-image` workflow, enter a unique prompt, and verify the output (or logs/network traffic) shows the injected prompt.
