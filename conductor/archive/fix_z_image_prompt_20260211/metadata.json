@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_z_image_prompt_20260211",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-02-11T11:27:00Z",
+  "updated_at": "2026-02-11T11:27:00Z",
+  "description": "There is currently a bug where the "prompt" node for the z-image workflow is not being read as the prompt input from the main area"
+}
