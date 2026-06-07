@@ -111,9 +111,9 @@
         0
       ]
     },
-    "class_type": "PreviewImage",
+    "class_type": "SaveImageWebsocket",
     "_meta": {
-      "title": "Preview Image"
+      "title": "Save Image (Websocket)"
     }
   }
 }

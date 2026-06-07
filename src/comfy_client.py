@@ -2,6 +2,7 @@ import requests
 import json
 import uuid
 import websockets
+import struct
 
 
 class ComfyClient:
@@ -21,7 +22,15 @@ class ComfyClient:
             json={"prompt": workflow, "client_id": client_id},
             timeout=10,
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            error_body = ""
+            try:
+                error_body = response.json()
+            except Exception:
+                error_body = response.text
+            raise Exception(f"ComfyUI Error ({response.status_code}): {error_body}") from e
         return response.json().get("prompt_id")
 
     async def generate_image(self, workflow):
@@ -49,6 +58,11 @@ class ComfyClient:
                                 "value": data["value"],
                                 "max": data["max"],
                             }
+                    elif message["type"] == "executing":
+                        data = message["data"]
+                        # node is None means the entire prompt is finished
+                        if data["node"] is None and data["prompt_id"] == prompt_id:
+                            break
                     elif message["type"] == "executed":
                         data = message["data"]
                         if data["prompt_id"] == prompt_id:
@@ -62,10 +76,17 @@ class ComfyClient:
                                             filename, subfolder, image["type"]
                                         )
                                         yield {"type": "image", "data": image_data}
-                            break  # End loop after receiving images for this prompt
                 elif isinstance(message, bytes):
-                    # Binary message is a preview
-                    yield {"type": "preview", "data": message[8:]}
+                    # Binary message header: 4 bytes for type, 4 bytes for format
+                    if len(message) > 8:
+                        msg_type = struct.unpack(">I", message[0:4])[0]
+                        if msg_type == 1: # Preview
+                            yield {"type": "preview", "data": message[8:]}
+                        elif msg_type == 2: # Final Image (Websocket Output)
+                            yield {"type": "image", "data": message[8:]}
+                        else:
+                            # Unknown type, treat as preview for safety
+                            yield {"type": "preview", "data": message[8:]}
 
     def _get_image(self, filename, subfolder, folder_type):
         response = requests.get(

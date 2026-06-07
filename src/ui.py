@@ -130,12 +130,16 @@ def merge_workflow_overrides(workflow, overrides):
     if not overrides:
         return merged
     for key, value in overrides.items():
-        if "." in key and not key.endswith(".randomize"):
-            node_id, input_name = key.split(".", 1)
-            if node_id in merged and "inputs" in merged[node_id]:
-                if isinstance(value, str) and value.isdigit():
-                    value = int(value)
-                merged[node_id]["inputs"][input_name] = value
+        # Only process keys that are intended for node inputs
+        # Filter out UI-only metadata like '.Dimensions.' or '.randomize'
+        if "." in key and ".Dimensions." not in key and not key.endswith(".randomize"):
+            parts = key.split(".")
+            if len(parts) == 2:
+                node_id, input_name = parts
+                if node_id in merged and "inputs" in merged[node_id]:
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                    merged[node_id]["inputs"][input_name] = value
     return merged
 
 
@@ -206,9 +210,18 @@ async def handle_generation(workflow_name, prompt_text, config, comfy_client, ov
                     final_image = Image.open(io.BytesIO(image_bytes))
                     completed_images.append(final_image)
                     latest_preview = None  # Clear preview as it is replaced by final image
-                    yield list(completed_images), latest_preview, "Generation complete"
+                    yield list(completed_images), latest_preview, "Image received"
                 except Exception as e:
                     yield list(completed_images), latest_preview, f"Error processing image: {e}"
+        
+        # PROMOTION: If we finished but have no final images, use the last preview
+        if not completed_images and latest_preview:
+            completed_images.append(latest_preview)
+            latest_preview = None
+            yield list(completed_images), latest_preview, "Using final preview as result"
+            
+        yield list(completed_images), None, "Batch finished"
+            
     except Exception as e:
         yield [], None, f"Error during generation: {e}"
 
@@ -502,7 +515,7 @@ def create_ui(config, comfy_client):
         }
     });
     """
-    with gr.Blocks(title="SimplUI", css=css, js=shortcut_js) as demo:
+    with gr.Blocks(title="SimplUI") as demo:
         with gr.Column(elem_id="app_container"):
             overrides_store = gr.JSON(value={}, visible=True, elem_id="overrides-store")
             history_state = gr.State(value=[])

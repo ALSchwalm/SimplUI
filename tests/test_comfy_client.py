@@ -53,10 +53,14 @@ def test_submit_workflow_failure():
 
     with patch("requests.post") as mock_post:
         mock_post.return_value.status_code = 400
+        mock_post.return_value.json.return_value = {"error": "Invalid workflow"}
         mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError()
 
-        with pytest.raises(requests.exceptions.HTTPError):
+        with pytest.raises(Exception) as excinfo:
             client.submit_workflow(workflow, client_id)
+        
+        assert "ComfyUI Error (400)" in str(excinfo.value)
+        assert "Invalid workflow" in str(excinfo.value)
 
 
 def test_find_node_by_title():
