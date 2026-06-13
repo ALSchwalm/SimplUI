@@ -306,8 +306,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 50vh; /* Gallery is constrained to 50% viewport height */
-  max-height: 50vh;
+  height: 70vh; /* Gallery is constrained to 70% viewport height */
+  max-height: 70vh;
 }
 
 .card-header {
@@ -384,7 +384,7 @@ body {
   border-radius: var(--border-radius-md);
   border: 1px solid var(--border-color);
   background: rgba(0, 0, 0, 0.2);
-  aspect-ratio: 1 / 1;
+  aspect-ratio: auto;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -400,6 +400,7 @@ body {
 .gallery-item img {
   width: 100%;
   height: 100%;
+  max-width: 80vw;
   object-fit: contain; /* ensures complete image is visible */
   transition: transform 0.5s ease;
 }

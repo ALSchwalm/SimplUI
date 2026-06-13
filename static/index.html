@@ -38,23 +38,6 @@
     <div class="main-layout">
       <!-- Left side: Generation Space -->
       <main class="generation-space">
-        <!-- Prompt Card -->
-        <div class="card prompt-card">
-          <div class="prompt-header">
-            <label for="prompt-input">Enter your prompt</label>
-            <span class="shortcut-hint">Ctrl + Enter to generate</span>
-          </div>
-          <div class="prompt-input-wrapper">
-            <textarea id="prompt-input" placeholder="An astronaut riding a horse on mars, photorealistic, cinematic lighting..." autofocus></textarea>
-          </div>
-          <div class="action-row">
-            <button id="generate-btn" class="btn btn-primary">
-              <i data-lucide="play" class="btn-icon"></i>
-              <span id="generate-btn-text">Generate</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Gallery Card -->
         <div class="card gallery-card">
           <div class="card-header">
@@ -72,6 +55,23 @@
                 <p>Generated images will appear here</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Prompt Card -->
+        <div class="card prompt-card">
+          <div class="prompt-header">
+            <label for="prompt-input">Enter your prompt</label>
+            <span class="shortcut-hint">Ctrl + Enter to generate</span>
+          </div>
+          <div class="prompt-input-wrapper">
+            <textarea id="prompt-input" placeholder="An astronaut riding a horse on mars, photorealistic, cinematic lighting..." autofocus></textarea>
+          </div>
+          <div class="action-row">
+            <button id="generate-btn" class="btn btn-primary">
+              <i data-lucide="play" class="btn-icon"></i>
+              <span id="generate-btn-text">Generate</span>
+            </button>
           </div>
         </div>
       </main>
