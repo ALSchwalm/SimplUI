@@ -49,6 +49,43 @@ def get_workflow(name: str):
         raise HTTPException(status_code=500, detail=f"Error reading workflow: {e}")
 
 
+from fastapi import Request
+from fastapi.responses import Response
+import requests
+
+
+@app.api_route("/comfy-proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def comfy_proxy(path: str, request: Request):
+    config = get_config()
+    comfy_url = getattr(
+        app.state, "comfy_url", config.comfy_url if config else "http://localhost:8188"
+    )
+    target_url = f"{comfy_url}/{path}"
+
+    body = await request.body()
+
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=target_url,
+            headers={
+                k: v
+                for k, v in request.headers.items()
+                if k.lower() not in ["host", "content-length"]
+            },
+            params=dict(request.query_params),
+            data=body,
+            timeout=10.0,
+        )
+
+        exclude_headers = ["content-encoding", "content-length", "transfer-encoding", "connection"]
+        headers = {k: v for k, v in resp.headers.items() if k.lower() not in exclude_headers}
+
+        return Response(content=resp.content, status_code=resp.status_code, headers=headers)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Proxy error: {e}")
+
+
 # Ensure static directory exists
 os.makedirs("static", exist_ok=True)
 if not os.path.exists("static/index.html"):

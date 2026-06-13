@@ -107,4 +107,29 @@ def test_main_success(mock_exists, mock_run, mock_client_cls, mock_config_cls, m
     mock_config_cls.assert_called_once_with("config.json")
     mock_run.assert_called_once()
 
-
+@patch("requests.request")
+def test_comfy_proxy(mock_request):
+    assert app is not None, "FastAPI app is not defined in main.py"
+    client = TestClient(app)
+    
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.content = b"proxy response"
+    mock_resp.headers = {"Content-Type": "application/json"}
+    mock_request.return_value = mock_resp
+    
+    app.state.comfy_url = "http://localhost:8188"
+    with patch("main.get_config") as mock_get_config:
+        mock_config = MagicMock()
+        mock_config.comfy_url = "http://localhost:8188"
+        mock_get_config.return_value = mock_config
+        
+        response = client.get("/comfy-proxy/object_info")
+        assert response.status_code == 200
+        assert response.content == b"proxy response"
+        assert response.headers["Content-Type"] == "application/json"
+        
+        mock_request.assert_called_once()
+        args, kwargs = mock_request.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url"] == "http://localhost:8188/object_info"

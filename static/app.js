@@ -1,6 +1,7 @@
 // Application State
 const state = {
   comfyUrl: '',
+  useProxy: false,
   workflows: [],
   sliders: {},
   currentWorkflowName: '',
@@ -146,6 +147,28 @@ function populateWorkflows() {
   });
 }
 
+// Helper for fetching from ComfyUI with fallback proxy
+async function fetchFromComfy(path, options = {}) {
+  const url = state.useProxy ? `/comfy-proxy/${path}` : `${state.comfyUrl}/${path}`;
+  try {
+    const res = await fetch(url, { ...options, mode: 'cors' });
+    return res;
+  } catch (error) {
+    if (!state.useProxy) {
+      console.warn(`Direct connection to ComfyUI failed at ${url}. Falling back to proxy.`);
+      state.useProxy = true;
+      const fallbackUrl = `/comfy-proxy/${path}`;
+      try {
+        const fallbackRes = await fetch(fallbackUrl, options);
+        return fallbackRes;
+      } catch (fallbackError) {
+        throw fallbackError;
+      }
+    }
+    throw error;
+  }
+}
+
 // Check Connection to ComfyUI
 async function checkConnection() {
   if (!state.comfyUrl) {
@@ -155,14 +178,14 @@ async function checkConnection() {
 
   try {
     // Try to fetch object_info to verify connection
-    const res = await fetch(`${state.comfyUrl}/object_info`, {
-      method: 'GET',
-      mode: 'cors'
+    const res = await fetchFromComfy('object_info', {
+      method: 'GET'
     });
     
     if (res.ok) {
       state.isConnected = true;
-      updateConnectionUI(true, 'Connected to ComfyUI');
+      const label = state.useProxy ? 'Connected to ComfyUI (via Proxy)' : 'Connected to ComfyUI';
+      updateConnectionUI(true, label);
     } else {
       throw new Error();
     }
