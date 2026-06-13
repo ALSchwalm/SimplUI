@@ -9,4 +9,4 @@
     - [x] Inspect `static/app.js` (specifically `handleCompletedImage` and `createGallerySlot`).
     - [x] Modify `handleCompletedImage` to remove the `.preview-badge` element from the slot when the final image is set.
     - [x] Run the test suite and confirm that all tests now pass.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Verification and Bug Fix' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Verification and Bug Fix' (Protocol in workflow.md)
