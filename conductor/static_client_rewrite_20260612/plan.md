@@ -15,15 +15,15 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Setup' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Foundation & Core UI
-- [ ] Task: Create static files and layout
-    - [ ] Create `static/index.html` structure with clean, semantic HTML
-    - [ ] Create `static/styles.css` with dark mode, premium typography, glassmorphism, responsive batch gallery
-    - [ ] Verify layout visually
-    - [ ] Commit code changes with proper message
-- [ ] Task: Load Config and Workflows
-    - [ ] Implement client-side `static/app.js` to fetch `/api/config` and populate workflow dropdown
-    - [ ] Establish initial UI structure and connection status indicator
-    - [ ] Commit code changes with proper message
+- [x] Task: Create static files and layout (38df157)
+    - [x] Create `static/index.html` structure with clean, semantic HTML
+    - [x] Create `static/styles.css` with dark mode, premium typography, glassmorphism, responsive batch gallery
+    - [x] Verify layout visually
+    - [x] Commit code changes with proper message
+- [x] Task: Load Config and Workflows (cc4d697)
+    - [x] Implement client-side `static/app.js` to fetch `/api/config` and populate workflow dropdown
+    - [x] Establish initial UI structure and connection status indicator
+    - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Foundation & Core UI' (Protocol in workflow.md)
 
 ## Phase 3: Client-Side ComfyUI Integration
