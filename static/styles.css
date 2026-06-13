@@ -309,6 +309,8 @@ body {
   height: 70vh; /* Gallery is constrained to 70% viewport height */
   max-height: 70vh;
   min-height: 0;
+  height: calc(100vh - 350px);
+  max-height: calc(100vh - 350px);
 }
 
 .card-header {
@@ -360,7 +362,7 @@ body {
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* Default desktop: 2 columns */
-  grid-auto-rows: minmax(0, calc(70vh - 140px));
+  grid-auto-rows: minmax(0, calc(100vh - 480px));
   gap: 16px;
 }
 
@@ -387,7 +389,7 @@ body {
   background: rgba(0, 0, 0, 0.2);
   aspect-ratio: auto;
   min-height: 0;
-  max-height: calc(70vh - 140px);
+  max-height: calc(100vh - 480px);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -405,7 +407,7 @@ body {
   height: 100%;
   min-height: 0;
   max-width: 80vw;
-  max-height: calc(70vh - 140px);
+  max-height: calc(100vh - 480px);
   object-fit: contain; /* ensures complete image is visible */
   transition: transform 0.5s ease;
 }
