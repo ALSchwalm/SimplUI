@@ -26,7 +26,7 @@
     - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Foundation & Core UI' (Protocol in workflow.md)
 
-## Phase 3: Client-Side ComfyUI Integration
+## Phase 3: Client-Side ComfyUI Integration [checkpoint: a51e167]
 - [x] Task: Node discovery and UI control generation (daa6b96)
     - [x] Implement client-side logic to load workflow JSON and discover nodes (Prompt, Width/Height, Seed, etc.)
     - [x] Dynamically render widgets in Advanced Sidebar
