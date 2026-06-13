@@ -1,1 +1,127 @@
-<!DOCTYPE html><html><body>SimplUI Backend</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimplUI - ComfyUI Client</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons for premium styling -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <i data-lucide="sparkles" class="brand-icon"></i>
+        <h1>SimplUI</h1>
+      </div>
+      <div class="connection-status disconnected" id="connection-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Disconnected</span>
+      </div>
+      <div class="header-actions">
+        <label class="toggle-advanced-label">
+          <input type="checkbox" id="advanced-toggle">
+          <span class="toggle-button">
+            <i data-lucide="sliders" class="icon-sliders"></i>
+            Advanced Controls
+          </span>
+        </label>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Left side: Generation Space -->
+      <main class="generation-space">
+        <!-- Prompt Card -->
+        <div class="card prompt-card">
+          <div class="prompt-header">
+            <label for="prompt-input">Enter your prompt</label>
+            <span class="shortcut-hint">Ctrl + Enter to generate</span>
+          </div>
+          <div class="prompt-input-wrapper">
+            <textarea id="prompt-input" placeholder="An astronaut riding a horse on mars, photorealistic, cinematic lighting..." autofocus></textarea>
+          </div>
+          <div class="action-row">
+            <button id="generate-btn" class="btn btn-primary">
+              <i data-lucide="play" class="btn-icon"></i>
+              <span id="generate-btn-text">Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Gallery Card -->
+        <div class="card gallery-card">
+          <div class="card-header">
+            <h2>Batch Results</h2>
+            <div id="gallery-progress" class="gallery-progress-bar-container hidden">
+              <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"></div>
+              <span class="progress-text" id="progress-text">0%</span>
+            </div>
+          </div>
+          <div class="gallery-wrapper">
+            <div class="gallery-grid" id="gallery-grid">
+              <!-- Dynamically populated generated images and live previews -->
+              <div class="gallery-empty-state" id="gallery-empty-state">
+                <i data-lucide="image" class="empty-icon"></i>
+                <p>Generated images will appear here</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right side: Advanced Controls Sidebar -->
+      <aside class="advanced-sidebar collapsed" id="advanced-sidebar">
+        <!-- Sidebar Tabs -->
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="settings">
+            <i data-lucide="settings-2"></i> Settings
+          </button>
+          <button class="tab-btn" data-tab="history">
+            <i data-lucide="history"></i> History
+          </button>
+        </div>
+
+        <div class="tab-content" id="tab-settings">
+          <!-- Workflow Selection -->
+          <div class="settings-group">
+            <label for="workflow-select">Select Workflow</label>
+            <select id="workflow-select" class="form-control">
+              <!-- Dynamically loaded -->
+            </select>
+          </div>
+
+          <!-- Dynamic Controls Container -->
+          <div class="dynamic-controls-container" id="dynamic-controls-container">
+            <!-- Dynamically generated controls based on selected workflow -->
+          </div>
+          
+          <!-- Default controls always present -->
+          <div class="settings-group">
+            <label for="batch-count-slider">Batch Count: <span id="batch-count-value">1</span></label>
+            <input type="range" id="batch-count-slider" min="1" max="20" value="1" class="form-range">
+          </div>
+        </div>
+
+        <div class="tab-content hidden" id="tab-history">
+          <div class="history-grid" id="history-grid">
+            <!-- Generated images session history -->
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
