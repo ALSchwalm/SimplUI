@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: We need to change the layout a little. The gallery results should be above the prompt box. Also, the image scaling is a bit off**
+- [~] **Track: We need to change the layout a little. The gallery results should be above the prompt box. Also, the image scaling is a bit off**
 *Link: [./layout_swap_and_gallery_scaling_20260613/](./layout_swap_and_gallery_scaling_20260613/)*
