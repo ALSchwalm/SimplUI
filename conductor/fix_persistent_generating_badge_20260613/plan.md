@@ -1,6 +1,6 @@
 # Implementation Plan: Fix persistent 'Generating...' badge on completed images
 
-## Phase 1: Verification and Bug Fix
+## Phase 1: Verification and Bug Fix [checkpoint: 0b9d8ca]
 - [x] Task: Write failing tests (Red Phase) (c2e4338)
     - [x] Analyze existing tests to verify if we have coverage for gallery slot markup/badges.
     - [x] Write a test in `tests/test_fastapi_backend.py` or a frontend test verifying that the DOM structure for completed images does not contain the `preview-badge` element.
