@@ -355,6 +355,8 @@ body {
   min-height: 0;
   overflow-y: auto;
   margin-top: 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 .gallery-grid {
@@ -362,18 +364,16 @@ body {
   grid-template-columns: repeat(2, 1fr); /* Default desktop: 2 columns */
   grid-auto-rows: minmax(0, calc(70vh - 140px));
   gap: 16px;
-  min-height: 100%;
 }
 
 .gallery-empty-state {
-  grid-column: span 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
   gap: 12px;
-  padding: 40px 0;
 }
 
 .empty-icon {
@@ -673,10 +673,7 @@ body {
     grid-template-columns: 1fr; /* Mobile: 1 column */
   }
   
-  .gallery-empty-state {
-    grid-column: span 1;
-  }
-  
+
   .advanced-sidebar {
     width: 100%;
     border-left: none;

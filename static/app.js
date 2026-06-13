@@ -903,6 +903,7 @@ async function handleGenerateClick() {
   
   // Clear gallery
   elements.galleryGrid.innerHTML = '';
+  elements.galleryGrid.classList.remove('hidden');
   elements.galleryEmptyState.classList.add('hidden');
   elements.galleryProgress.classList.remove('hidden');
   
