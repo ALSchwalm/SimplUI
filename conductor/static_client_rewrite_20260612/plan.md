@@ -27,18 +27,18 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Foundation & Core UI' (Protocol in workflow.md)
 
 ## Phase 3: Client-Side ComfyUI Integration
-- [ ] Task: Node discovery and UI control generation
-    - [ ] Implement client-side logic to load workflow JSON and discover nodes (Prompt, Width/Height, Seed, etc.)
-    - [ ] Dynamically render widgets in Advanced Sidebar
-    - [ ] Add Aspect Ratio simplified widget & toggle
-    - [ ] Add Seed control randomize toggle
-    - [ ] Commit code changes with proper message
-- [ ] Task: Generation connection & WebSocket handling
-    - [ ] Implement direct connection to ComfyUI websocket and HTTP `/prompt`
-    - [ ] Implement submission, execution tracking, and real-time live preview rendering in JS
-    - [ ] Implement batch generation loop (1-20), seed generation per iteration, and "Skip" button
-    - [ ] Implement local storage state saving
-    - [ ] Commit code changes with proper message
+- [x] Task: Node discovery and UI control generation (bea26b4)
+    - [x] Implement client-side logic to load workflow JSON and discover nodes (Prompt, Width/Height, Seed, etc.)
+    - [x] Dynamically render widgets in Advanced Sidebar
+    - [x] Add Aspect Ratio simplified widget & toggle
+    - [x] Add Seed control randomize toggle
+    - [x] Commit code changes with proper message
+- [x] Task: Generation connection & WebSocket handling (bea26b4)
+    - [x] Implement direct connection to ComfyUI websocket and HTTP `/prompt`
+    - [x] Implement submission, execution tracking, and real-time live preview rendering in JS
+    - [x] Implement batch generation loop (1-20), seed generation per iteration, and "Skip" button
+    - [x] Implement local storage state saving
+    - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Client-Side ComfyUI Integration' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Quality Verification
