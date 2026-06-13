@@ -42,9 +42,9 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Client-Side ComfyUI Integration' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Quality Verification
-- [ ] Task: Remove old Gradio code
-    - [ ] Delete or clean up unused python files (e.g. `src/ui.py`)
-    - [ ] Clean up requirements or config
-    - [ ] Verify test suite passes
-    - [ ] Commit code changes with proper message
+- [x] Task: Remove old Gradio code (551525f)
+    - [x] Delete or clean up unused python files (e.g. `src/ui.py`)
+    - [x] Clean up requirements or config
+    - [x] Verify test suite passes
+    - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Cleanup & Quality Verification' (Protocol in workflow.md)
