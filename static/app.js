@@ -843,6 +843,10 @@ function handleWebSocketMessage(msg) {
           const slotIndex = activePrompt ? activePrompt.index : state.currentBatchIndex;
           const slot = document.getElementById(`gallery-slot-${slotIndex}`);
           if (slot) {
+            const badge = slot.querySelector('.preview-badge');
+            if (badge) {
+              badge.remove();
+            }
             const img = slot.querySelector('img');
             if (img && img.src) {
               const imageUrl = img.src;
