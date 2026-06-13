@@ -1,17 +1,17 @@
 # Implementation Plan: Static Client & FastAPI Rewrite
 
 ## Phase 1: Backend Setup
-- [ ] Task: Setup FastAPI app and config API endpoints
-    - [ ] Write unit tests for FastAPI config and workflow APIs
-    - [ ] Implement FastAPI app inside `main.py`
-    - [ ] Expose GET `/api/config` returning the resolved ComfyUI URL and available workflows
-    - [ ] Verify all tests pass
-    - [ ] Commit code changes with proper message
-- [ ] Task: Serve static assets
-    - [ ] Write unit tests verifying static file serving routing
-    - [ ] Configure FastAPI to mount a static directory `/static` and serve `index.html` at root `/`
-    - [ ] Verify all tests pass
-    - [ ] Commit code changes with proper message
+- [x] Task: Setup FastAPI app and config API endpoints (85be4ac)
+    - [x] Write unit tests for FastAPI config and workflow APIs
+    - [x] Implement FastAPI app inside `main.py`
+    - [x] Expose GET `/api/config` returning the resolved ComfyUI URL and available workflows
+    - [x] Verify all tests pass
+    - [x] Commit code changes with proper message
+- [x] Task: Serve static assets (85be4ac)
+    - [x] Write unit tests verifying static file serving routing
+    - [x] Configure FastAPI to mount a static directory `/static` and serve `index.html` at root `/`
+    - [x] Verify all tests pass
+    - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Setup' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Foundation & Core UI
