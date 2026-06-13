@@ -385,6 +385,7 @@ body {
   border: 1px solid var(--border-color);
   background: rgba(0, 0, 0, 0.2);
   aspect-ratio: auto;
+  max-height: calc(70vh - 120px);
   overflow: hidden;
   display: flex;
   align-items: center;
