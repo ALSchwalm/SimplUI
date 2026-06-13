@@ -6,8 +6,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: I want to make a significant rewrite of this project. Instead of using gradio, with the server acting as a kind of "proxy" for the comfyui server, I would like the server to basically just be serving a static page. All the actual logic to interact with the websocket and http endpoints of comfyui would be done in the client with no involvement from the simplui server**
 *Link: [./archive/static_client_rewrite_20260612/](./archive/static_client_rewrite_20260612/)*
-
----
-
-- [x] **Track: There is a bug where the "Generating..." badge is still shown on an image after it is done being generated**
-*Link: [./fix_persistent_generating_badge_20260613/](./fix_persistent_generating_badge_20260613/)*
