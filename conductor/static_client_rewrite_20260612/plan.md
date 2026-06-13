@@ -14,7 +14,7 @@
     - [x] Commit code changes with proper message
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Setup' (Protocol in workflow.md)
 
-## Phase 2: Frontend Foundation & Core UI
+## Phase 2: Frontend Foundation & Core UI [checkpoint: 2d49f58]
 - [x] Task: Create static files and layout (38df157)
     - [x] Create `static/index.html` structure with clean, semantic HTML
     - [x] Create `static/styles.css` with dark mode, premium typography, glassmorphism, responsive batch gallery
