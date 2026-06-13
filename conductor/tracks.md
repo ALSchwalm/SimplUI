@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: There is a bug where the "Generating..." badge is still shown on an image after it is done being generated**
+- [x] **Track: There is a bug where the "Generating..." badge is still shown on an image after it is done being generated**
 *Link: [./fix_persistent_generating_badge_20260613/](./fix_persistent_generating_badge_20260613/)*
