@@ -1,9 +1,66 @@
-import gradio as gr
-from src.config_manager import ConfigManager
-from src.comfy_client import ComfyClient
-from src.ui import create_ui
 import os
 import argparse
+import json
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import uvicorn
+
+from src.config_manager import ConfigManager
+from src.comfy_client import ComfyClient
+
+app = FastAPI(title="SimplUI Backend")
+
+
+def get_config():
+    return getattr(app.state, "config", None)
+
+
+@app.get("/api/config")
+def api_config():
+    config = get_config()
+    if not config:
+        return {
+            "comfy_url": getattr(app.state, "comfy_url", "http://localhost:8188"),
+            "workflows": [],
+            "sliders": {},
+        }
+    return {
+        "comfy_url": getattr(app.state, "comfy_url", config.comfy_url),
+        "workflows": config.workflows,
+        "sliders": config.sliders,
+    }
+
+
+@app.get("/api/workflows/{name}")
+def get_workflow(name: str):
+    config = get_config()
+    if not config:
+        raise HTTPException(status_code=500, detail="Config not loaded")
+
+    workflow_info = next((w for w in config.workflows if w["name"] == name), None)
+    if not workflow_info:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    try:
+        with open(workflow_info["path"], "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading workflow: {e}")
+
+
+# Ensure static directory exists
+os.makedirs("static", exist_ok=True)
+if not os.path.exists("static/index.html"):
+    with open("static/index.html", "w") as f:
+        f.write("<!DOCTYPE html><html><body>SimplUI Backend</body></html>")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get("/")
+def read_index():
+    return FileResponse("static/index.html")
 
 
 def parse_args():
@@ -63,22 +120,17 @@ def main():
                 f"Warning: Could not connect to ComfyUI at {comfy_url}. Check if the server is running."
             )
 
-        demo = create_ui(config, client)
+        # Initialize app state
+        app.state.config = config
+        app.state.comfy_url = comfy_url
 
         # Listen address splitting
         listen_host, listen_port = split_addr(args.listen_addr, "0.0.0.0", 7860)
 
         print(f"Connecting to ComfyUI at: {comfy_url}")
-        print(f"Launching Gradio UI at http://{listen_host}:{listen_port}")
+        print(f"Launching FastAPI Server at http://{listen_host}:{listen_port}")
 
-        # Launching with debug=True can help see errors in the console
-        demo.launch(
-            server_name=listen_host,
-            server_port=listen_port,
-            debug=True,
-            css=demo.css,
-            js=demo.js,
-        )
+        uvicorn.run(app, host=listen_host, port=listen_port)
 
     except Exception as e:
         print(f"Failed to launch UI: {e}")

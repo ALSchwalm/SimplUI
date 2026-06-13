@@ -2,13 +2,16 @@
 
 ## Backend
 - **Language:** Python (3.11+)
-- **Session State:** `gr.State` used for managing temporary session data like image history.
-- **API Communication:** `requests` (Synchronous HTTP for workflow submission and `/object_info` metadata retrieval)
-- **Real-time Communication:** `websockets` (For streaming image generation progress and binary image data from ComfyUI)
+- **Framework:** FastAPI (for serving static assets and config API)
+- **Session State:** Client-side only (localStorage/browser state)
+- **API Communication:** Synchronous HTTP in Python is no longer used for generation; the client browser directly requests ComfyUI.
 
 ## Frontend
-- **Framework:** Gradio
-- **Styling:** Standard Gradio themes with custom CSS for the integrated sidebar.
+- **Framework:** Vanilla HTML, JavaScript, and CSS (Zero build step, direct ComfyUI WebSocket/HTTP communication)
+- **Styling:** Custom CSS featuring a premium dark theme, glassmorphism sidebar, and responsive gallery layout.
+
+*Change Note (June 13, 2026):* Rewritten from Gradio to a static frontend architecture with a FastAPI backend to eliminate proxy overhead and allow direct client-to-ComfyUI websocket/HTTP integration.
+
 
 ## Infrastructure & Connectivity
 - **Target System:** Remote ComfyUI instance (configurable URL).
