@@ -946,15 +946,32 @@ async function handleSkip() {
 function updateGenerateBtnUI() {
   const btn = elements.generateBtn;
   const txt = elements.generateBtnText;
+  
+  // Recreate the icon element to ensure Lucide can parse and replace it correctly
+  let icon = btn.querySelector('.btn-icon');
+  if (icon) {
+    icon.remove();
+  }
+  
+  let svgIcon = btn.querySelector('svg');
+  if (svgIcon) {
+    svgIcon.remove();
+  }
+  
+  icon = document.createElement('i');
+  icon.className = 'btn-icon';
+  
   if (state.isGenerating) {
     btn.className = 'btn btn-danger';
     txt.textContent = 'Skip';
-    btn.querySelector('i').setAttribute('data-lucide', 'square');
+    icon.setAttribute('data-lucide', 'square');
   } else {
     btn.className = 'btn btn-primary';
     txt.textContent = 'Generate';
-    btn.querySelector('i').setAttribute('data-lucide', 'play');
+    icon.setAttribute('data-lucide', 'play');
   }
+  
+  btn.insertBefore(icon, txt);
   lucide.createIcons();
 }
 
