@@ -206,6 +206,50 @@ function updateConnectionUI(connected, text) {
   }
 }
 
+// Preset tables
+const ASPECT_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "7:9", "9:7", "1:2", "2:1"];
+const PIXEL_COUNTS = ["0.25M", "0.5M", "1M", "1.5M", "2M"];
+
+function calculateDimensions(aspectRatioStr, pixelCountM) {
+  const totalPixels = pixelCountM * 1024 * 1024;
+  let ratio = 1.0;
+  try {
+    const parts = aspectRatioStr.split(":");
+    const wPart = parseFloat(parts[0]);
+    const hPart = parseFloat(parts[1]);
+    if (wPart && hPart) ratio = wPart / hPart;
+  } catch (e) {
+    ratio = 1.0;
+  }
+  
+  const height = Math.sqrt(totalPixels / ratio);
+  const width = height * ratio;
+  
+  const roundTo64 = (val) => Math.max(64, Math.round(val / 64.0) * 64);
+  return {
+    width: roundTo64(width),
+    height: roundTo64(height)
+  };
+}
+
+function findNearestPreset(width, height) {
+  let bestDist = Infinity;
+  let bestMatch = { ar: "1:1", pc: "1M" };
+  
+  for (const ar of ASPECT_RATIOS) {
+    for (const pc of PIXEL_COUNTS) {
+      const pcVal = parseFloat(pc.replace("M", ""));
+      const dims = calculateDimensions(ar, pcVal);
+      const dist = Math.sqrt(Math.pow(dims.width - width, 2) + Math.pow(dims.height - height, 2));
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestMatch = { ar, pc };
+      }
+    }
+  }
+  return bestMatch;
+}
+
 // Select Workflow
 async function selectWorkflow(name) {
   state.currentWorkflowName = name;
@@ -221,7 +265,7 @@ async function selectWorkflow(name) {
       elements.promptInput.value = defaultPrompt;
     }
 
-    // Populate dynamic controls (to be implemented in Phase 3)
+    // Render dynamic inputs in sidebar
     renderDynamicControls();
 
   } catch (error) {
@@ -232,7 +276,6 @@ async function selectWorkflow(name) {
 // Parse default prompt from workflow JSON
 function getPromptDefaultValue(workflow) {
   if (!workflow) return null;
-  // Search for any PrimitiveString or prompt input node titled "Prompt" or with "text" inputs
   for (const nodeId in workflow) {
     const node = workflow[nodeId];
     if (node._meta && node._meta.title === 'Prompt' && node.inputs && node.inputs.text !== undefined) {
@@ -242,12 +285,397 @@ function getPromptDefaultValue(workflow) {
   return null;
 }
 
-// Render dynamic settings controls (placeholder for Phase 3)
-function renderDynamicControls() {
-  elements.dynamicControls.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Advanced widgets will load here...</p>';
+// Extract inputs from workflow JSON
+function extractWorkflowInputs(workflow, objectInfo, slidersConfig) {
+  const extracted = [];
+  if (!workflow) return extracted;
+  
+  for (const nodeId in workflow) {
+    const nodeData = workflow[nodeId];
+    const title = (nodeData._meta && nodeData._meta.title) || `Node ${nodeId}`;
+    const classType = nodeData.class_type || '';
+    const nodeInputs = nodeData.inputs || {};
+    const inputs = [];
+    
+    const isPromptNode = title.toLowerCase() === 'prompt';
+    const hasWidth = 'width' in nodeInputs;
+    const hasHeight = 'height' in nodeInputs;
+    
+    const nodeDef = objectInfo ? objectInfo[classType] : null;
+    
+    if (hasWidth && hasHeight) {
+      inputs.push({
+        name: 'Dimensions',
+        type: 'dimensions',
+        width_name: 'width',
+        height_name: 'height',
+        width_value: nodeInputs['width'],
+        height_value: nodeInputs['height']
+      });
+    }
+    
+    for (const name in nodeInputs) {
+      const value = nodeInputs[name];
+      if (Array.isArray(value)) continue; // link
+      
+      if (isPromptNode && ['text', 'string', 'value'].includes(name)) continue;
+      if (hasWidth && hasHeight && ['width', 'height'].includes(name)) continue;
+      
+      let inputType = 'str';
+      let options = null;
+      let sliderParams = {};
+      
+      if (nodeDef) {
+        let inputDef = null;
+        if (nodeDef.input && nodeDef.input.required) {
+          inputDef = nodeDef.input.required[name];
+        }
+        if (!inputDef && nodeDef.input && nodeDef.input.optional) {
+          inputDef = nodeDef.input.optional[name];
+        }
+        
+        if (Array.isArray(inputDef) && inputDef.length > 0) {
+          if (Array.isArray(inputDef[0])) {
+            inputType = 'enum';
+            options = inputDef[0];
+          } else if (inputDef.length > 1 && typeof inputDef[1] === 'object' && inputDef[1] !== null) {
+            const meta = inputDef[1];
+            if ('min' in meta && 'max' in meta) {
+              sliderParams.min = meta.min;
+              sliderParams.max = meta.max;
+              if ('step' in meta) sliderParams.step = meta.step;
+            }
+          }
+        }
+      }
+      
+      if (inputType !== 'enum') {
+        if (typeof value === 'boolean') {
+          inputType = 'bool';
+        } else if (typeof value === 'number') {
+          if (name.toLowerCase().includes('seed')) {
+            inputType = 'seed';
+          } else {
+            inputType = 'number';
+            if (slidersConfig && slidersConfig[name]) {
+              inputType = 'slider';
+              Object.assign(sliderParams, slidersConfig[name]);
+            } else if ('min' in sliderParams && 'max' in sliderParams) {
+              inputType = 'slider';
+            }
+          }
+        }
+      }
+      
+      const inputData = { name, type: inputType, value };
+      if (inputType === 'seed') {
+        inputData.randomize = value === 0 || value === '0';
+      }
+      if (options) {
+        inputData.options = options;
+      }
+      if (inputType === 'slider') {
+        Object.assign(inputData, sliderParams);
+      }
+      inputs.push(inputData);
+    }
+    
+    if (inputs.length > 0) {
+      extracted.push({ node_id: nodeId, title, inputs });
+    }
+  }
+  return extracted;
 }
 
-// Render history (placeholder for Phase 3)
+// Render dynamic settings controls
+function renderDynamicControls() {
+  const container = elements.dynamicControls;
+  container.innerHTML = '';
+  
+  if (!state.currentWorkflowJson) {
+    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No workflow loaded.</p>';
+    return;
+  }
+  
+  // Load saved overrides for this workflow
+  const savedOverridesKey = `simplui_overrides_${state.currentWorkflowName}`;
+  let savedOverrides = {};
+  try {
+    const raw = localStorage.getItem(savedOverridesKey);
+    if (raw) savedOverrides = JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to parse saved overrides', e);
+  }
+  state.overrides = savedOverrides;
+  
+  const extracted = extractWorkflowInputs(state.currentWorkflowJson, state.objectInfo, state.sliders);
+  
+  if (extracted.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No configurable nodes found.</p>';
+    return;
+  }
+  
+  extracted.forEach(node => {
+    const nodeSection = document.createElement('div');
+    nodeSection.className = 'node-section';
+    nodeSection.style.marginBottom = '20px';
+    nodeSection.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+    nodeSection.style.paddingBottom = '15px';
+    
+    const nodeHeader = document.createElement('h3');
+    nodeHeader.textContent = node.title;
+    nodeHeader.style.fontSize = '14px';
+    nodeHeader.style.fontWeight = '600';
+    nodeHeader.style.color = 'var(--primary)';
+    nodeHeader.style.marginBottom = '12px';
+    nodeSection.appendChild(nodeHeader);
+    
+    const controlsList = document.createElement('div');
+    controlsList.className = 'controls-list';
+    controlsList.style.display = 'flex';
+    controlsList.style.flexDirection = 'column';
+    controlsList.style.gap = '12px';
+    
+    node.inputs.forEach(input => {
+      const widget = createWidget(node.node_id, input);
+      controlsList.appendChild(widget);
+    });
+    
+    nodeSection.appendChild(controlsList);
+    container.appendChild(nodeSection);
+  });
+}
+
+function createWidget(nodeId, input) {
+  const group = document.createElement('div');
+  group.className = 'settings-group';
+  
+  const key = `${nodeId}.${input.name}`;
+  let val = state.overrides[key] !== undefined ? state.overrides[key] : input.value;
+  
+  // Save initial value to overrides if not set
+  if (state.overrides[key] === undefined && input.type !== 'dimensions') {
+    state.overrides[key] = val;
+  }
+  
+  if (input.type === 'dimensions') {
+    // Width and height keys
+    const wKey = `${nodeId}.${input.width_name}`;
+    const hKey = `${nodeId}.${input.height_name}`;
+    
+    let wVal = state.overrides[wKey] !== undefined ? state.overrides[wKey] : input.width_value;
+    let hVal = state.overrides[hKey] !== undefined ? state.overrides[hKey] : input.height_value;
+    
+    state.overrides[wKey] = wVal;
+    state.overrides[hKey] = hVal;
+    
+    const isExactKey = `${nodeId}.Dimensions.isExact`;
+    let isExact = state.overrides[isExactKey] === true;
+    
+    group.className = 'aspect-ratio-widget';
+    
+    group.innerHTML = `
+      <div class="aspect-ratio-header">
+        <label>Dimensions</label>
+        <button class="toggle-mode-btn" id="toggle-dim-${nodeId}">${isExact ? 'Use Aspect Ratio' : 'Use Custom Pixels'}</button>
+      </div>
+      
+      <div class="aspect-ratio-controls ${isExact ? 'hidden' : ''}" id="ar-controls-${nodeId}">
+        <div class="aspect-ratio-row">
+          <select class="form-control" id="ar-select-${nodeId}">
+            ${ASPECT_RATIOS.map(ar => `<option value="${ar}">${ar}</option>`).join('')}
+          </select>
+          <select class="form-control" id="pc-select-${nodeId}">
+            ${PIXEL_COUNTS.map(pc => `<option value="${pc}">${pc}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div class="exact-controls ${isExact ? '' : 'hidden'}" id="exact-controls-${nodeId}">
+        <div class="aspect-ratio-row">
+          <input type="number" class="form-control" id="width-input-${nodeId}" value="${wVal}" placeholder="Width" step="64">
+          <input type="number" class="form-control" id="height-input-${nodeId}" value="${hVal}" placeholder="Height" step="64">
+        </div>
+      </div>
+    `;
+    
+    // Add event listeners inside widget
+    setTimeout(() => {
+      const toggleBtn = document.getElementById(`toggle-dim-${nodeId}`);
+      const arControls = document.getElementById(`ar-controls-${nodeId}`);
+      const exactControls = document.getElementById(`exact-controls-${nodeId}`);
+      const arSelect = document.getElementById(`ar-select-${nodeId}`);
+      const pcSelect = document.getElementById(`pc-select-${nodeId}`);
+      const wInput = document.getElementById(`width-input-${nodeId}`);
+      const hInput = document.getElementById(`height-input-${nodeId}`);
+      
+      // Initialize preset
+      const preset = findNearestPreset(wVal, hVal);
+      arSelect.value = preset.ar;
+      pcSelect.value = preset.pc;
+      
+      toggleBtn.addEventListener('click', () => {
+        isExact = !isExact;
+        state.overrides[isExactKey] = isExact;
+        saveOverrides();
+        
+        toggleBtn.textContent = isExact ? 'Use Aspect Ratio' : 'Use Custom Pixels';
+        if (isExact) {
+          arControls.classList.add('hidden');
+          exactControls.classList.remove('hidden');
+        } else {
+          arControls.classList.remove('hidden');
+          exactControls.classList.add('hidden');
+          updateDimsFromPresets();
+        }
+      });
+      
+      function updateDimsFromPresets() {
+        const ar = arSelect.value;
+        const pc = parseFloat(pcSelect.value.replace('M', ''));
+        const dims = calculateDimensions(ar, pc);
+        wInput.value = dims.width;
+        hInput.value = dims.height;
+        state.overrides[wKey] = dims.width;
+        state.overrides[hKey] = dims.height;
+        saveOverrides();
+      }
+      
+      arSelect.addEventListener('change', updateDimsFromPresets);
+      pcSelect.addEventListener('change', updateDimsFromPresets);
+      
+      wInput.addEventListener('change', (e) => {
+        state.overrides[wKey] = parseInt(e.target.value, 10);
+        saveOverrides();
+      });
+      
+      hInput.addEventListener('change', (e) => {
+        state.overrides[hKey] = parseInt(e.target.value, 10);
+        saveOverrides();
+      });
+    }, 0);
+    
+    return group;
+  }
+  
+  // Label
+  const label = document.createElement('label');
+  label.textContent = input.name;
+  group.appendChild(label);
+  
+  if (input.type === 'enum') {
+    const select = document.createElement('select');
+    select.className = 'form-control';
+    input.options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (opt === val) option.selected = true;
+      select.appendChild(option);
+    });
+    select.addEventListener('change', (e) => {
+      state.overrides[key] = e.target.value;
+      saveOverrides();
+    });
+    group.appendChild(select);
+  } else if (input.type === 'bool') {
+    group.className = 'settings-group';
+    label.className = 'checkbox-label';
+    label.innerHTML = `
+      <input type="checkbox" ${val ? 'checked' : ''}>
+      ${input.name}
+    `;
+    const checkbox = label.querySelector('input');
+    checkbox.addEventListener('change', (e) => {
+      state.overrides[key] = e.target.checked;
+      saveOverrides();
+    });
+  } else if (input.type === 'slider') {
+    label.innerHTML = `${input.name}: <span id="val-${nodeId}-${input.name}">${val}</span>`;
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.className = 'form-range';
+    range.style.width = '100%';
+    range.min = input.min !== undefined ? input.min : 0;
+    range.max = input.max !== undefined ? input.max : 100;
+    range.step = input.step !== undefined ? input.step : 1;
+    range.value = val;
+    
+    range.addEventListener('input', (e) => {
+      document.getElementById(`val-${nodeId}-${input.name}`).textContent = e.target.value;
+      state.overrides[key] = parseFloat(e.target.value);
+      saveOverrides();
+    });
+    group.appendChild(range);
+  } else if (input.type === 'seed') {
+    group.className = 'seed-widget';
+    
+    const randomizeKey = `${key}.randomize`;
+    let isRandom = state.overrides[randomizeKey] !== undefined ? state.overrides[randomizeKey] : input.randomize;
+    state.overrides[randomizeKey] = isRandom;
+    
+    group.innerHTML = `
+      <div class="seed-row">
+        <label>Seed</label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="randomize-${nodeId}" ${isRandom ? 'checked' : ''}>
+          Randomize
+        </label>
+      </div>
+      <input type="number" class="form-control ${isRandom ? 'hidden' : ''}" id="seed-input-${nodeId}" value="${val}">
+    `;
+    
+    setTimeout(() => {
+      const randCheck = document.getElementById(`randomize-${nodeId}`);
+      const seedIn = document.getElementById(`seed-input-${nodeId}`);
+      
+      randCheck.addEventListener('change', (e) => {
+        isRandom = e.target.checked;
+        state.overrides[randomizeKey] = isRandom;
+        saveOverrides();
+        if (isRandom) {
+          seedIn.classList.add('hidden');
+        } else {
+          seedIn.classList.remove('hidden');
+        }
+      });
+      
+      seedIn.addEventListener('change', (e) => {
+        state.overrides[key] = parseInt(e.target.value, 10);
+        saveOverrides();
+      });
+    }, 0);
+  } else if (input.type === 'number') {
+    const num = document.createElement('input');
+    num.type = 'number';
+    num.className = 'form-control';
+    num.value = val;
+    num.addEventListener('change', (e) => {
+      state.overrides[key] = parseFloat(e.target.value);
+      saveOverrides();
+    });
+    group.appendChild(num);
+  } else {
+    const text = document.createElement('input');
+    text.type = 'text';
+    text.className = 'form-control';
+    text.value = val;
+    text.addEventListener('change', (e) => {
+      state.overrides[key] = e.target.value;
+      saveOverrides();
+    });
+    group.appendChild(text);
+  }
+  
+  return group;
+}
+
+function saveOverrides() {
+  const savedOverridesKey = `simplui_overrides_${state.currentWorkflowName}`;
+  localStorage.setItem(savedOverridesKey, JSON.stringify(state.overrides));
+}
+
+// Render history
 function renderHistory() {
   if (state.history.length === 0) {
     elements.historyGrid.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 0;">No history yet</p>';
@@ -265,10 +693,329 @@ function renderHistory() {
   });
 }
 
-// Handle Generate Button Click (skeletal placeholder for Phase 3)
-function handleGenerateClick() {
-  console.log('Generate click handler (not yet connected to ComfyUI websocket/prompt API)');
+// WebSocket client connection setup
+state.clientId = generateUUID();
+let ws = null;
+let promptResolver = null;
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
+
+function getWebSocketUrl() {
+  if (!state.comfyUrl) return null;
+  let url = state.comfyUrl;
+  url = url.replace(/^http/, 'ws');
+  return `${url}/ws?clientId=${state.clientId}`;
+}
+
+function connectWebSocket() {
+  const url = getWebSocketUrl();
+  if (!url) return;
+  
+  if (ws) {
+    try { ws.close(); } catch(e){}
+  }
+  
+  console.log(`Connecting WebSocket: ${url}`);
+  ws = new WebSocket(url);
+  
+  ws.onopen = () => {
+    console.log('WebSocket connection established.');
+  };
+  
+  ws.onmessage = async (event) => {
+    if (event.data instanceof Blob) {
+      try {
+        const buffer = await event.data.arrayBuffer();
+        const view = new DataView(buffer);
+        const eventType = view.getInt32(0);
+        const imageType = view.getInt32(4);
+        
+        if (eventType === 1) { // Live preview image
+          const imageBytes = buffer.slice(8);
+          const mime = imageType === 1 ? 'image/png' : 'image/jpeg';
+          const blob = new Blob([imageBytes], { type: mime });
+          const objectUrl = URL.createObjectURL(blob);
+          updateLivePreview(objectUrl);
+        }
+      } catch (err) {
+        console.error('Error parsing binary socket message:', err);
+      }
+      return;
+    }
+    
+    try {
+      const msg = JSON.parse(event.data);
+      handleWebSocketMessage(msg);
+    } catch (err) {
+      console.error('Error parsing websocket message:', err);
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log('WebSocket closed. Reconnecting in 3s...');
+    setTimeout(connectWebSocket, 3000);
+  };
+}
+
+function handleWebSocketMessage(msg) {
+  if (!state.isGenerating || !state.currentPromptId) return;
+  
+  const type = msg.type;
+  const data = msg.data;
+  
+  if (type === 'status') {
+    // optional status check
+  } else if (type === 'progress') {
+    if (data.prompt_id === state.currentPromptId) {
+      const val = data.value;
+      const max = data.max;
+      state.currentStep = val;
+      state.maxSteps = max;
+      updateProgressBar(val, max);
+    }
+  } else if (type === 'executing') {
+    if (data.prompt_id === state.currentPromptId && data.node === null) {
+      // Completed execution of prompt
+      console.log(`Prompt completed: ${state.currentPromptId}`);
+      if (promptResolver) promptResolver();
+    }
+  } else if (type === 'executed') {
+    if (data.prompt_id === state.currentPromptId && data.output && data.output.images) {
+      // Generated images
+      data.output.images.forEach(img => {
+        const url = `${state.comfyUrl}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`;
+        handleCompletedImage(url);
+      });
+    }
+  }
+}
+
+// UI State & Generation Loop
+async function handleGenerateClick() {
+  if (state.isGenerating) {
+    // If generating, this button acts as "Skip"
+    handleSkip();
+    return;
+  }
+  
+  if (!state.isConnected) {
+    alert('Cannot generate: ComfyUI server is offline.');
+    return;
+  }
+  
+  state.isGenerating = true;
+  updateGenerateBtnUI();
+  
+  // Clear gallery
+  elements.galleryGrid.innerHTML = '';
+  elements.galleryEmptyState.classList.add('hidden');
+  elements.galleryProgress.classList.remove('hidden');
+  
+  // Determine seeds
+  let baseSeed = 0;
+  // Get base seed node key
+  let seedNodeKey = null;
+  let randomize = false;
+  
+  for (const k in state.overrides) {
+    if (k.endsWith('.randomize')) {
+      randomize = state.overrides[k] === true;
+      seedNodeKey = k.replace('.randomize', '');
+      break;
+    }
+  }
+  
+  if (seedNodeKey) {
+    const rawSeed = state.overrides[seedNodeKey];
+    baseSeed = randomize ? Math.floor(Math.random() * 9000000000000) : parseInt(rawSeed, 10);
+    // If randomized, update numeric seed widget value in UI and overrides so users can see the base seed used
+    if (randomize) {
+      state.overrides[seedNodeKey] = baseSeed;
+      const seedInput = document.querySelector('[id^="seed-input-"]');
+      if (seedInput) seedInput.value = baseSeed;
+      saveOverrides();
+    }
+  }
+  
+  // Sequentially loop through batch count
+  for (let i = 0; i < state.batchCount; i++) {
+    if (!state.isGenerating) break; // User stopped/cancelled
+    
+    state.currentBatchIndex = i;
+    state.currentStep = 0;
+    state.maxSteps = 1;
+    state.activePromptSkipped = false;
+    updateProgressBar(0, 1);
+    
+    // Create current gallery slot for live preview & final image
+    createGallerySlot(i);
+    
+    // Clone and prepare workflow json
+    const workflow = JSON.parse(JSON.stringify(state.currentWorkflowJson));
+    
+    // Inject Prompt node
+    let promptInjected = false;
+    for (const nodeId in workflow) {
+      const node = workflow[nodeId];
+      if (node._meta && node._meta.title === 'Prompt' && node.inputs && node.inputs.text !== undefined) {
+        node.inputs.text = elements.promptInput.value;
+        promptInjected = true;
+      }
+    }
+    
+    // Apply overrides
+    for (const key in state.overrides) {
+      if (key.includes('.')) {
+        const parts = key.split('.');
+        const nodeId = parts[0];
+        const inputName = parts[1];
+        
+        // Skip UI settings like Dimension.isExact and randomize keys
+        if (inputName === 'Dimensions' || inputName === 'randomize') continue;
+        
+        if (workflow[nodeId] && workflow[nodeId].inputs) {
+          let value = state.overrides[key];
+          
+          // Apply iteration-derived seeds
+          if (nodeId === seedNodeKey && inputName === 'seed') {
+            value = baseSeed + i;
+          }
+          
+          workflow[nodeId].inputs[inputName] = value;
+        }
+      }
+    }
+    
+    try {
+      const submitRes = await fetchFromComfy('prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: workflow,
+          client_id: state.clientId
+        })
+      });
+      
+      if (!submitRes.ok) throw new Error('Failed to submit prompt');
+      const submitData = await submitRes.json();
+      state.currentPromptId = submitData.prompt_id;
+      
+      // Wait for WebSocket execution
+      await new Promise((resolve) => {
+        promptResolver = resolve;
+      });
+      
+    } catch (err) {
+      console.error(`Error generating batch item ${i}:`, err);
+    }
+    
+    promptResolver = null;
+    state.currentPromptId = null;
+  }
+  
+  state.isGenerating = false;
+  updateGenerateBtnUI();
+  elements.galleryProgress.classList.add('hidden');
+}
+
+// Skip current batch iteration
+async function handleSkip() {
+  if (!state.currentPromptId) return;
+  state.activePromptSkipped = true;
+  try {
+    await fetchFromComfy('interrupt', { method: 'POST' });
+  } catch (err) {
+    console.error('Error sending interrupt:', err);
+  }
+  
+  // Remove partial preview image from the gallery slot
+  const activeSlot = document.getElementById(`gallery-slot-${state.currentBatchIndex}`);
+  if (activeSlot) {
+    activeSlot.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Skipped</p>`;
+  }
+  
+  if (promptResolver) promptResolver();
+}
+
+// UI controls
+function updateGenerateBtnUI() {
+  const btn = elements.generateBtn;
+  const txt = elements.generateBtnText;
+  if (state.isGenerating) {
+    btn.className = 'btn btn-danger';
+    txt.textContent = 'Skip';
+    btn.querySelector('i').setAttribute('data-lucide', 'square');
+  } else {
+    btn.className = 'btn btn-primary';
+    txt.textContent = 'Generate';
+    btn.querySelector('i').setAttribute('data-lucide', 'play');
+  }
+  lucide.createIcons();
+}
+
+function updateProgressBar(val, max) {
+  const pct = Math.round((val / max) * 100);
+  elements.progressBarFill.style.width = `${pct}%`;
+  elements.progressText.textContent = `Batch Item ${state.currentBatchIndex + 1}/${state.batchCount}: ${pct}%`;
+}
+
+function createGallerySlot(index) {
+  const slot = document.createElement('div');
+  slot.className = 'gallery-item';
+  slot.id = `gallery-slot-${index}`;
+  slot.innerHTML = `
+    <span class="preview-badge">Generating...</span>
+    <span class="item-index-badge">${index + 1}</span>
+  `;
+  elements.galleryGrid.appendChild(slot);
+}
+
+function updateLivePreview(objectUrl) {
+  const slot = document.getElementById(`gallery-slot-${state.currentBatchIndex}`);
+  if (!slot || state.activePromptSkipped) return;
+  
+  // Update or add image element
+  let img = slot.querySelector('img');
+  if (!img) {
+    img = document.createElement('img');
+    slot.appendChild(img);
+  }
+  img.src = objectUrl;
+}
+
+function handleCompletedImage(imageUrl) {
+  const slot = document.getElementById(`gallery-slot-${state.currentBatchIndex}`);
+  if (!slot) return;
+  
+  slot.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = imageUrl;
+  slot.appendChild(img);
+  
+  const badge = document.createElement('span');
+  badge.className = 'item-index-badge';
+  badge.textContent = state.currentBatchIndex + 1;
+  slot.appendChild(badge);
+  
+  // Add to session history
+  state.history.unshift(imageUrl);
+  saveHistoryToStorage();
+}
+
+function saveHistoryToStorage() {
+  if (state.activeTab === 'history') {
+    renderHistory();
+  }
+}
+
+// Initial hook on WebSocket connection
+connectWebSocket();
 
 // Run on page load
 window.addEventListener('DOMContentLoaded', init);
+
