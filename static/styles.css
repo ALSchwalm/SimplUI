@@ -355,8 +355,6 @@ body {
   min-height: 0;
   overflow-y: auto;
   margin-top: 10px;
-  display: flex;
-  flex-direction: column;
 }
 
 .gallery-grid {
@@ -367,7 +365,7 @@ body {
 }
 
 .gallery-empty-state {
-  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
