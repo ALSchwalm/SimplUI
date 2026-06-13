@@ -1,0 +1,47 @@
+import os
+import re
+
+
+def test_layout_card_order():
+    html_path = "static/index.html"
+    assert os.path.exists(html_path), "index.html must exist"
+
+    with open(html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Find the positions of prompt-card and gallery-card in the DOM
+    gallery_pos = content.find("gallery-card")
+    prompt_pos = content.find("prompt-card")
+
+    assert gallery_pos != -1, "gallery-card must exist in HTML"
+    assert prompt_pos != -1, "prompt-card must exist in HTML"
+
+    # We expect gallery-card to be positioned before prompt-card in the DOM structure
+    assert (
+        gallery_pos < prompt_pos
+    ), "gallery-card should be defined before prompt-card in index.html"
+
+
+def test_gallery_css_sizing():
+    css_path = "static/styles.css"
+    assert os.path.exists(css_path), "styles.css must exist"
+
+    with open(css_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # We expect .gallery-card to have a height of 70vh and max-height of 70vh
+    assert (
+        re.search(r"\.gallery-card\s*\{[^}]*height:\s*70vh", content) is not None
+    ), "gallery-card height should be 70vh"
+    assert (
+        re.search(r"\.gallery-card\s*\{[^}]*max-height:\s*70vh", content) is not None
+    ), "gallery-card max-height should be 70vh"
+
+    # We expect .gallery-item to not force a square aspect ratio (aspect-ratio: 1 / 1)
+    # E.g., we look for aspect-ratio: 1 / 1 inside .gallery-item block and assert it's NOT present, or changed.
+    gallery_item_match = re.search(r"\.gallery-item\s*\{([^}]*)\}", content)
+    assert gallery_item_match is not None, ".gallery-item block must exist in CSS"
+    gallery_item_rules = gallery_item_match.group(1)
+    assert (
+        "aspect-ratio: 1 / 1" not in gallery_item_rules
+    ), ".gallery-item should not force aspect-ratio: 1 / 1"
