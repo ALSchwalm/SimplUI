@@ -1,6 +1,6 @@
 # Implementation Plan: Static Client & FastAPI Rewrite
 
-## Phase 1: Backend Setup
+## Phase 1: Backend Setup [checkpoint: 9e6f9cb]
 - [x] Task: Setup FastAPI app and config API endpoints (85be4ac)
     - [x] Write unit tests for FastAPI config and workflow APIs
     - [x] Implement FastAPI app inside `main.py`
