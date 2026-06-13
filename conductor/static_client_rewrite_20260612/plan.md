@@ -12,7 +12,7 @@
     - [x] Configure FastAPI to mount a static directory `/static` and serve `index.html` at root `/`
     - [x] Verify all tests pass
     - [x] Commit code changes with proper message
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Setup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Setup' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Foundation & Core UI [checkpoint: 2d49f58]
 - [x] Task: Create static files and layout (38df157)
@@ -24,7 +24,7 @@
     - [x] Implement client-side `static/app.js` to fetch `/api/config` and populate workflow dropdown
     - [x] Establish initial UI structure and connection status indicator
     - [x] Commit code changes with proper message
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Foundation & Core UI' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Foundation & Core UI' (Protocol in workflow.md)
 
 ## Phase 3: Client-Side ComfyUI Integration [checkpoint: a51e167]
 - [x] Task: Node discovery and UI control generation (daa6b96)
@@ -39,7 +39,7 @@
     - [x] Implement batch generation loop (1-20), seed generation per iteration, and "Skip" button
     - [x] Implement local storage state saving
     - [x] Commit code changes with proper message
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Client-Side ComfyUI Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Client-Side ComfyUI Integration' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Quality Verification
 - [x] Task: Remove old Gradio code (551525f)
@@ -47,4 +47,4 @@
     - [x] Clean up requirements or config
     - [x] Verify test suite passes
     - [x] Commit code changes with proper message
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Cleanup & Quality Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Cleanup & Quality Verification' (Protocol in workflow.md)
