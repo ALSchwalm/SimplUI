@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_persistent_generating_badge_20260613",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-06-13T20:16:30Z",
+  "updated_at": "2026-06-13T20:16:30Z",
+  "description": "There is a bug where the 'Generating...' badge is still shown on an image after it is done being generated"
+}
