@@ -29,7 +29,14 @@ def test_api_config():
 def test_static_assets():
     assert app is not None, "FastAPI app is not defined in main.py"
     client = TestClient(app)
+    
     response = client.get("/")
+    assert response.status_code == 200
+    
+    response = client.get("/static/styles.css")
+    assert response.status_code == 200
+    
+    response = client.get("/static/app.js")
     assert response.status_code == 200
 
 def test_get_workflow(tmp_path):
