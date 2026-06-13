@@ -12,6 +12,9 @@ const state = {
   batchCount: 1,
   history: [], // Generated images history
   activePreviews: {}, // Active preview images by index
+  activePrompts: {}, // promptId -> { index: i, resolve: resolveFunc }
+  currentlyExecutingPromptId: null,
+  lastExecutingPromptId: null,
 };
 
 // DOM Elements
@@ -157,6 +160,7 @@ async function fetchFromComfy(path, options = {}) {
     if (!state.useProxy) {
       console.warn(`Direct connection to ComfyUI failed at ${url}. Falling back to proxy.`);
       state.useProxy = true;
+      connectWebSocket();
       const fallbackUrl = `/comfy-proxy/${path}`;
       try {
         const fallbackRes = await fetch(fallbackUrl, options);
@@ -183,6 +187,7 @@ async function checkConnection() {
     });
     
     if (res.ok) {
+      state.objectInfo = await res.json();
       state.isConnected = true;
       const label = state.useProxy ? 'Connected to ComfyUI (via Proxy)' : 'Connected to ComfyUI';
       updateConnectionUI(true, label);
@@ -278,8 +283,10 @@ function getPromptDefaultValue(workflow) {
   if (!workflow) return null;
   for (const nodeId in workflow) {
     const node = workflow[nodeId];
-    if (node._meta && node._meta.title === 'Prompt' && node.inputs && node.inputs.text !== undefined) {
-      return node.inputs.text;
+    if (node._meta && node._meta.title === 'Prompt' && node.inputs) {
+      if (node.inputs.text !== undefined) return node.inputs.text;
+      if (node.inputs.string !== undefined) return node.inputs.string;
+      if (node.inputs.value !== undefined) return node.inputs.value;
     }
   }
   return null;
@@ -696,7 +703,6 @@ function renderHistory() {
 // WebSocket client connection setup
 state.clientId = generateUUID();
 let ws = null;
-let promptResolver = null;
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -706,25 +712,37 @@ function generateUUID() {
 }
 
 function getWebSocketUrl() {
+  if (state.useProxy) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/comfy-ws?clientId=${state.clientId}`;
+  }
   if (!state.comfyUrl) return null;
   let url = state.comfyUrl;
   url = url.replace(/^http/, 'ws');
   return `${url}/ws?clientId=${state.clientId}`;
 }
 
+let wsHasOpened = false;
+
 function connectWebSocket() {
   const url = getWebSocketUrl();
   if (!url) return;
   
   if (ws) {
+    ws.onopen = null;
+    ws.onmessage = null;
+    ws.onerror = null;
+    ws.onclose = null;
     try { ws.close(); } catch(e){}
   }
   
   console.log(`Connecting WebSocket: ${url}`);
   ws = new WebSocket(url);
+  wsHasOpened = false;
   
   ws.onopen = () => {
     console.log('WebSocket connection established.');
+    wsHasOpened = true;
   };
   
   ws.onmessage = async (event) => {
@@ -735,12 +753,24 @@ function connectWebSocket() {
         const eventType = view.getInt32(0);
         const imageType = view.getInt32(4);
         
+        console.log(`WS Binary Message: eventType=${eventType}, imageType=${imageType}, size=${buffer.byteLength} bytes`);
+        
+        const promptId = state.currentlyExecutingPromptId || state.lastExecutingPromptId;
+        const activePrompt = promptId ? state.activePrompts[promptId] : null;
+        const slotIndex = activePrompt ? activePrompt.index : state.currentBatchIndex;
+
         if (eventType === 1) { // Live preview image
           const imageBytes = buffer.slice(8);
           const mime = imageType === 1 ? 'image/png' : 'image/jpeg';
           const blob = new Blob([imageBytes], { type: mime });
           const objectUrl = URL.createObjectURL(blob);
-          updateLivePreview(objectUrl);
+          updateLivePreview(objectUrl, slotIndex);
+        } else if (eventType === 2) { // Final image (binary output)
+          const imageBytes = buffer.slice(8);
+          const mime = imageType === 1 ? 'image/png' : 'image/jpeg';
+          const blob = new Blob([imageBytes], { type: mime });
+          const objectUrl = URL.createObjectURL(blob);
+          handleCompletedImage(objectUrl, slotIndex);
         }
       } catch (err) {
         console.error('Error parsing binary socket message:', err);
@@ -750,47 +780,80 @@ function connectWebSocket() {
     
     try {
       const msg = JSON.parse(event.data);
+      console.log('WS JSON Message:', msg);
       handleWebSocketMessage(msg);
     } catch (err) {
       console.error('Error parsing websocket message:', err);
     }
   };
   
+  ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+  };
+  
   ws.onclose = () => {
-    console.log('WebSocket closed. Reconnecting in 3s...');
-    setTimeout(connectWebSocket, 3000);
+    console.log('WebSocket closed.');
+    for (const pid in state.activePrompts) {
+      const activePrompt = state.activePrompts[pid];
+      if (activePrompt && activePrompt.resolve) {
+        console.warn(`WebSocket closed. Resolving pending prompt resolver for ${pid}.`);
+        activePrompt.resolve();
+        activePrompt.resolve = null;
+      }
+    }
+    if (!wsHasOpened && !state.useProxy) {
+      console.warn('Direct WebSocket connection failed. Falling back to proxy.');
+      state.useProxy = true;
+      checkConnection();
+      setTimeout(connectWebSocket, 1000);
+    } else {
+      console.log('Reconnecting WebSocket in 3s...');
+      setTimeout(connectWebSocket, 3000);
+    }
   };
 }
 
 function handleWebSocketMessage(msg) {
-  if (!state.isGenerating || !state.currentPromptId) return;
-  
   const type = msg.type;
   const data = msg.data;
+  if (!data) return;
   
-  if (type === 'status') {
-    // optional status check
-  } else if (type === 'progress') {
-    if (data.prompt_id === state.currentPromptId) {
-      const val = data.value;
-      const max = data.max;
-      state.currentStep = val;
-      state.maxSteps = max;
-      updateProgressBar(val, max);
+  if (data.prompt_id) {
+    state.lastExecutingPromptId = data.prompt_id;
+    if (type !== 'executing' || data.node !== null) {
+      state.currentlyExecutingPromptId = data.prompt_id;
+    } else {
+      state.currentlyExecutingPromptId = null;
     }
-  } else if (type === 'executing') {
-    if (data.prompt_id === state.currentPromptId && data.node === null) {
-      // Completed execution of prompt
-      console.log(`Prompt completed: ${state.currentPromptId}`);
-      if (promptResolver) promptResolver();
-    }
-  } else if (type === 'executed') {
-    if (data.prompt_id === state.currentPromptId && data.output && data.output.images) {
-      // Generated images
-      data.output.images.forEach(img => {
-        const url = `${state.comfyUrl}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`;
-        handleCompletedImage(url);
-      });
+    
+    const activePrompt = state.activePrompts[data.prompt_id];
+    if (activePrompt) {
+      if (type === 'progress') {
+        const val = data.value;
+        const max = data.max;
+        state.currentStep = val;
+        state.maxSteps = max;
+        updateProgressBar(val, max, activePrompt.index);
+      } else if (type === 'executing') {
+        if (data.node === null) {
+          // Completed execution of prompt
+          console.log(`Prompt completed: ${data.prompt_id}`);
+          if (activePrompt.resolve) {
+            activePrompt.resolve();
+            activePrompt.resolve = null;
+          }
+        }
+      } else if (type === 'executed') {
+        if (data.output && data.output.images) {
+          // Generated images
+          data.output.images.forEach(img => {
+            const url = state.useProxy
+              ? `/comfy-proxy/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+              : `${state.comfyUrl}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`;
+            handleCompletedImage(url, activePrompt.index);
+          });
+        }
+      }
     }
   }
 }
@@ -830,9 +893,15 @@ async function handleGenerateClick() {
     }
   }
   
+  console.log('--- GENERATE CLICK DIAGNOSTICS ---');
+  console.log('state.overrides:', JSON.stringify(state.overrides));
+  console.log('seedNodeKey:', seedNodeKey);
+  console.log('randomize:', randomize);
+  
   if (seedNodeKey) {
     const rawSeed = state.overrides[seedNodeKey];
     baseSeed = randomize ? Math.floor(Math.random() * 9000000000000) : parseInt(rawSeed, 10);
+    console.log('Parsed baseSeed:', baseSeed);
     // If randomized, update numeric seed widget value in UI and overrides so users can see the base seed used
     if (randomize) {
       state.overrides[seedNodeKey] = baseSeed;
@@ -840,6 +909,8 @@ async function handleGenerateClick() {
       if (seedInput) seedInput.value = baseSeed;
       saveOverrides();
     }
+  } else {
+    console.log('No seedNodeKey was detected. Overrides keys are:', Object.keys(state.overrides));
   }
   
   // Sequentially loop through batch count
@@ -862,9 +933,20 @@ async function handleGenerateClick() {
     let promptInjected = false;
     for (const nodeId in workflow) {
       const node = workflow[nodeId];
-      if (node._meta && node._meta.title === 'Prompt' && node.inputs && node.inputs.text !== undefined) {
-        node.inputs.text = elements.promptInput.value;
-        promptInjected = true;
+      if (node._meta && node._meta.title === 'Prompt' && node.inputs) {
+        if (node.inputs.text !== undefined) {
+          node.inputs.text = elements.promptInput.value;
+          promptInjected = true;
+        } else if (node.inputs.string !== undefined) {
+          node.inputs.string = elements.promptInput.value;
+          promptInjected = true;
+        } else if (node.inputs.value !== undefined) {
+          node.inputs.value = elements.promptInput.value;
+          promptInjected = true;
+        } else {
+          node.inputs.text = elements.promptInput.value;
+          promptInjected = true;
+        }
       }
     }
     
@@ -876,18 +958,25 @@ async function handleGenerateClick() {
         const inputName = parts[1];
         
         // Skip UI settings like Dimension.isExact and randomize keys
-        if (inputName === 'Dimensions' || inputName === 'randomize') continue;
+        if (inputName === 'Dimensions' || key.endsWith('.randomize')) continue;
         
         if (workflow[nodeId] && workflow[nodeId].inputs) {
           let value = state.overrides[key];
           
           // Apply iteration-derived seeds
-          if (nodeId === seedNodeKey && inputName === 'seed') {
+          if (key === seedNodeKey) {
             value = baseSeed + i;
           }
           
           workflow[nodeId].inputs[inputName] = value;
         }
+      }
+    }
+    
+    console.log(`--- Iteration ${i} ---`);
+    for (const nodeId in workflow) {
+      if (workflow[nodeId].class_type === 'KSampler') {
+        console.log(`KSampler Node ${nodeId} seed value:`, workflow[nodeId].inputs.seed);
       }
     }
     
@@ -903,18 +992,21 @@ async function handleGenerateClick() {
       
       if (!submitRes.ok) throw new Error('Failed to submit prompt');
       const submitData = await submitRes.json();
-      state.currentPromptId = submitData.prompt_id;
+      const promptId = submitData.prompt_id;
+      state.currentPromptId = promptId;
       
       // Wait for WebSocket execution
       await new Promise((resolve) => {
-        promptResolver = resolve;
+        state.activePrompts[promptId] = {
+          index: i,
+          resolve: resolve
+        };
       });
       
     } catch (err) {
       console.error(`Error generating batch item ${i}:`, err);
     }
     
-    promptResolver = null;
     state.currentPromptId = null;
   }
   
@@ -939,7 +1031,11 @@ async function handleSkip() {
     activeSlot.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Skipped</p>`;
   }
   
-  if (promptResolver) promptResolver();
+  const activePrompt = state.activePrompts[state.currentPromptId];
+  if (activePrompt && activePrompt.resolve) {
+    activePrompt.resolve();
+    activePrompt.resolve = null;
+  }
 }
 
 // UI controls
@@ -975,10 +1071,11 @@ function updateGenerateBtnUI() {
   lucide.createIcons();
 }
 
-function updateProgressBar(val, max) {
+function updateProgressBar(val, max, index) {
+  const idx = index !== undefined ? index : state.currentBatchIndex;
   const pct = Math.round((val / max) * 100);
   elements.progressBarFill.style.width = `${pct}%`;
-  elements.progressText.textContent = `Batch Item ${state.currentBatchIndex + 1}/${state.batchCount}: ${pct}%`;
+  elements.progressText.textContent = `Batch Item ${idx + 1}/${state.batchCount}: ${pct}%`;
 }
 
 function createGallerySlot(index) {
@@ -992,8 +1089,9 @@ function createGallerySlot(index) {
   elements.galleryGrid.appendChild(slot);
 }
 
-function updateLivePreview(objectUrl) {
-  const slot = document.getElementById(`gallery-slot-${state.currentBatchIndex}`);
+function updateLivePreview(objectUrl, index) {
+  const idx = index !== undefined ? index : state.currentBatchIndex;
+  const slot = document.getElementById(`gallery-slot-${idx}`);
   if (!slot || state.activePromptSkipped) return;
   
   // Update or add image element
@@ -1005,8 +1103,9 @@ function updateLivePreview(objectUrl) {
   img.src = objectUrl;
 }
 
-function handleCompletedImage(imageUrl) {
-  const slot = document.getElementById(`gallery-slot-${state.currentBatchIndex}`);
+function handleCompletedImage(imageUrl, index) {
+  const idx = index !== undefined ? index : state.currentBatchIndex;
+  const slot = document.getElementById(`gallery-slot-${idx}`);
   if (!slot) return;
   
   slot.innerHTML = '';
@@ -1016,7 +1115,7 @@ function handleCompletedImage(imageUrl) {
   
   const badge = document.createElement('span');
   badge.className = 'item-index-badge';
-  badge.textContent = state.currentBatchIndex + 1;
+  badge.textContent = idx + 1;
   slot.appendChild(badge);
   
   // Add to session history

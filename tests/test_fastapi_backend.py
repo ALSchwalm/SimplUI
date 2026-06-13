@@ -148,3 +148,56 @@ def test_comfy_proxy(mock_request):
         args, kwargs = mock_request.call_args
         assert kwargs["method"] == "GET"
         assert kwargs["url"] == "http://localhost:8188/object_info"
+
+
+@patch("requests.request")
+def test_comfy_proxy_error(mock_request):
+    assert app is not None
+    client = TestClient(app)
+
+    mock_request.side_effect = Exception("Connection refused")
+
+    app.state.comfy_url = "http://localhost:8188"
+    with patch("main.get_config") as mock_get_config:
+        mock_config = MagicMock()
+        mock_config.comfy_url = "http://localhost:8188"
+        mock_get_config.return_value = mock_config
+
+        response = client.get("/comfy-proxy/object_info")
+        assert response.status_code == 502
+        assert "Proxy error" in response.json()["detail"]
+
+
+def test_comfy_ws_endpoint():
+    from unittest.mock import AsyncMock, patch
+    import asyncio
+
+    mock_comfy_ws = AsyncMock()
+    mock_comfy_ws.__aenter__.return_value = mock_comfy_ws
+
+    # We want it to receive something, then stop.
+    async def mock_recv():
+        await asyncio.sleep(0.05)
+        return "hello from comfy"
+
+    mock_comfy_ws.recv.side_effect = mock_recv
+
+    # Mock bytes messages as well
+    async def mock_send(data):
+        pass
+
+    mock_comfy_ws.send.side_effect = mock_send
+
+    with patch("websockets.connect", return_value=mock_comfy_ws) as mock_connect:
+        client = TestClient(app)
+        with client.websocket_connect("/comfy-ws?clientId=test-client") as websocket:
+            websocket.send_text("hello to comfy")
+            websocket.send_bytes(b"hello bytes")
+            # The receiver task forwards from comfy to client
+            data = websocket.receive_text()
+            assert data == "hello from comfy"
+
+        mock_connect.assert_called_once()
+        args, kwargs = mock_connect.call_args
+        assert "ws://localhost:8188/ws?clientId=test-client" in args[0]
+        assert kwargs.get("max_size") == 100 * 1024 * 1024

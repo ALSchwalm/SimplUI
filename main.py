@@ -86,6 +86,69 @@ async def comfy_proxy(path: str, request: Request):
         raise HTTPException(status_code=502, detail=f"Proxy error: {e}")
 
 
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
+import websockets
+
+
+@app.websocket("/comfy-ws")
+async def comfy_ws(websocket: WebSocket):
+    await websocket.accept()
+
+    config = get_config()
+    comfy_url = getattr(
+        app.state, "comfy_url", config.comfy_url if config else "http://localhost:8188"
+    )
+    ws_target_base = comfy_url.replace("http://", "ws://").replace("https://", "wss://")
+
+    client_id = websocket.query_params.get("clientId")
+    ws_target_url = f"{ws_target_base}/ws"
+    if client_id:
+        ws_target_url += f"?clientId={client_id}"
+
+    print(f"WS Proxy: Connecting to ComfyUI at {ws_target_url}")
+    try:
+        async with websockets.connect(ws_target_url, max_size=100 * 1024 * 1024) as comfy_ws_conn:
+            print("WS Proxy: Connected to ComfyUI successfully")
+
+            async def forward_to_comfy():
+                try:
+                    while True:
+                        data = await websocket.receive()
+                        if data.get("type") == "websocket.disconnect":
+                            print("WS Proxy: Client disconnected (forward_to_comfy)")
+                            break
+                        if "text" in data:
+                            await comfy_ws_conn.send(data["text"])
+                        elif "bytes" in data:
+                            await comfy_ws_conn.send(data["bytes"])
+                except Exception as e:
+                    print(f"WS Proxy: Exception in forward_to_comfy: {e}")
+
+            async def forward_to_client():
+                try:
+                    while True:
+                        msg = await comfy_ws_conn.recv()
+                        if isinstance(msg, bytes):
+                            await websocket.send_bytes(msg)
+                        else:
+                            await websocket.send_text(msg)
+                except Exception as e:
+                    print(f"WS Proxy: Exception in forward_to_client: {e}")
+
+            task1 = asyncio.create_task(forward_to_comfy())
+            task2 = asyncio.create_task(forward_to_client())
+            await asyncio.wait([task1, task2], return_when=asyncio.FIRST_COMPLETED)
+            print("WS Proxy: Forwarding task finished, cleaning up")
+            task1.cancel()
+            task2.cancel()
+
+    except WebSocketDisconnect:
+        print("WS Proxy: WebSocketDisconnect in outer handler")
+    except Exception as e:
+        print(f"WS Proxy: Exception in outer handler connecting/running: {e}")
+
+
 # Ensure static directory exists
 os.makedirs("static", exist_ok=True)
 if not os.path.exists("static/index.html"):
