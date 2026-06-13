@@ -1,0 +1,8 @@
+{
+  "track_id": "layout_swap_and_gallery_scaling_20260613",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-13T21:03:10Z",
+  "updated_at": "2026-06-13T21:03:10Z",
+  "description": "We need to change the layout a little. The gallery results should be above the prompt box. Also, the image scaling is a bit off."
+}
