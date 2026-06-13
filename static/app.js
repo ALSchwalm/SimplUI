@@ -838,6 +838,21 @@ function handleWebSocketMessage(msg) {
         if (data.node === null) {
           // Completed execution of prompt
           console.log(`Prompt completed: ${data.prompt_id}`);
+          
+          // Ensure the final image shown in the gallery slot is added to history
+          const slotIndex = activePrompt ? activePrompt.index : state.currentBatchIndex;
+          const slot = document.getElementById(`gallery-slot-${slotIndex}`);
+          if (slot) {
+            const img = slot.querySelector('img');
+            if (img && img.src) {
+              const imageUrl = img.src;
+              if (!state.history.includes(imageUrl)) {
+                state.history.unshift(imageUrl);
+                saveHistoryToStorage();
+              }
+            }
+          }
+
           if (activePrompt.resolve) {
             activePrompt.resolve();
             activePrompt.resolve = null;
