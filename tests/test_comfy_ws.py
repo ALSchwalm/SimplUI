@@ -46,6 +46,12 @@ async def test_generate_image_success():
                 },
             }
         ),
+        json.dumps(
+            {
+                "type": "executing",
+                "data": {"node": None, "prompt_id": prompt_id},
+            }
+        ),
     ]
 
     mock_ws.recv.side_effect = messages
@@ -122,6 +128,12 @@ async def test_generate_image_with_previews():
             {
                 "type": "executed",
                 "data": {"prompt_id": prompt_id, "output": {"images": []}},
+            }
+        ),
+        json.dumps(
+            {
+                "type": "executing",
+                "data": {"node": None, "prompt_id": prompt_id},
             }
         ),
     ]

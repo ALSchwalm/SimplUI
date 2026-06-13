@@ -58,7 +58,7 @@ def test_submit_workflow_failure():
 
         with pytest.raises(Exception) as excinfo:
             client.submit_workflow(workflow, client_id)
-        
+
         assert "ComfyUI Error (400)" in str(excinfo.value)
         assert "Invalid workflow" in str(excinfo.value)
 

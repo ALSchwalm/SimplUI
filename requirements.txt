@@ -1,4 +1,3 @@
-gradio
 requests
 websockets
 pytest

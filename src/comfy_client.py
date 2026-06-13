@@ -80,9 +80,9 @@ class ComfyClient:
                     # Binary message header: 4 bytes for type, 4 bytes for format
                     if len(message) > 8:
                         msg_type = struct.unpack(">I", message[0:4])[0]
-                        if msg_type == 1: # Preview
+                        if msg_type == 1:  # Preview
                             yield {"type": "preview", "data": message[8:]}
-                        elif msg_type == 2: # Final Image (Websocket Output)
+                        elif msg_type == 2:  # Final Image (Websocket Output)
                             yield {"type": "image", "data": message[8:]}
                         else:
                             # Unknown type, treat as preview for safety

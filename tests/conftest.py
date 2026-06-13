@@ -1,10 +1,6 @@
 import pytest
-import threading
-import time
 from unittest.mock import MagicMock, patch
-from ui import create_ui
 from config_manager import ConfigManager
-from playwright.sync_api import Page
 
 
 # Mock Config
@@ -75,48 +71,4 @@ def mock_comfy_client():
     return client
 
 
-@pytest.fixture(scope="session")
-def app_port():
-    return 7861  # Use a different port for testing
-
-
-@pytest.fixture
-def gradio_server(mock_config, mock_comfy_client, app_port):
-    """
-    Launches the Gradio app in a background thread.
-    """
-    demo = create_ui(mock_config, mock_comfy_client)
-
-    # Launch in a thread
-    # prevent_thread_lock=True ensures it doesn't block
-    server_thread = threading.Thread(
-        target=demo.launch,
-        kwargs={
-            "server_name": "127.0.0.1",
-            "server_port": app_port,
-            "prevent_thread_lock": True,
-            "quiet": True,
-            "css": demo.css,
-            "js": demo.js,
-        },
-    )
-    server_thread.start()
-
-    # Wait for server to start (simple sleep for now, or check connectivity)
-    time.sleep(2)
-
-    yield f"http://127.0.0.1:{app_port}"
-
-    # Cleanup
-    demo.close()
-    server_thread.join(timeout=2)
-
-
-@pytest.fixture
-def page(context, gradio_server):
-    """
-    Overrides the default page fixture to navigate to the gradio app.
-    """
-    page = context.new_page()
-    page.goto(gradio_server)
-    return page
+# Gradio server and page fixtures removed
