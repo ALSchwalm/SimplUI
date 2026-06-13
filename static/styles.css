@@ -308,6 +308,7 @@ body {
   flex-direction: column;
   height: 70vh; /* Gallery is constrained to 70% viewport height */
   max-height: 70vh;
+  min-height: 0;
 }
 
 .card-header {
@@ -351,6 +352,7 @@ body {
 
 .gallery-wrapper {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin-top: 10px;
 }
