@@ -826,6 +826,14 @@ function handleWebSocketMessage(msg) {
       state.currentlyExecutingPromptId = null;
     }
     
+    // Auto-register prompt_id to avoid HTTP/WS race conditions
+    if (!state.activePrompts[data.prompt_id]) {
+      state.activePrompts[data.prompt_id] = {
+        index: state.currentBatchIndex,
+        resolve: null
+      };
+    }
+    
     const activePrompt = state.activePrompts[data.prompt_id];
     if (activePrompt) {
       if (type === 'progress') {
@@ -1016,10 +1024,14 @@ async function handleGenerateClick() {
       
       // Wait for WebSocket execution
       await new Promise((resolve) => {
-        state.activePrompts[promptId] = {
-          index: i,
-          resolve: resolve
-        };
+        if (state.activePrompts[promptId]) {
+          state.activePrompts[promptId].resolve = resolve;
+        } else {
+          state.activePrompts[promptId] = {
+            index: i,
+            resolve: resolve
+          };
+        }
       });
       
     } catch (err) {
