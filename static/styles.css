@@ -385,7 +385,7 @@ body {
   border: 1px solid var(--border-color);
   background: rgba(0, 0, 0, 0.2);
   aspect-ratio: auto;
-  max-height: calc(70vh - 120px);
+  max-height: calc(70vh - 140px);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -402,6 +402,7 @@ body {
   width: 100%;
   height: 100%;
   max-width: 80vw;
+  max-height: calc(70vh - 140px);
   object-fit: contain; /* ensures complete image is visible */
   transition: transform 0.5s ease;
 }
