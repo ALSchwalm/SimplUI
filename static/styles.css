@@ -360,6 +360,7 @@ body {
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* Default desktop: 2 columns */
+  grid-auto-rows: minmax(0, calc(70vh - 140px));
   gap: 16px;
   min-height: 100%;
 }
