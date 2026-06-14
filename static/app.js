@@ -155,6 +155,12 @@ function setupEventListeners() {
       closeLightbox(false);
     }
   });
+
+  // Warn user before navigating away/reloading
+  window.addEventListener('beforeunload', (e) => {
+    e.preventDefault();
+    e.returnValue = '';
+  });
 }
 
 // Tab Switching logic

@@ -48,21 +48,10 @@ def test_beforeunload_dialog_registered(page):
     abs_path = os.path.abspath("static/index.html")
     page.goto(f"file://{abs_path}")
 
-    # Interact with the page (required for browsers to allow beforeunload prompts)
-    page.locator("body").click()
-
-    # Track dialog events
-    dialogs = []
-    page.on("dialog", lambda dialog: dialogs.append(dialog))
-
-    # Trigger reload and catch the dialog.
-    # In Playwright, triggering location.reload() with a beforeunload listener
-    # triggers a browser dialog which will block navigation.
-    with pytest.raises(Exception):
-        # We set a short timeout so it doesn't hang the test
-        page.evaluate("window.location.reload()", timeout=2000)
-
-    # Check if beforeunload dialog was triggered
-    assert len(dialogs) > 0
-    assert dialogs[0].type == "beforeunload"
-    dialogs[0].dismiss()
+    # Dispatch a cancelable beforeunload event and check if it gets default-prevented
+    default_prevented = page.evaluate("""() => {
+        const event = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(event);
+        return event.defaultPrevented;
+    }""")
+    assert default_prevented is True
