@@ -20,6 +20,12 @@ This will be a gradio project that acts as a wrapper/proxy for comfyui workflows
 - **Batch Results (Gallery):** For batch generations, the application displays results in a responsive gallery limited to 70% of the viewport height. The gallery automatically adjusts its layout to use a single column on mobile devices and two columns on larger screens, ensuring optimal viewing.
 - **Skip Functionality:** During generation, the 'Generate' button is replaced by a 'Skip' button. Clicking 'Skip' immediately cancels the current iteration and moves to the next item in the batch, removing any partial preview from the gallery while preserving completed images.
 
+### Lightbox Full Screen Viewer
+- **Full Screen Overlay:** Clicking any image in the Batch Results gallery or History tab sidebar opens a full-screen lightbox with a semi-translucent backdrop (`rgba(0, 0, 0, 0.85)`) and blur effect (`backdrop-filter: blur(8px)`).
+- **Navigation & Loops:** Users can cycle through images instantaneously using the keyboard arrow keys or by clicking the left/right halves of the image. Navigation loops seamlessly and is context-aware, scoped only to the currently visible Batch Results or History items.
+- **Mobile Back Button:** On mobile devices, system back navigation closes the lightbox instead of navigating away from the page, using browser history state management.
+- **Preview Exclusions:** Images that are still generating (live previews) are ignored and cannot be clicked or included in the navigation stack of the lightbox.
+
 ### Advanced User Controls
 - **Advanced Mode:** The interface will feature an "Advanced" button.
 - **Sidebar Controls:** Clicking the "Advanced Controls" checkbox will reveal a sidebar on the right containing detailed controls for manipulating the specific nodes within the selected workflow.
