@@ -1,9 +1,9 @@
 # Implementation Plan: Compact Connection Status Indicator with Custom Tooltip
 
 ## Phase 1: Implement Compact Indicator and CSS Tooltip
-- [ ] Task: Write failing tests (Red Phase)
-    - [ ] Add unit tests in `tests/test_layout.py` to assert that `.status-text` is hidden in CSS, `app.js` sets the `data-tooltip` attribute on the connection indicator, and the custom CSS tooltip (`::after`) rules are present in `styles.css`.
-    - [ ] Run the tests and confirm they fail.
+- [~] Task: Write failing tests (Red Phase)
+    - [~] Add unit tests in `tests/test_layout.py` to assert that `.status-text` is hidden in CSS, `app.js` sets the `data-tooltip` attribute on the connection indicator, and the custom CSS tooltip (`::after`) rules are present in `styles.css`.
+    - [~] Run the tests and confirm they fail.
 - [ ] Task: Implement JS dynamic tooltip update (Green Phase)
     - [ ] Modify `static/app.js` to update the `data-tooltip` attribute of `elements.connectionStatus` with the status text whenever the connection state changes.
 - [ ] Task: Implement CSS layout and tooltip styling (Green Phase)

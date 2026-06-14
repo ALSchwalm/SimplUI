@@ -9,7 +9,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: I'd like to change the heading slightly. The current "Connected to Comfyui" badge is large and takes up too much space on mobile. Can you make it just a red/green indicator with a hover that shows the details**
+- [~] **Track: I'd like to change the heading slightly. The current "Connected to Comfyui" badge is large and takes up too much space on mobile. Can you make it just a red/green indicator with a hover that shows the details**
 *Link: [./compact_connection_indicator_20260614/](./compact_connection_indicator_20260614/)*
 
 
