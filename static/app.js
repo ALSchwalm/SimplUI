@@ -17,6 +17,7 @@ const state = {
   lastExecutingPromptId: null,
   lightboxImages: [],
   lightboxIndex: -1,
+  lightboxSource: '',
 };
 
 // DOM Elements
@@ -120,17 +121,7 @@ function setupEventListeners() {
       return; // Do nothing for previews
     }
     
-    // Get only completed images (those gallery items that DO NOT have a preview-badge)
-    const completedItems = Array.from(elements.galleryGrid.querySelectorAll('.gallery-item'))
-      .filter(item => !item.querySelector('.preview-badge'));
-    
-    const imgs = completedItems.map(item => item.querySelector('img')).filter(img => img !== null);
-    const urls = imgs.map(img => img.getAttribute('src'));
-    const clickedIndex = imgs.indexOf(clickedImg);
-    
-    if (clickedIndex !== -1) {
-      openLightbox(urls, clickedIndex);
-    }
+    openLightbox('gallery', clickedImg.getAttribute('src'));
   });
   
   // History item click to open lightbox
@@ -138,13 +129,7 @@ function setupEventListeners() {
     const clickedImg = e.target.closest('img');
     if (!clickedImg) return;
     
-    const imgs = Array.from(elements.historyGrid.querySelectorAll('img'));
-    const urls = imgs.map(img => img.getAttribute('src'));
-    const clickedIndex = imgs.indexOf(clickedImg);
-    
-    if (clickedIndex !== -1) {
-      openLightbox(urls, clickedIndex);
-    }
+    openLightbox('history', clickedImg.getAttribute('src'));
   });
   
   // Keyboard navigation
@@ -1235,6 +1220,11 @@ function handleCompletedImage(imageUrl, index) {
   // Add to session history
   state.history.unshift(imageUrl);
   saveHistoryToStorage();
+
+  // If lightbox is open, dynamically refresh its images
+  if (elements.lightbox && !elements.lightbox.classList.contains('hidden')) {
+    updateLightboxImagesAndIndex();
+  }
 }
 
 function saveHistoryToStorage() {
@@ -1244,9 +1234,9 @@ function saveHistoryToStorage() {
 }
 
 // Lightbox functionality
-function openLightbox(images, startIndex) {
-  state.lightboxImages = images;
-  state.lightboxIndex = startIndex;
+function openLightbox(source, clickedImageUrl) {
+  state.lightboxSource = source;
+  updateLightboxImagesAndIndex(clickedImageUrl);
   
   if (state.lightboxImages.length === 0 || state.lightboxIndex < 0) return;
   
@@ -1269,18 +1259,41 @@ function closeLightbox(shouldGoBack = true) {
   }
 }
 
+function updateLightboxImagesAndIndex(targetUrl) {
+  let imgs = [];
+  if (state.lightboxSource === 'gallery') {
+    const completedItems = Array.from(elements.galleryGrid.querySelectorAll('.gallery-item'))
+      .filter(item => !item.querySelector('.preview-badge'));
+    imgs = completedItems.map(item => item.querySelector('img')).filter(img => img !== null);
+  } else if (state.lightboxSource === 'history') {
+    const historyItems = Array.from(elements.historyGrid.querySelectorAll('.history-item'));
+    imgs = historyItems.map(item => item.querySelector('img')).filter(img => img !== null);
+  }
+  
+  state.lightboxImages = imgs.map(img => img.getAttribute('src'));
+  
+  if (targetUrl) {
+    state.lightboxIndex = state.lightboxImages.indexOf(targetUrl);
+  } else {
+    const currentUrl = elements.lightboxImage.getAttribute('src');
+    state.lightboxIndex = state.lightboxImages.indexOf(currentUrl);
+  }
+}
+
 function updateLightboxImage() {
   if (state.lightboxIndex < 0 || state.lightboxIndex >= state.lightboxImages.length) return;
   elements.lightboxImage.src = state.lightboxImages[state.lightboxIndex];
 }
 
 function lightboxNext() {
+  updateLightboxImagesAndIndex();
   if (state.lightboxImages.length === 0) return;
   state.lightboxIndex = (state.lightboxIndex + 1) % state.lightboxImages.length;
   updateLightboxImage();
 }
 
 function lightboxPrev() {
+  updateLightboxImagesAndIndex();
   if (state.lightboxImages.length === 0) return;
   state.lightboxIndex = (state.lightboxIndex - 1 + state.lightboxImages.length) % state.lightboxImages.length;
   updateLightboxImage();

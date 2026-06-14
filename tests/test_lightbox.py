@@ -151,6 +151,29 @@ def test_lightbox_js_behavior(page):
     page.keyboard.press("ArrowRight")
     assert lightbox_image.get_attribute("src").endswith("img3.jpg")
 
+    # Simulating a new image generation completion while lightbox is open
+    page.evaluate("""() => {
+        const gallery = document.getElementById('gallery-grid');
+        const slot4 = document.createElement('div');
+        slot4.className = 'gallery-item';
+        slot4.id = 'gallery-slot-4';
+        const img4 = document.createElement('img');
+        img4.src = 'img4.jpg';
+        slot4.appendChild(img4);
+        gallery.appendChild(slot4);
+
+        // Trigger completed image handler
+        handleCompletedImage('img4.jpg', 4);
+    }""")
+
+    # Click right zone: it should now navigate to img4.jpg
+    page.locator("#lightbox-right-zone").click()
+    assert lightbox_image.get_attribute("src").endswith("img4.jpg")
+
+    # Click right zone again: it should loop to img1.jpg
+    page.locator("#lightbox-right-zone").click()
+    assert lightbox_image.get_attribute("src").endswith("img1.jpg")
+
     # Click close button and verify lightbox is hidden
     page.locator("#lightbox-close").click()
     assert "hidden" in lightbox.get_attribute("class")
@@ -158,8 +181,8 @@ def test_lightbox_js_behavior(page):
     # Switch to history tab
     page.locator(".tab-btn[data-tab='history']").click()
 
-    # Open it again by clicking a history image
-    page.locator("#history-grid .history-item img").first.click()
+    # Open it again by clicking the second history image (which is hist1.jpg)
+    page.locator("#history-grid .history-item img").nth(1).click()
     assert "hidden" not in lightbox.get_attribute("class")
     assert lightbox_image.get_attribute("src").endswith("hist1.jpg")
 
@@ -167,7 +190,10 @@ def test_lightbox_js_behavior(page):
     page.locator("#lightbox-right-zone").click()
     assert lightbox_image.get_attribute("src").endswith("hist2.jpg")
 
-    # Loop back
+    # Loop back (includes img4.jpg as it is now part of the history context)
+    page.locator("#lightbox-right-zone").click()
+    assert lightbox_image.get_attribute("src").endswith("img4.jpg")
+
     page.locator("#lightbox-right-zone").click()
     assert lightbox_image.get_attribute("src").endswith("hist1.jpg")
 
