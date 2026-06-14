@@ -6,7 +6,7 @@
     - [x] Run the tests and confirm they fail.
 - [x] Task: Implement fresh session state clearance (Green Phase) [fc8f5e5]
     - [x] Add `localStorage.clear()` call at the start of app initialization in `static/app.js`.
-- [ ] Task: Implement navigate-away confirmation dialog (Green Phase)
-    - [ ] Register a `beforeunload` listener on `window` to intercept page reloads, tab/browser closures, or navigations in `static/app.js`.
-    - [ ] Run the tests and confirm that all tests now pass.
+- [x] Task: Implement navigate-away confirmation dialog (Green Phase) [fa5e1a5]
+    - [x] Register a `beforeunload` listener on `window` to intercept page reloads, tab/browser closures, or navigations in `static/app.js`.
+    - [x] Run the tests and confirm that all tests now pass.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Fresh Sessions and Navigate-Away Warning' (Protocol in workflow.md)
