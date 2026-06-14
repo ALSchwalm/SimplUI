@@ -159,3 +159,73 @@ def test_websocket_executed_adds_to_history(page):
     history = page.evaluate("state.history")
     assert len(history) == 1
     assert any("final-image-from-ws.png" in url for url in history)
+
+
+def test_websocket_binary_executed_adds_to_history(page):
+    abs_path = os.path.abspath("static/index.html")
+    page.goto(f"file://{abs_path}")
+
+    # Set up mock WebSocket constructor and state
+    page.evaluate("""() => {
+        window.WebSocket = class {
+            close() {}
+            set onopen(cb) { setTimeout(cb, 0); }
+            set onmessage(cb) { window.mockWsOnMessage = cb; }
+            set onerror(cb) {}
+            set onclose(cb) {}
+        };
+        
+        state.isConnected = true;
+        state.isGenerating = true;
+        state.batchCount = 1;
+        state.currentBatchIndex = 0;
+        
+        state.currentWorkflowJson = {
+            '11': {
+                class_type: 'SaveImageWebsocket'
+            }
+        };
+        
+        state.comfyUrl = 'http://localhost:8188';
+        connectWebSocket();
+        
+        // Initialize slot
+        createGallerySlot(0);
+        
+        state.activePrompts['prompt-1'] = {
+            index: 0,
+            resolve: () => {}
+        };
+    }""")
+
+    # Simulate executing start for output node 11
+    page.evaluate("""() => {
+        handleWebSocketMessage({
+            type: 'executing',
+            data: {
+                node: '11',
+                prompt_id: 'prompt-1'
+            }
+        });
+    }""")
+
+    # Simulate receiving the binary eventType 1 message
+    page.evaluate("""async () => {
+        // Construct binary buffer: eventType=1 (4 bytes), imageType=2 (4 bytes)
+        const buffer = new ArrayBuffer(12);
+        const view = new DataView(buffer);
+        view.setInt32(0, 1); // eventType
+        view.setInt32(4, 2); // imageType
+        
+        // Send a Blob message through the websocket message handler
+        const blob = new Blob([buffer]);
+        
+        // Trigger ws.onmessage manually
+        const event = { data: blob };
+        await window.mockWsOnMessage(event);
+    }""")
+
+    # Assert that history contains a blob URL (since it's a binary message)
+    history = page.evaluate("state.history")
+    assert len(history) == 1
+    assert any(url.startswith("blob:") for url in history)

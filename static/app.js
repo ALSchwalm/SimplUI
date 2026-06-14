@@ -843,12 +843,19 @@ function connectWebSocket() {
         const activePrompt = promptId ? state.activePrompts[promptId] : null;
         const slotIndex = activePrompt ? activePrompt.index : state.currentBatchIndex;
 
-        if (eventType === 1) { // Live preview image
+        const isOutputImage = activePrompt && activePrompt.isExecutingOutputNode;
+
+        if (eventType === 1) { // Live preview image or final image from SaveImageWebsocket
           const imageBytes = buffer.slice(8);
           const mime = imageType === 1 ? 'image/png' : 'image/jpeg';
           const blob = new Blob([imageBytes], { type: mime });
           const objectUrl = URL.createObjectURL(blob);
-          updateLivePreview(objectUrl, slotIndex);
+          
+          if (isOutputImage) {
+            handleCompletedImage(objectUrl, slotIndex);
+          } else {
+            updateLivePreview(objectUrl, slotIndex);
+          }
         } else if (eventType === 2) { // Final image (binary output)
           const imageBytes = buffer.slice(8);
           const mime = imageType === 1 ? 'image/png' : 'image/jpeg';
@@ -939,33 +946,24 @@ function handleWebSocketMessage(msg) {
             if (badge) {
               badge.remove();
             }
-            
-            // If the prompt executed a final output node successfully and was not skipped, add the final image from the slot to history
-            if (activePrompt && activePrompt.hasExecutedFinalNode && !state.activePromptSkipped) {
-              const img = slot.querySelector('img');
-              if (img && img.src) {
-                const imageUrl = img.src;
-                if (!state.history.includes(imageUrl)) {
-                  state.history.unshift(imageUrl);
-                  saveHistoryToStorage();
-                }
-              }
-            }
           }
 
           if (activePrompt.resolve) {
             activePrompt.resolve();
             activePrompt.resolve = null;
           }
-        }
-      } else if (type === 'executed') {
-        if (state.currentWorkflowJson && data.node) {
-          const node = state.currentWorkflowJson[data.node];
-          if (node && node.class_type && (node.class_type.includes('Save') || node.class_type.includes('Preview'))) {
-            activePrompt.hasExecutedFinalNode = true;
+        } else {
+          // Node execution started
+          if (state.currentWorkflowJson && data.node) {
+            const node = state.currentWorkflowJson[data.node];
+            if (node && node.class_type && (node.class_type.includes('Save') || node.class_type.includes('Preview'))) {
+              activePrompt.isExecutingOutputNode = true;
+            } else {
+              activePrompt.isExecutingOutputNode = false;
+            }
           }
         }
-
+      } else if (type === 'executed') {
         if (data.output && data.output.images) {
           // Generated images
           data.output.images.forEach(img => {
