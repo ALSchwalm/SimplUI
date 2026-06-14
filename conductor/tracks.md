@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: There is a bug where the images in the history tab appear to actually be previews, not the completed images**
+- [x] **Track: There is a bug where the images in the history tab appear to actually be previews, not the completed images**
 *Link: [./exclude_previews_from_history_20260614/](./exclude_previews_from_history_20260614/)*
