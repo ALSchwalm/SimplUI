@@ -1,0 +1,13 @@
+# Implementation Plan: Relocate Batch Count in Advanced Controls
+
+## Phase 1: Relocate Batch Count and Add Visual Divider
+- [ ] Task: Write failing tests (Red Phase)
+    - [ ] Add unit tests in `tests/test_layout.py` to assert that in `static/index.html`, the batch count slider element is defined after the workflow select element and before the dynamic controls container.
+    - [ ] Add assertions that a divider or border style exists separating default controls from dynamic controls.
+    - [ ] Run the tests and confirm they fail.
+- [ ] Task: Implement HTML layout relocation (Green Phase)
+    - [ ] Modify `static/index.html` to relocate the batch count settings group element directly below the workflow selection settings group element and above the dynamic controls container.
+- [ ] Task: Add CSS divider styling (Green Phase)
+    - [ ] Modify `static/styles.css` to add styling to visually separate the default settings (Workflow Selection and Batch Count) from the dynamic controls.
+    - [ ] Run the tests and confirm that all tests now pass.
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Relocate Batch Count and Add Visual Divider' (Protocol in workflow.md)
