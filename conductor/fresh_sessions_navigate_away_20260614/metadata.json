@@ -1,0 +1,8 @@
+{
+  "track_id": "fresh_sessions_navigate_away_20260614",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-14T19:22:00Z",
+  "updated_at": "2026-06-14T19:22:00Z",
+  "description": "I want to change the behvaior on page refresh. First, it currently seems like some state is preserved across page reloads. We should not do that. When the page is refreshed it should be a completely new session with no memory of the previous one. We shoudl also add a modal dialog warning when the user attempts to go back/refresh/natvigate away"
+}
