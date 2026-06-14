@@ -111,14 +111,46 @@ body {
 .connection-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 50%;
   transition: all var(--transition-speed);
+  position: relative;
+}
+
+.status-text {
+  display: none;
+}
+
+/* Tooltip styling */
+.connection-status::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(15, 15, 20, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-speed);
+  z-index: 1010;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.connection-status:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(4px);
 }
 
 .status-dot {
@@ -140,6 +172,11 @@ body {
 .connection-status.connected {
   border-color: rgba(16, 185, 129, 0.2);
   background: rgba(16, 185, 129, 0.05);
+}
+
+.connection-status.disconnected {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.05);
 }
 
 .toggle-advanced-label {
