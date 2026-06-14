@@ -524,6 +524,11 @@ body {
   gap: 8px;
 }
 
+.settings-divider {
+  border-bottom: 1px solid var(--border-color);
+  margin: 4px 0;
+}
+
 .settings-group label {
   font-size: 13px;
   font-weight: 600;
