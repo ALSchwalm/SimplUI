@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: I want to change the behvaior on page refresh. First, it currently seems like some state is preserved across page reloads. We should not do that. When the page is refreshed it should be a completely new session with no memory of the previous one. We shoudl also add a modal dialog warning when the user attempts to go back/refresh/natvigate away**
+- [x] **Track: I want to change the behvaior on page refresh. First, it currently seems like some state is preserved across page reloads. We should not do that. When the page is refreshed it should be a completely new session with no memory of the previous one. We shoudl also add a modal dialog warning when the user attempts to go back/refresh/natvigate away**
 *Link: [./fresh_sessions_navigate_away_20260614/](./fresh_sessions_navigate_away_20260614/)*
