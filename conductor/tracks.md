@@ -9,7 +9,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: I'd like to change the layout so the batch count is shown at the top of advanced settings, just under the selected workflow dropdown**
+- [x] **Track: I'd like to change the layout so the batch count is shown at the top of advanced settings, just under the selected workflow dropdown**
 *Link: [./relocate_batch_count_20260614/](./relocate_batch_count_20260614/)*
 
 
