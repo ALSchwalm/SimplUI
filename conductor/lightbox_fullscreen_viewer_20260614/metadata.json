@@ -1,0 +1,8 @@
+{
+  "track_id": "lightbox_fullscreen_viewer_20260614",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-14T11:46:00Z",
+  "updated_at": "2026-06-14T11:46:00Z",
+  "description": "A new feature where if you click/press a generated image you can see it 'full screen'. You must also then be able to exit the full screen view. In full screen view, you should be able to move between all generated images (or all historical images if you are viewing something from that tab), and mobile back should close the lightbox."
+}
