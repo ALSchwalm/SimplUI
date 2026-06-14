@@ -114,3 +114,48 @@ def test_history_only_contains_successful_final_images(page):
     assert "final-image-1.jpg" in history
     assert "blob:preview-url-1" not in history
     assert len(history) == 1
+
+
+def test_websocket_executed_adds_to_history(page):
+    abs_path = os.path.abspath("static/index.html")
+    page.goto(f"file://{abs_path}")
+
+    # Set up slot and mock state
+    page.evaluate("""() => {
+        state.isConnected = true;
+        state.isGenerating = true;
+        state.batchCount = 1;
+        state.currentBatchIndex = 0;
+        
+        // Initialize slot
+        createGallerySlot(0);
+        
+        state.activePrompts['prompt-1'] = {
+            index: 0,
+            resolve: () => {}
+        };
+    }""")
+
+    # Simulate receiving the executed WebSocket JSON message
+    page.evaluate("""() => {
+        handleWebSocketMessage({
+            type: 'executed',
+            data: {
+                prompt_id: 'prompt-1',
+                output: {
+                    images: [
+                        {
+                            filename: 'final-image-from-ws.png',
+                            subfolder: '',
+                            type: 'output'
+                        }
+                    ]
+                }
+            }
+        });
+    }""")
+
+    # Assert that history contains the final image url
+    history = page.evaluate("state.history")
+    assert len(history) == 1
+    assert any("final-image-from-ws.png" in url for url in history)

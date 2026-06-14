@@ -939,6 +939,18 @@ function handleWebSocketMessage(msg) {
             if (badge) {
               badge.remove();
             }
+            
+            // If the prompt executed a final output node successfully and was not skipped, add the final image from the slot to history
+            if (activePrompt && activePrompt.hasExecutedFinalNode && !state.activePromptSkipped) {
+              const img = slot.querySelector('img');
+              if (img && img.src) {
+                const imageUrl = img.src;
+                if (!state.history.includes(imageUrl)) {
+                  state.history.unshift(imageUrl);
+                  saveHistoryToStorage();
+                }
+              }
+            }
           }
 
           if (activePrompt.resolve) {
@@ -947,6 +959,13 @@ function handleWebSocketMessage(msg) {
           }
         }
       } else if (type === 'executed') {
+        if (state.currentWorkflowJson && data.node) {
+          const node = state.currentWorkflowJson[data.node];
+          if (node && node.class_type && (node.class_type.includes('Save') || node.class_type.includes('Preview'))) {
+            activePrompt.hasExecutedFinalNode = true;
+          }
+        }
+
         if (data.output && data.output.images) {
           // Generated images
           data.output.images.forEach(img => {
