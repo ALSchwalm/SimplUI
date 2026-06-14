@@ -119,6 +119,7 @@ body {
   border-radius: 50%;
   transition: all var(--transition-speed);
   position: relative;
+  cursor: pointer;
 }
 
 .status-text {
