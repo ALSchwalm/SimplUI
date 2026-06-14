@@ -118,6 +118,20 @@
     </div>
   </div>
 
+  <!-- Lightbox Overlay -->
+  <div id="lightbox" class="lightbox-overlay hidden">
+    <button id="lightbox-close" class="lightbox-close" aria-label="Close full screen view">
+      <i data-lucide="x"></i>
+    </button>
+    <div class="lightbox-content-wrapper">
+      <img id="lightbox-image" class="lightbox-image" src="" alt="Full Screen View">
+      <div class="lightbox-click-zones">
+        <div class="lightbox-click-zone left" id="lightbox-left-zone"></div>
+        <div class="lightbox-click-zone right" id="lightbox-right-zone"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="/static/app.js"></script>
   <script>
     // Initialize Lucide icons
