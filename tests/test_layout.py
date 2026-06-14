@@ -85,3 +85,52 @@ def test_divider_css_styling():
     assert (
         re.search(r"\.settings-divider\s*\{[^}]*border-bottom:", content) is not None
     ), "settings-divider should have border-bottom style"
+
+
+def test_connection_status_compact():
+    html_path = "static/index.html"
+    assert os.path.exists(html_path), "index.html must exist"
+
+    with open(html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Assert that connection-status div exists
+    assert 'id="connection-status"' in content, "connection-status element must exist in HTML"
+
+
+def test_connection_status_js_tooltip():
+    app_js_path = "static/app.js"
+    assert os.path.exists(app_js_path), "app.js must exist"
+
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Assert that app.js sets data-tooltip attribute
+    assert "data-tooltip" in content, "app.js should reference data-tooltip to set status details"
+
+
+def test_connection_status_css_tooltip():
+    css_path = "static/styles.css"
+    assert os.path.exists(css_path), "styles.css must exist"
+
+    with open(css_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Assert status-text is hidden/styled as hidden (e.g. display: none or similar)
+    assert (
+        re.search(r"\.status-text\s*\{[^}]*display:\s*none", content) is not None
+    ), "status-text should be hidden via display: none"
+
+    # Assert tooltip pseudo-elements are present on connection-status
+    assert (
+        re.search(
+            r"\.connection-status(?:|::after|:after)\s*\{[^}]*content:\s*attr\(data-tooltip\)",
+            content,
+        )
+        is not None
+        or re.search(
+            r"\.connection-status(::after|:after)\s*\{[^}]*content:\s*attr\(data-tooltip\)",
+            content,
+        )
+        is not None
+    ), "connection-status::after must exist and use attr(data-tooltip)"
