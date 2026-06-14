@@ -55,3 +55,18 @@ def test_beforeunload_dialog_registered(page):
         return event.defaultPrevented;
     }""")
     assert default_prevented is True
+
+
+def test_fresh_session_clears_prompt_input(page):
+    abs_path = os.path.abspath("static/index.html")
+    page.goto(f"file://{abs_path}")
+
+    # Set some custom text in prompt input
+    page.fill("#prompt-input", "custom user prompt text")
+    assert page.locator("#prompt-input").input_value() == "custom user prompt text"
+
+    # Reload the page
+    page.reload()
+
+    # The prompt should not preserve the user's custom text
+    assert page.locator("#prompt-input").input_value() != "custom user prompt text"

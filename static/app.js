@@ -51,6 +51,16 @@ const elements = {
 // Initialize App
 async function init() {
   localStorage.clear();
+  if (elements.promptInput) elements.promptInput.value = '';
+  if (elements.batchCountSlider) {
+    elements.batchCountSlider.value = 1;
+    state.batchCount = 1;
+    if (elements.batchCountValue) elements.batchCountValue.textContent = '1';
+  }
+  if (elements.advancedToggle) {
+    elements.advancedToggle.checked = false;
+    if (elements.advancedSidebar) elements.advancedSidebar.classList.add('collapsed');
+  }
   setupEventListeners();
   await fetchConfig();
 }
