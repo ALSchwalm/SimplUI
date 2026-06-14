@@ -1,6 +1,6 @@
 # Implementation Plan - Exclude Previews from Session History
 
-## Phase 1: Bug Investigation & Fix
+## Phase 1: Bug Investigation & Fix [checkpoint: ce46664]
 
 - [x] Task: Fix History Previews Bug (26ad61a)
     - [x] Write failing Playwright integration tests in a new test file `tests/test_history_previews.py` that verifies that intermediate preview images and skipped generations are never added to the History tab.
