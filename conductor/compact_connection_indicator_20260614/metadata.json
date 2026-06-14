@@ -1,0 +1,8 @@
+{
+  "track_id": "compact_connection_indicator_20260614",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-14T17:35:00Z",
+  "updated_at": "2026-06-14T17:35:00Z",
+  "description": "I'd like to change the heading slightly. The current \"Connected to Comfyui\" badge is large and takes up too much space on mobile. Can you make it just a red/green indicator with a hover that shows the details"
+}
