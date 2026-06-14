@@ -931,21 +931,13 @@ function handleWebSocketMessage(msg) {
           // Completed execution of prompt
           console.log(`Prompt completed: ${data.prompt_id}`);
           
-          // Ensure the final image shown in the gallery slot is added to history
+          // Clean up the preview badge from the gallery slot
           const slotIndex = activePrompt ? activePrompt.index : state.currentBatchIndex;
           const slot = document.getElementById(`gallery-slot-${slotIndex}`);
           if (slot) {
             const badge = slot.querySelector('.preview-badge');
             if (badge) {
               badge.remove();
-            }
-            const img = slot.querySelector('img');
-            if (img && img.src) {
-              const imageUrl = img.src;
-              if (!state.history.includes(imageUrl)) {
-                state.history.unshift(imageUrl);
-                saveHistoryToStorage();
-              }
             }
           }
 
@@ -1234,9 +1226,11 @@ function handleCompletedImage(imageUrl, index) {
   badge.textContent = idx + 1;
   slot.appendChild(badge);
   
-  // Add to session history
-  state.history.unshift(imageUrl);
-  saveHistoryToStorage();
+  // Add to session history if not already present
+  if (!state.history.includes(imageUrl)) {
+    state.history.unshift(imageUrl);
+    saveHistoryToStorage();
+  }
 
   // If lightbox is open, dynamically refresh its images
   if (elements.lightbox && !elements.lightbox.classList.contains('hidden')) {
