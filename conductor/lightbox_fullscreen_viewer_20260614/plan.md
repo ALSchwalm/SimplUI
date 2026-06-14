@@ -1,6 +1,6 @@
 # Implementation Plan: Lightbox Full Screen Image Viewer
 
-## Phase 1: Lightbox Overlay and Navigation Implementation
+## Phase 1: Lightbox Overlay and Navigation Implementation [checkpoint: 4eec23b]
 - [x] Task: Write failing tests (Red Phase) [8d75a18]
     - [x] Create a new unit test file `tests/test_lightbox.py` to assert that the lightbox overlay, close button, and visual container are declared in the codebase.
     - [x] Write assertions verifying that the lightbox container matches the dark translucent blur styling rules.
@@ -14,4 +14,4 @@
     - [x] Implement image split-click zone detection (left 50% / right 50%) to change active image.
     - [x] Add browser history state management (`history.pushState` and `popstate` event handling) to intercept mobile system back actions and close the lightbox overlay.
     - [x] Run the tests and confirm that all tests now pass.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Lightbox Overlay and Navigation Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Lightbox Overlay and Navigation Implementation' (Protocol in workflow.md) [4eec23b]
