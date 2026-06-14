@@ -8,7 +8,7 @@
 - [x] Task: Implement HTML structure and CSS styles for the Lightbox (Green Phase) [a274822]
     - [x] Add the lightbox markup (including backdrop, close button, and left/right half click zones) to `static/index.html`.
     - [x] Implement CSS styles for `.lightbox-overlay`, `.lightbox-image`, and control overlays in `static/styles.css` using `rgba(0, 0, 0, 0.85)` and `backdrop-filter: blur(8px)`.
-- [x] Task: Implement JavaScript functionality for Lightbox, Navigation, and Mobile Back Interception (Green Phase) [9e4f226]
+- [x] Task: Implement JavaScript functionality for Lightbox, Navigation, and Mobile Back Interception (Green Phase) [9e4f226, 3d226f9]
     - [x] Add event listeners to gallery grid items and history list items to open the lightbox in `static/app.js`.
     - [x] Implement keyboard navigation (`ArrowLeft`, `ArrowRight`, `Escape`) and loop boundaries.
     - [x] Implement image split-click zone detection (left 50% / right 50%) to change active image.
