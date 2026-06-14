@@ -1,0 +1,8 @@
+{
+  "track_id": "exclude_previews_from_history_20260614",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-06-14T14:55:00Z",
+  "updated_at": "2026-06-14T14:55:00Z",
+  "description": "There is a bug where the images in the history tab appear to actually be previews, not the completed images"
+}
