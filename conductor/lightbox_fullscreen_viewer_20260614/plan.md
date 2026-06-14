@@ -1,10 +1,10 @@
 # Implementation Plan: Lightbox Full Screen Image Viewer
 
 ## Phase 1: Lightbox Overlay and Navigation Implementation
-- [ ] Task: Write failing tests (Red Phase)
-    - [ ] Create a new unit test file `tests/test_lightbox.py` to assert that the lightbox overlay, close button, and visual container are declared in the codebase.
-    - [ ] Write assertions verifying that the lightbox container matches the dark translucent blur styling rules.
-    - [ ] Run the tests and confirm they fail.
+- [x] Task: Write failing tests (Red Phase) [8d75a18]
+    - [x] Create a new unit test file `tests/test_lightbox.py` to assert that the lightbox overlay, close button, and visual container are declared in the codebase.
+    - [x] Write assertions verifying that the lightbox container matches the dark translucent blur styling rules.
+    - [x] Run the tests and confirm they fail.
 - [ ] Task: Implement HTML structure and CSS styles for the Lightbox (Green Phase)
     - [ ] Add the lightbox markup (including backdrop, close button, and left/right half click zones) to `static/index.html`.
     - [ ] Implement CSS styles for `.lightbox-overlay`, `.lightbox-image`, and control overlays in `static/styles.css` using `rgba(0, 0, 0, 0.85)` and `backdrop-filter: blur(8px)`.
