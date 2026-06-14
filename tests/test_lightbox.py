@@ -62,19 +62,50 @@ def test_lightbox_js_behavior(page):
 
     # Set up some test images in gallery grid and history grid via page.evaluate
     page.evaluate("""() => {
-        // Mock gallery images
+        // Mock gallery images (2 completed, 1 preview, 1 completed)
         const gallery = document.getElementById('gallery-grid');
         gallery.innerHTML = '';
         gallery.classList.remove('hidden');
-        ['img1.jpg', 'img2.jpg', 'img3.jpg'].forEach((src, idx) => {
-            const slot = document.createElement('div');
-            slot.className = 'gallery-item';
-            slot.id = `gallery-slot-${idx}`;
-            const img = document.createElement('img');
-            img.src = src;
-            slot.appendChild(img);
-            gallery.appendChild(slot);
-        });
+        
+        // Slot 0: completed
+        const slot0 = document.createElement('div');
+        slot0.className = 'gallery-item';
+        slot0.id = 'gallery-slot-0';
+        const img0 = document.createElement('img');
+        img0.src = 'img1.jpg';
+        slot0.appendChild(img0);
+        gallery.appendChild(slot0);
+
+        // Slot 1: completed
+        const slot1 = document.createElement('div');
+        slot1.className = 'gallery-item';
+        slot1.id = 'gallery-slot-1';
+        const img1 = document.createElement('img');
+        img1.src = 'img2.jpg';
+        slot1.appendChild(img1);
+        gallery.appendChild(slot1);
+
+        // Slot 2: preview (has preview-badge)
+        const slot2 = document.createElement('div');
+        slot2.className = 'gallery-item';
+        slot2.id = 'gallery-slot-2';
+        const badge = document.createElement('span');
+        badge.className = 'preview-badge';
+        badge.textContent = 'Generating...';
+        slot2.appendChild(badge);
+        const img2 = document.createElement('img');
+        img2.src = 'preview.jpg';
+        slot2.appendChild(img2);
+        gallery.appendChild(slot2);
+
+        // Slot 3: completed
+        const slot3 = document.createElement('div');
+        slot3.className = 'gallery-item';
+        slot3.id = 'gallery-slot-3';
+        const img3 = document.createElement('img');
+        img3.src = 'img3.jpg';
+        slot3.appendChild(img3);
+        gallery.appendChild(slot3);
 
         // Mock history state
         state.history = ['hist1.jpg', 'hist2.jpg'];
@@ -82,6 +113,10 @@ def test_lightbox_js_behavior(page):
 
     # Verify lightbox is initially hidden
     lightbox = page.locator("#lightbox")
+    assert "hidden" in lightbox.get_attribute("class")
+
+    # Click preview image and verify it does NOT open the lightbox
+    page.locator("#gallery-slot-2 img").click()
     assert "hidden" in lightbox.get_attribute("class")
 
     # Click first image in gallery
@@ -96,7 +131,7 @@ def test_lightbox_js_behavior(page):
     page.locator("#lightbox-right-zone").click()
     assert lightbox_image.get_attribute("src").endswith("img2.jpg")
 
-    # Click right zone again
+    # Click right zone again (should skip preview.jpg and go to img3.jpg)
     page.locator("#lightbox-right-zone").click()
     assert lightbox_image.get_attribute("src").endswith("img3.jpg")
 

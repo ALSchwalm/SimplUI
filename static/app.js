@@ -114,7 +114,17 @@ function setupEventListeners() {
     const clickedImg = e.target.closest('img');
     if (!clickedImg) return;
     
-    const imgs = Array.from(elements.galleryGrid.querySelectorAll('img'));
+    // Check if the image belongs to a slot that is still generating (has preview-badge)
+    const slot = clickedImg.closest('.gallery-item');
+    if (slot && slot.querySelector('.preview-badge')) {
+      return; // Do nothing for previews
+    }
+    
+    // Get only completed images (those gallery items that DO NOT have a preview-badge)
+    const completedItems = Array.from(elements.galleryGrid.querySelectorAll('.gallery-item'))
+      .filter(item => !item.querySelector('.preview-badge'));
+    
+    const imgs = completedItems.map(item => item.querySelector('img')).filter(img => img !== null);
     const urls = imgs.map(img => img.getAttribute('src'));
     const clickedIndex = imgs.indexOf(clickedImg);
     
