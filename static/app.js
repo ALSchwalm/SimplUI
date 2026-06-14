@@ -293,6 +293,7 @@ function updateConnectionUI(connected, text) {
     elements.connectionStatus.className = 'connection-status disconnected';
     elements.connectionStatus.querySelector('.status-text').textContent = text;
   }
+  elements.connectionStatus.setAttribute('data-tooltip', text);
 }
 
 // Preset tables
