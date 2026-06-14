@@ -15,6 +15,8 @@ const state = {
   activePrompts: {}, // promptId -> { index: i, resolve: resolveFunc }
   currentlyExecutingPromptId: null,
   lastExecutingPromptId: null,
+  lightboxImages: [],
+  lightboxIndex: -1,
 };
 
 // DOM Elements
@@ -38,6 +40,11 @@ const elements = {
   tabSettings: document.getElementById('tab-settings'),
   tabHistory: document.getElementById('tab-history'),
   tabButtons: document.querySelectorAll('.tab-btn'),
+  lightbox: document.getElementById('lightbox'),
+  lightboxClose: document.getElementById('lightbox-close'),
+  lightboxImage: document.getElementById('lightbox-image'),
+  lightboxLeftZone: document.getElementById('lightbox-left-zone'),
+  lightboxRightZone: document.getElementById('lightbox-right-zone'),
 };
 
 // Initialize App
@@ -87,6 +94,71 @@ function setupEventListeners() {
 
   // Generate Button Click
   elements.generateBtn.addEventListener('click', handleGenerateClick);
+
+  // Lightbox click zones
+  elements.lightboxLeftZone.addEventListener('click', lightboxPrev);
+  elements.lightboxRightZone.addEventListener('click', lightboxNext);
+  
+  // Close button
+  elements.lightboxClose.addEventListener('click', () => closeLightbox(true));
+  
+  // Close by clicking backdrop
+  elements.lightbox.addEventListener('click', (e) => {
+    if (e.target === elements.lightbox) {
+      closeLightbox(true);
+    }
+  });
+  
+  // Gallery item click to open lightbox
+  elements.galleryGrid.addEventListener('click', (e) => {
+    const clickedImg = e.target.closest('img');
+    if (!clickedImg) return;
+    
+    const imgs = Array.from(elements.galleryGrid.querySelectorAll('img'));
+    const urls = imgs.map(img => img.getAttribute('src'));
+    const clickedIndex = imgs.indexOf(clickedImg);
+    
+    if (clickedIndex !== -1) {
+      openLightbox(urls, clickedIndex);
+    }
+  });
+  
+  // History item click to open lightbox
+  elements.historyGrid.addEventListener('click', (e) => {
+    const clickedImg = e.target.closest('img');
+    if (!clickedImg) return;
+    
+    const imgs = Array.from(elements.historyGrid.querySelectorAll('img'));
+    const urls = imgs.map(img => img.getAttribute('src'));
+    const clickedIndex = imgs.indexOf(clickedImg);
+    
+    if (clickedIndex !== -1) {
+      openLightbox(urls, clickedIndex);
+    }
+  });
+  
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (elements.lightbox.classList.contains('hidden')) return;
+    
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      lightboxPrev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      lightboxNext();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeLightbox(true);
+    }
+  });
+  
+  // Popstate event for mobile back button integration
+  window.addEventListener('popstate', () => {
+    if (!elements.lightbox.classList.contains('hidden')) {
+      closeLightbox(false);
+    }
+  });
 }
 
 // Tab Switching logic
@@ -1159,6 +1231,49 @@ function saveHistoryToStorage() {
   if (state.activeTab === 'history') {
     renderHistory();
   }
+}
+
+// Lightbox functionality
+function openLightbox(images, startIndex) {
+  state.lightboxImages = images;
+  state.lightboxIndex = startIndex;
+  
+  if (state.lightboxImages.length === 0 || state.lightboxIndex < 0) return;
+  
+  elements.lightbox.classList.remove('hidden');
+  updateLightboxImage();
+  
+  // Push state to history for mobile back button interception
+  history.pushState({ lightboxOpen: true }, '');
+}
+
+function closeLightbox(shouldGoBack = true) {
+  if (elements.lightbox.classList.contains('hidden')) return;
+  
+  elements.lightbox.classList.add('hidden');
+  
+  if (shouldGoBack) {
+    if (history.state && history.state.lightboxOpen) {
+      history.back();
+    }
+  }
+}
+
+function updateLightboxImage() {
+  if (state.lightboxIndex < 0 || state.lightboxIndex >= state.lightboxImages.length) return;
+  elements.lightboxImage.src = state.lightboxImages[state.lightboxIndex];
+}
+
+function lightboxNext() {
+  if (state.lightboxImages.length === 0) return;
+  state.lightboxIndex = (state.lightboxIndex + 1) % state.lightboxImages.length;
+  updateLightboxImage();
+}
+
+function lightboxPrev() {
+  if (state.lightboxImages.length === 0) return;
+  state.lightboxIndex = (state.lightboxIndex - 1 + state.lightboxImages.length) % state.lightboxImages.length;
+  updateLightboxImage();
 }
 
 // Initial hook on WebSocket connection
