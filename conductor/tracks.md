@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: A new feature where if you click/press a generated image you can see it "full screen". You must also then be able to exit the full screen view. In full screen view, you should be able to move between all generated images (or all historical images if you are viewing something from that tab)**
+- [~] **Track: A new feature where if you click/press a generated image you can see it "full screen". You must also then be able to exit the full screen view. In full screen view, you should be able to move between all generated images (or all historical images if you are viewing something from that tab)**
 *Link: [./lightbox_fullscreen_viewer_20260614/](./lightbox_fullscreen_viewer_20260614/)*
