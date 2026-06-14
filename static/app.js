@@ -50,6 +50,7 @@ const elements = {
 
 // Initialize App
 async function init() {
+  localStorage.clear();
   setupEventListeners();
   await fetchConfig();
 }
