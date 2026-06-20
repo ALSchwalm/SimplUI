@@ -9,7 +9,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: The default batch count seems to be 1 now, it was two before, we should fix that**
+- [~] **Track: The default batch count seems to be 1 now, it was two before, we should fix that**
 *Link: [./default_batch_count_two_20260620/](./default_batch_count_two_20260620/)*
 
 
