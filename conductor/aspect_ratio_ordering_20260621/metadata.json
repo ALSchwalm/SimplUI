@@ -1,0 +1,8 @@
+{
+  "track_id": "aspect_ratio_ordering_20260621",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-06-21T02:21:00Z",
+  "updated_at": "2026-06-21T02:21:00Z",
+  "description": "The aspect ratio dropdown should be organized from tallest to widest"
+}
