@@ -70,3 +70,17 @@ def test_fresh_session_clears_prompt_input(page):
 
     # The prompt should not preserve the user's custom text
     assert page.locator("#prompt-input").input_value() != "custom user prompt text"
+
+
+def test_default_batch_count_is_two(page):
+    abs_path = os.path.abspath("static/index.html")
+    page.goto(f"file://{abs_path}")
+
+    # Assert slider value is 2
+    assert page.locator("#batch-count-slider").input_value() == "2"
+
+    # Assert label value is 2
+    assert page.locator("#batch-count-value").text_content() == "2"
+
+    # Assert state.batchCount is 2
+    assert page.evaluate("state.batchCount") == 2
