@@ -9,7 +9,7 @@ const state = {
   isConnected: false,
   isGenerating: false,
   activeTab: 'settings',
-  batchCount: 1,
+  batchCount: 2,
   history: [], // Generated images history
   activePreviews: {}, // Active preview images by index
   activePrompts: {}, // promptId -> { index: i, resolve: resolveFunc }
@@ -53,9 +53,9 @@ async function init() {
   localStorage.clear();
   if (elements.promptInput) elements.promptInput.value = '';
   if (elements.batchCountSlider) {
-    elements.batchCountSlider.value = 1;
-    state.batchCount = 1;
-    if (elements.batchCountValue) elements.batchCountValue.textContent = '1';
+    elements.batchCountSlider.value = 2;
+    state.batchCount = 2;
+    if (elements.batchCountValue) elements.batchCountValue.textContent = '2';
   }
   if (elements.advancedToggle) {
     elements.advancedToggle.checked = false;
