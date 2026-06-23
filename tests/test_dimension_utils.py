@@ -3,6 +3,7 @@ from dimension_utils import (
     calculate_dimensions,
     find_matching_preset,
     find_nearest_preset,
+    ASPECT_RATIOS,
 )
 
 
@@ -74,3 +75,9 @@ def test_find_nearest_preset():
     # Something very small -> 0.25M
     # 1:1 at 0.25M is 512x512
     assert find_nearest_preset(500, 500) == ("1:1", "0.25M")
+
+
+def test_aspect_ratios_sorted_tallest_to_widest():
+    expected = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"]
+    assert ASPECT_RATIOS == expected
+
