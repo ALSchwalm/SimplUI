@@ -297,7 +297,7 @@ function updateConnectionUI(connected, text) {
 }
 
 // Preset tables
-const ASPECT_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "7:9", "9:7", "1:2", "2:1"];
+const ASPECT_RATIOS = ["1:2", "9:16", "2:3", "3:4", "7:9", "1:1", "9:7", "4:3", "3:2", "16:9", "2:1"];
 const PIXEL_COUNTS = ["0.25M", "0.5M", "1M", "1.5M", "2M"];
 
 function calculateDimensions(aspectRatioStr, pixelCountM) {
