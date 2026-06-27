@@ -9,6 +9,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: The aspect ratio dropdown should be organized from tallest to widest**
+- [~] **Track: The aspect ratio dropdown should be organized from tallest to widest**
 *Link: [./aspect_ratio_ordering_20260621/](./aspect_ratio_ordering_20260621/)*
 
